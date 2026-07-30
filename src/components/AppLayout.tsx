@@ -47,21 +47,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
       }
     }
 
-    // Default back behavior
-    const hasQuery = !!window.location.search;
-    const isRootPage = 
-      !hasQuery && (
-        pathname === '/' || 
-        pathname === '/dashboard' || 
-        pathname === '/transactions' || 
-        pathname === '/analytics' || 
-        pathname === '/accounts' || 
-        pathname === '/more'
-      );
-
-    if (!isRootPage) {
-      router.back();
+    if (pathname === '/add-expense') {
+      router.push('/transactions');
+      return;
     }
+
+    router.back();
   };
 
   const handleGlobalTouchStart = (e: React.TouchEvent) => {
@@ -106,21 +97,29 @@ export default function AppLayout({ children }: AppLayoutProps) {
     let handler: any;
     const init = async () => {
       const { App } = await import('@capacitor/app');
-      handler = await App.addListener('backButton', ({ canGoBack }) => {
-        // Only treat as root page exit if there are no search query parameters (e.g. ?account=...)
-        const hasQuery = typeof window !== 'undefined' && !!window.location.search;
-        const isRootPage = 
-          !hasQuery && (
-            pathname === '/' || 
-            pathname === '/dashboard' || 
-            pathname === '/transactions' || 
-            pathname === '/analytics' || 
-            pathname === '/accounts' || 
-            pathname === '/more'
-          );
-        
-        if (isRootPage) {
-          App.exitApp();
+      handler = await App.addListener('backButton', () => {
+        const params = new URLSearchParams(window.location.search);
+        const accountParam = params.get('account');
+        const categoryParam = params.get('category');
+
+        if (pathname === '/transactions') {
+          if (accountParam) {
+            router.push('/accounts');
+            return;
+          }
+          if (categoryParam) {
+            router.push('/analytics');
+            return;
+          }
+        }
+
+        if (pathname === '/add-expense') {
+          router.push('/transactions');
+          return;
+        }
+
+        if (pathname !== '/' && pathname !== '/dashboard') {
+          router.back();
         } else {
           router.back();
         }
