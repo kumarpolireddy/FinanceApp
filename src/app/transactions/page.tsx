@@ -144,7 +144,9 @@ function TransactionsPageContent() {
   const handleTripButtonClick = () => {
     const current = getActiveTrip();
     if (current) {
-      setIsActiveTripModalOpen(true);
+      setActiveTrip(null);
+      refreshActiveTrip();
+      toast.info(`Trip "${current.name}" stopped`);
     } else {
       setNewTripName('');
       setNewTripDestination('');
@@ -169,14 +171,7 @@ function TransactionsPageContent() {
     });
     refreshActiveTrip();
     setIsStartTripModalOpen(false);
-    toast.success(`Trip Mode Activated for "${created.name}"! All new transactions will log under this trip.`);
-  };
-
-  const handleEndTrip = () => {
-    setActiveTrip(null);
-    refreshActiveTrip();
-    setIsActiveTripModalOpen(false);
-    toast.info('Trip Mode Deactivated');
+    toast.success(`Trip "${created.name}" started`);
   };
 
   // Edit / Delete Repayment states
@@ -1301,10 +1296,10 @@ function TransactionsPageContent() {
                 ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse ring-2 ring-amber-400/40'
                 : 'bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20'
             }`}
-            title={activeTrip ? `Trip Mode Active: ${activeTrip.name}` : 'Start Trip Mode'}
+            title={activeTrip ? `Tap to stop ${activeTrip.name}` : 'Start Trip'}
           >
             <Plane size={13} className={activeTrip ? 'animate-bounce' : ''} />
-            <span>{activeTrip ? `Trip: ${activeTrip.name}` : 'Trip'}</span>
+            <span>{activeTrip ? activeTrip.name : 'Trip'}</span>
           </button>
         </div>
 
@@ -2663,19 +2658,16 @@ function TransactionsPageContent() {
         <Modal
           isOpen={isStartTripModalOpen}
           onClose={() => setIsStartTripModalOpen(false)}
-          title="Start Trip Mode ✈️"
+          title="New Trip"
         >
           <form onSubmit={handleStartTripSubmit} className="space-y-4 text-xs font-semibold">
-            <p className="text-muted-foreground leading-relaxed">
-              Start a new trip mode. From this moment, all expenses and transactions will automatically log under this trip until you deactivate it.
-            </p>
             <div>
               <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
                 Trip Name *
               </label>
               <input
                 type="text"
-                placeholder="e.g. Goa Trip, Europe Vacation, Office Outing"
+                placeholder="Trip Name"
                 value={newTripName}
                 onChange={(e) => setNewTripName(e.target.value)}
                 className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
@@ -2686,11 +2678,11 @@ function TransactionsPageContent() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Destination (Optional)
+                  Destination
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Goa, Paris"
+                  placeholder="Destination"
                   value={newTripDestination}
                   onChange={(e) => setNewTripDestination(e.target.value)}
                   className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
@@ -2698,11 +2690,11 @@ function TransactionsPageContent() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                  Budget (₹) (Optional)
+                  Budget (₹)
                 </label>
                 <input
                   type="number"
-                  placeholder="e.g. 20000"
+                  placeholder="Budget"
                   value={newTripBudget}
                   onChange={(e) => setNewTripBudget(e.target.value)}
                   className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
@@ -2715,7 +2707,7 @@ function TransactionsPageContent() {
                 type="submit"
                 className="flex-1 py-3 bg-primary text-primary-foreground font-extrabold rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
               >
-                Start Trip Mode
+                Start Trip
               </button>
               <button
                 type="button"
@@ -2726,66 +2718,6 @@ function TransactionsPageContent() {
               </button>
             </div>
           </form>
-        </Modal>
-      )}
-
-      {/* Active Trip Info & Actions Modal */}
-      {isActiveTripModalOpen && activeTrip && (
-        <Modal
-          isOpen={isActiveTripModalOpen}
-          onClose={() => setIsActiveTripModalOpen(false)}
-          title={`Trip Mode Active: ${activeTrip.name} ✈️`}
-        >
-          <div className="space-y-4 text-xs font-semibold">
-            {(() => {
-              const summary = getTripSummary(activeTrip.id);
-              return (
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-2 text-foreground">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-sm text-amber-500">🔴 Live Trip Running</span>
-                    <span className="text-2xs font-semibold text-muted-foreground">Since {activeTrip.startDate}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 pt-1 text-center">
-                    <div className="bg-background/80 p-2.5 rounded-lg border border-border">
-                      <p className="text-2xs text-muted-foreground uppercase">Total Spent</p>
-                      <p className="text-base font-black text-negative mt-0.5">₹{summary.totalExpense.toLocaleString('en-IN')}</p>
-                    </div>
-                    <div className="bg-background/80 p-2.5 rounded-lg border border-border">
-                      <p className="text-2xs text-muted-foreground uppercase">Trip Budget</p>
-                      <p className="text-base font-black text-foreground mt-0.5">
-                        {summary.budget > 0 ? `₹${summary.budget.toLocaleString('en-IN')}` : 'Unset'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            <p className="text-muted-foreground text-center">
-              All transactions recorded right now are being automatically tagged under <strong>{activeTrip.name}</strong>.
-            </p>
-
-            <div className="space-y-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsActiveTripModalOpen(false);
-                  router.push('/trips');
-                }}
-                className="w-full py-3 bg-primary text-primary-foreground font-extrabold rounded-lg hover:opacity-90 transition shadow-sm flex items-center justify-center gap-1.5"
-              >
-                <Plane size={15} /> View Full Trip Breakdown
-              </button>
-              
-              <button
-                type="button"
-                onClick={handleEndTrip}
-                className="w-full py-3 bg-negative/10 border border-negative/30 text-negative font-extrabold rounded-lg hover:bg-negative/20 transition flex items-center justify-center gap-1.5"
-              >
-                Stop / End Trip Mode
-              </button>
-            </div>
-          </div>
         </Modal>
       )}
 
