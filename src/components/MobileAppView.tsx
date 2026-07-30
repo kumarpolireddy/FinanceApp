@@ -1387,38 +1387,93 @@ export default function MobileAppView() {
                 )}
               </div>
 
-              {/* Category & Subcategory (Only if not transfer) */}
+              {/* Category & Expanding Subcategories Picker */}
               {formType !== 'transfer' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-3xs font-bold text-muted-foreground uppercase">Category</label>
-                    <select
-                      value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value)}
-                      className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
-                    >
-                      {activeCategories.map(cat => (
-                        <option key={cat.id} value={cat.name}>
-                          {cat.icon || '📦'} {cat.name}
-                        </option>
-                      ))}
-                    </select>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-3xs font-bold text-muted-foreground uppercase">
+                      Category
+                    </label>
+                    {formCategory && (
+                      <span className="text-3xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                        {formCategory} {formSubcategory ? `➔ ${formSubcategory}` : ''}
+                      </span>
+                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-3xs font-bold text-muted-foreground uppercase">Subcategory</label>
-                    <select
-                      value={formSubcategory}
-                      onChange={(e) => setFormSubcategory(e.target.value)}
-                      className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
-                    >
-                      <option value="">None</option>
-                      {activeSubcategories.map(sub => (
-                        <option key={sub} value={sub}>
-                          {sub}
-                        </option>
-                      ))}
-                    </select>
+
+                  {/* Main Category Chips */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+                    {activeCategories.map((cat) => {
+                      const isSelected = formCategory.toLowerCase() === cat.name.toLowerCase();
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setFormCategory(cat.name);
+                            setFormSubcategory('');
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 border ${
+                            isSelected
+                              ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                              : 'bg-[#0b0f1a] text-foreground border-border hover:border-primary/40'
+                          }`}
+                        >
+                          <span>{cat.icon || '📦'}</span>
+                          <span>{cat.name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
+
+                  {/* Subcategories panel when tapped */}
+                  {(() => {
+                    const selectedCatObj = activeCategories.find(
+                      (c) => c.name.toLowerCase() === formCategory.toLowerCase()
+                    );
+                    if (!selectedCatObj || !selectedCatObj.subcategories || selectedCatObj.subcategories.length === 0) {
+                      return null;
+                    }
+
+                    return (
+                      <div className="bg-[#0b0f1a] border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in">
+                        <span className="text-3xs font-extrabold text-muted-foreground uppercase block tracking-wider">
+                          Subcategories under {selectedCatObj.name}:
+                        </span>
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                          <button
+                            type="button"
+                            onClick={() => setFormSubcategory('')}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
+                              !formSubcategory
+                                ? 'bg-amber-500 text-white border-amber-400 shadow-sm'
+                                : 'bg-muted/30 text-muted-foreground border-border hover:text-foreground'
+                            }`}
+                          >
+                            All {selectedCatObj.name}
+                          </button>
+
+                          {selectedCatObj.subcategories.map((sub) => {
+                            const isSubSelected = formSubcategory.toLowerCase() === sub.toLowerCase();
+                            return (
+                              <button
+                                key={sub}
+                                type="button"
+                                onClick={() => setFormSubcategory(sub)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
+                                  isSubSelected
+                                    ? 'bg-amber-500 text-white border-amber-400 shadow-sm ring-2 ring-amber-400/30'
+                                    : 'bg-card text-foreground border-border hover:border-amber-400/50'
+                                }`}
+                              >
+                                {sub}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
