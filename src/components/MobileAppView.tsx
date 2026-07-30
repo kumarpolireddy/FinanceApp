@@ -642,7 +642,7 @@ export default function MobileAppView() {
                               >
                                 <div className="space-y-0.5 min-w-0 pr-2">
                                   <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-xs font-semibold text-foreground truncate">{tx.description}</span>
+                                    <span className="text-xs font-semibold text-foreground truncate">{tx.notes || tx.category}</span>
                                     {isTrip && (
                                       <span className="text-4xs bg-amber-500/20 text-amber-500 border border-amber-500/40 px-1.5 py-0.5 rounded-full font-bold">
                                         ✈️ Trip
@@ -866,7 +866,7 @@ export default function MobileAppView() {
                         >
                           <div className="min-w-0 pr-2">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-semibold text-foreground truncate">{tx.description}</span>
+                              <span className="text-xs font-semibold text-foreground truncate">{tx.notes || tx.category}</span>
                               <span className="text-4xs bg-card border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
                                 {tx.category}
                               </span>

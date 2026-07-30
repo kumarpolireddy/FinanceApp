@@ -893,7 +893,7 @@ function TransactionsPageContent() {
     if (!editingTransaction || !editForm) return;
 
     const amount = Math.abs(Number(editForm.amount || 0));
-    if (!amount || !editForm.description.trim() || !editForm.account) {
+    if (!amount || !editForm.account) {
       toast.error('Please fill in all required fields.');
       return;
     }
@@ -949,7 +949,7 @@ function TransactionsPageContent() {
   const handleCopyTransaction = () => {
     if (!editingTransaction || !editForm) return;
     const amount = Math.abs(Number(editForm.amount || 0));
-    if (!amount || !editForm.description.trim() || !editForm.account) {
+    if (!amount || !editForm.account) {
       toast.error('Please fill in all required fields to copy.');
       return;
     }
@@ -978,7 +978,7 @@ function TransactionsPageContent() {
   const handleBookmarkTransaction = () => {
     if (!editingTransaction || !editForm) return;
     const amount = Math.abs(Number(editForm.amount || 0));
-    if (!amount || !editForm.description.trim() || !editForm.account) {
+    if (!amount || !editForm.account) {
       toast.error('Please fill in all required fields to bookmark.');
       return;
     }
@@ -1662,7 +1662,7 @@ function TransactionsPageContent() {
                             const isIncome = txn.type === 'income';
                             const isTransfer = txn.type === 'transfer';
                             
-                            const title = txn.description?.trim() || txn.category || 'Transaction';
+                            const title = txn.notes?.trim() || txn.category || 'Transaction';
                             
                             const accName = getAccountName(txn.account);
                             const toAccName = txn.toAccount ? getAccountName(txn.toAccount) : '';
@@ -1672,9 +1672,6 @@ function TransactionsPageContent() {
                               metadata = `${accName} → ${toAccName || 'Unknown'}`;
                             } else {
                               metadata = `${txn.category}  •  ${accName}`;
-                            }
-                            if (txn.notes) {
-                              metadata += `  •  📝 ${txn.notes}`;
                             }
                             
                             const isTrip = Boolean(txn.tripId);
@@ -1792,7 +1789,7 @@ function TransactionsPageContent() {
                           const isIncome = txn.type === 'income';
                           const isTransfer = txn.type === 'transfer';
                           
-                          const title = txn.description?.trim() || txn.category || 'Transaction';
+                          const title = txn.notes?.trim() || txn.category || 'Transaction';
 
                           const accName = getAccountName(txn.account);
                           const toAccName = txn.toAccount ? getAccountName(txn.toAccount) : '';

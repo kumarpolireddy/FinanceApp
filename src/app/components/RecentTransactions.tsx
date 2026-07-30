@@ -136,7 +136,7 @@ export default function RecentTransactions({
                   {hasIcon ? catMeta.icon : (txn.category || 'Transfer').charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{txn.description}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{txn.notes || txn.category || 'Transaction'}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="text-2xs text-muted-foreground">{formatDate(txn.date)}</span>
                     <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground" />
