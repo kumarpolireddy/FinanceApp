@@ -1387,46 +1387,31 @@ export default function MobileAppView() {
                 )}
               </div>
 
-              {/* Category & Expanding Subcategories Picker */}
+              {/* Category Dropdown & Expanding Subcategories */}
               {formType !== 'transfer' && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <label className="block text-3xs font-bold text-muted-foreground uppercase">
                       Category
                     </label>
-                    {formCategory && (
-                      <span className="text-3xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                        {formCategory} {formSubcategory ? `➔ ${formSubcategory}` : ''}
-                      </span>
-                    )}
+                    <select
+                      value={formCategory}
+                      onChange={(e) => {
+                        setFormCategory(e.target.value);
+                        setFormSubcategory('');
+                      }}
+                      className="bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none text-xs w-full max-w-[200px]"
+                    >
+                      <option value="">Select Category</option>
+                      {activeCategories.map((cat) => (
+                        <option key={cat.id} value={cat.name}>
+                          {cat.icon || '📦'} {cat.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  {/* Main Category Chips */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
-                    {activeCategories.map((cat) => {
-                      const isSelected = formCategory.toLowerCase() === cat.name.toLowerCase();
-                      return (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => {
-                            setFormCategory(cat.name);
-                            setFormSubcategory('');
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 border ${
-                            isSelected
-                              ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                              : 'bg-[#0b0f1a] text-foreground border-border hover:border-primary/40'
-                          }`}
-                        >
-                          <span>{cat.icon || '📦'}</span>
-                          <span>{cat.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Subcategories panel when tapped */}
+                  {/* Subcategories panel when category with subcategories is selected */}
                   {(() => {
                     const selectedCatObj = activeCategories.find(
                       (c) => c.name.toLowerCase() === formCategory.toLowerCase()
@@ -1436,7 +1421,7 @@ export default function MobileAppView() {
                     }
 
                     return (
-                      <div className="bg-[#0b0f1a] border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in">
+                      <div className="bg-[#0b0f1a] border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in mt-2">
                         <span className="text-3xs font-extrabold text-muted-foreground uppercase block tracking-wider">
                           Subcategories under {selectedCatObj.name}:
                         </span>

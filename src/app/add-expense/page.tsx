@@ -372,45 +372,32 @@ export default function AddExpensePage() {
             </div>
           )}
 
-          {/* Category & Expanding Subcategories Picker */}
+          {/* Category Dropdown & Expanding Subcategories */}
           {type !== 'transfer' && (
             <div className="space-y-2 border-b border-border/30 pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Category</span>
-                {category && (
-                  <span className="text-3xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                    {category} {subcategory ? `➔ ${subcategory}` : ''}
-                  </span>
-                )}
+                <select
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setSubcategory('');
+                  }}
+                  className="bg-secondary text-right font-bold text-foreground focus:outline-none cursor-pointer text-sm px-3 py-1.5 rounded-lg border border-border max-w-[180px] truncate"
+                >
+                  <option value="" className="bg-secondary">Select Category</option>
+                  {categories.map((catName) => {
+                    const catObj = categoriesMeta.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+                    return (
+                      <option key={catName} value={catName} className="bg-secondary">
+                        {catObj?.icon || '📦'} {catName}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
 
-              {/* Main Category Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
-                {categories.map((catName) => {
-                  const catObj = categoriesMeta.find((c) => c.name.toLowerCase() === catName.toLowerCase());
-                  const isSelected = category.toLowerCase() === catName.toLowerCase();
-                  return (
-                    <button
-                      key={catName}
-                      type="button"
-                      onClick={() => {
-                        setCategory(catName);
-                        setSubcategory('');
-                      }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 border ${
-                        isSelected
-                          ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                          : 'bg-muted/30 text-foreground border-border hover:border-primary/40'
-                      }`}
-                    >
-                      <span>{catObj?.icon || '📦'}</span>
-                      <span>{catName}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Subcategories panel when tapped */}
+              {/* Subcategories panel when category with subcategories is selected */}
               {(() => {
                 const selectedCatObj = categoriesMeta.find(
                   (c) => c.name.toLowerCase() === category.toLowerCase()
@@ -420,7 +407,7 @@ export default function AddExpensePage() {
                 }
 
                 return (
-                  <div className="bg-muted/20 border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in">
+                  <div className="bg-muted/20 border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in mt-2">
                     <span className="text-3xs font-extrabold text-muted-foreground uppercase block tracking-wider">
                       Subcategories under {selectedCatObj.name}:
                     </span>
