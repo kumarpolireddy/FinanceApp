@@ -3250,13 +3250,13 @@ export default function SettingsPage() {
                   }}
                   className="w-full rounded-xl border border-border bg-[#0b0f1a] p-3 text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold text-sm"
                 >
-                  <option value="dark">🖤 Default Dark</option>
-                  <option value="light">🤍 Light Mode</option>
-                  <option value="system">⚙️ System Default</option>
-                  <option value="theme-midnight-blue">🌌 Midnight Blue</option>
-                  <option value="theme-emerald-green">💚 Emerald Green</option>
-                  <option value="theme-royal-purple">💜 Royal Purple</option>
-                  <option value="theme-sunset-orange">🧡 Sunset Orange</option>
+                  <option value="dark">Default Dark</option>
+                  <option value="light">Light Mode</option>
+                  <option value="system">System Default</option>
+                  <option value="theme-midnight-blue">Midnight Blue</option>
+                  <option value="theme-emerald-green">Emerald Green</option>
+                  <option value="theme-royal-purple">Royal Purple</option>
+                  <option value="theme-sunset-orange">Sunset Orange</option>
                 </select>
               </div>
 
@@ -3287,14 +3287,13 @@ export default function SettingsPage() {
                         setTripBgColor(preset.color);
                         toast.success(`Trip background color updated to ${preset.label}`);
                       }}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all ${
+                      className={`flex items-center justify-center px-3.5 py-2 rounded-xl border text-xs font-bold transition-all ${
                         tripBgColor === preset.color
                           ? 'border-primary ring-2 ring-primary/30 scale-105 shadow-md'
                           : 'border-border hover:border-muted-foreground/40'
                       }`}
                       style={{ backgroundColor: `${preset.color}20` }}
                     >
-                      <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: preset.color }} />
                       <span style={{ color: preset.color }}>{preset.label}</span>
                     </button>
                   ))}

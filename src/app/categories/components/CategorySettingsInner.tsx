@@ -304,15 +304,10 @@ export function CategorySettingsInner() {
               className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3 group hover:border-primary/30 transition-all"
             >
               <div className="flex items-center gap-3 min-w-0">
-                {showIcons && (
-                  /* Category icon with subtle colored border */
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0 bg-background/50 border border-border"
-                    style={{ borderColor: `${cat.color}40` }}
-                  >
-                    {cat.icon || '📦'}
-                  </div>
-                )}
+                <div
+                  className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: cat.color }}
+                />
 
                 {/* Name */}
                 <p className="text-sm font-semibold text-foreground truncate">{cat.name}</p>

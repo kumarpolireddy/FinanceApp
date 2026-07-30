@@ -496,10 +496,10 @@ export function getTripSummary(tripId: string) {
 // ── Account Categories ────────────────────────────────────────────────────────
 
 const DEFAULT_ACCOUNT_CATEGORIES: AccountCategory[] = [
-  { id: 'accounts', name: 'Main Accounts', baseType: 'accounts', icon: '🏦' },
-  { id: 'cash', name: 'Cash Accounts', baseType: 'cash', icon: '💵' },
-  { id: 'credit', name: 'Credit Cards', baseType: 'credit', icon: '💳' },
-  { id: 'loan', name: 'Loan Accounts', baseType: 'loan', icon: '📉' },
+  { id: 'accounts', name: 'Main Accounts', baseType: 'accounts', icon: '' },
+  { id: 'cash', name: 'Cash Accounts', baseType: 'cash', icon: '' },
+  { id: 'credit', name: 'Credit Cards', baseType: 'credit', icon: '' },
+  { id: 'loan', name: 'Loan Accounts', baseType: 'loan', icon: '' },
 ];
 
 export function getAccountCategories(): AccountCategory[] {

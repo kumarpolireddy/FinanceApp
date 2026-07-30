@@ -250,7 +250,6 @@ export default function TripsPage() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{activeTripState.icon || '✈️'}</span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground uppercase tracking-wider animate-pulse">
                     Live Trip Active
                   </span>
@@ -386,21 +385,18 @@ export default function TripsPage() {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{trip.icon || '✈️'}</span>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-base text-foreground">{trip.name}</h3>
-                              {isActive && (
-                                <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
-                              )}
-                            </div>
-                            {trip.destination && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                <MapPin size={12} /> {trip.destination}
-                              </p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-base text-foreground">{trip.name}</h3>
+                            {isActive && (
+                              <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
                             )}
                           </div>
+                          {trip.destination && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <MapPin size={12} /> {trip.destination}
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -496,17 +492,12 @@ export default function TripsPage() {
                 <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-3xl">{currentSummary.trip.icon || '✈️'}</span>
-                        <div>
-                          <h2 className="text-xl font-black text-foreground">{currentSummary.trip.name}</h2>
-                          {currentSummary.trip.destination && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <MapPin size={13} className="text-primary" /> {currentSummary.trip.destination}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      <h2 className="text-xl font-black text-foreground">{currentSummary.trip.name}</h2>
+                      {currentSummary.trip.destination && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <MapPin size={13} className="text-primary" /> {currentSummary.trip.destination}
+                        </p>
+                      )}
                     </div>
 
                     <button

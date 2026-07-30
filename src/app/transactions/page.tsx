@@ -1859,7 +1859,7 @@ function TransactionsPageContent() {
                             metadata = `${txn.category}  •  ${accName}`;
                           }
                           if (txn.notes) {
-                            metadata += `  •  📝 ${txn.notes}`;
+                            metadata += `  •  ${txn.notes}`;
                           }
 
                           const isTrip = Boolean(txn.tripId);
