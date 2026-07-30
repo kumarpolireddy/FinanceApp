@@ -1254,13 +1254,21 @@ export default function MobileAppView() {
           <div className="w-full bg-card border-t border-border rounded-t-2xl max-h-[90%] overflow-y-auto flex flex-col animate-slide-up">
             
             {/* Modal Header */}
-            <div className="flex justify-between items-center px-4 py-3 border-b border-border">
+            <div className="flex justify-between items-center px-4 py-3 border-b border-border sticky top-0 bg-card z-30">
               <h3 className="text-sm font-extrabold text-foreground">
                 {editingTx ? 'Edit Transaction' : 'Add Transaction'}
               </h3>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  onClick={handleSave}
+                  className="px-3.5 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
+                >
+                  Save
+                </button>
                 {editingTx && (
                   <button 
+                    type="button"
                     onClick={() => handleDelete(editingTx)}
                     className="p-1.5 text-negative hover:bg-muted/50 rounded-lg transition"
                     title="Delete"
@@ -1269,6 +1277,7 @@ export default function MobileAppView() {
                   </button>
                 )}
                 <button 
+                  type="button"
                   onClick={() => setIsAddModalOpen(false)}
                   className="p-1 text-muted-foreground hover:text-foreground transition"
                 >
@@ -1425,20 +1434,20 @@ export default function MobileAppView() {
                 />
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-3">
+              {/* Actions - Sticky Bottom Footer so always visible when keyboard is open */}
+              <div className="sticky bottom-0 bg-card/95 backdrop-blur-md pt-3 pb-2 border-t border-border z-30 flex gap-3 -mx-4 px-4 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-2.5 bg-card border border-border font-extrabold text-xs rounded-xl hover:bg-muted/20 transition"
+                  className="flex-1 py-3 bg-card border border-border font-extrabold text-xs rounded-xl hover:bg-muted/20 active:scale-95 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-primary text-primary-foreground font-extrabold text-xs rounded-xl hover:opacity-90 transition"
+                  className="flex-1 py-3 bg-primary text-primary-foreground font-extrabold text-xs rounded-xl hover:opacity-90 active:scale-95 transition shadow-md"
                 >
-                  {editingTx ? 'Save Changes' : 'Add Record'}
+                  {editingTx ? 'Save Changes' : 'Save Transaction'}
                 </button>
               </div>
 

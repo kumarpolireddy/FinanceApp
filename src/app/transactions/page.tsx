@@ -2031,19 +2031,32 @@ function TransactionsPageContent() {
       {/* Edit Transaction Full Screen Page */}
       {editingTransaction && editForm && (
         <div className="fixed inset-0 z-50 bg-[#1F2027] flex flex-col text-[#F2F2F4] select-text animate-slide-up">
-          {/* Header */}
-          <div className="flex items-center h-14 px-5 bg-[#1F2027] shrink-0">
-            <button 
+          {/* Header with Always Visible Save Button */}
+          <div className="flex items-center justify-between h-14 px-5 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
+            <div className="flex items-center">
+              <button 
+                type="button"
+                onClick={() => {
+                  setEditingTransaction(null);
+                  setEditForm(null);
+                }}
+                className="text-[#F2F2F4] hover:bg-white/[0.08] transition flex items-center justify-center h-10 w-10 shrink-0 -ml-2 rounded-full"
+                title="Cancel"
+              >
+                <ArrowLeft size={24} />
+              </button>
+              <h2 className="text-[20px] font-medium text-[#F2F2F4] ml-2 capitalize">
+                {editForm.type}
+              </h2>
+            </div>
+
+            <button
               type="button"
               onClick={handleSaveClick}
-              className="text-[#F2F2F4] hover:bg-white/[0.08] transition flex items-center justify-center h-10 w-10 shrink-0 -ml-2 rounded-full"
-              title="Save & Go Back"
+              className="px-4 py-2 bg-primary text-primary-foreground font-extrabold text-xs rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
             >
-              <ArrowLeft size={24} />
+              Save Transaction
             </button>
-            <h2 className="text-[20px] font-medium text-[#F2F2F4] ml-2 capitalize">
-              {editForm.type}
-            </h2>
           </div>
 
           {/* Content Area */}
