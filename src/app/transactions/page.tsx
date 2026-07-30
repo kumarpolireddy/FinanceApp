@@ -917,7 +917,7 @@ function TransactionsPageContent() {
       account: editForm.account,
       toAccount: editForm.type === 'transfer' ? editForm.toAccount : undefined,
       amount,
-      description: editForm.description.trim(),
+      description: editForm.description.trim() || (editForm.type === 'transfer' ? 'Transfer' : (editForm.category || 'Expense')),
       notes: editForm.notes.trim(),
     });
 
@@ -2061,7 +2061,7 @@ function TransactionsPageContent() {
               onClick={handleSaveClick}
               className="px-4 py-2 bg-primary text-primary-foreground font-extrabold text-xs rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
             >
-              Save Transaction
+              Done
             </button>
           </div>
 
@@ -2246,7 +2246,6 @@ function TransactionsPageContent() {
                     onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                     rows={1}
                     className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 resize-none h-auto min-h-[26px]"
-                    placeholder="Optional"
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
                       target.style.height = 'auto';
@@ -2264,8 +2263,6 @@ function TransactionsPageContent() {
                     type="text"
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    required
-                    placeholder="Description / Vendor"
                     className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 pr-8"
                   />
                   <Camera size={20} className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />

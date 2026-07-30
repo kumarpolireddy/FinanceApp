@@ -165,7 +165,7 @@ export default function AddExpensePage() {
 
     saveTransaction({
       date,
-      description: description.trim(),
+      description: description.trim() || (type === 'transfer' ? 'Transfer' : (category || 'Expense')),
       category: type === 'transfer' ? 'Transfer' : category,
       subcategory: type === 'transfer' ? undefined : subcategory || undefined,
       account,
@@ -394,7 +394,7 @@ export default function AddExpensePage() {
             </div>
           )}
 
-          {/* Row 5: Description */}
+          {/* Row 5: Description (Optional, No Placeholder) */}
           <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-2">
             <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Description</span>
             <input
@@ -403,11 +403,11 @@ export default function AddExpensePage() {
               onChange={(e) => setDescription(e.target.value)}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => setIsInputFocused(false)}
-              className="bg-transparent text-right font-semibold text-foreground focus:outline-none placeholder:text-muted-foreground/35 max-w-[200px] text-base"
+              className="bg-transparent text-right font-semibold text-foreground focus:outline-none max-w-[200px] text-base"
             />
           </div>
 
-          {/* Row 6: Notes */}
+          {/* Row 6: Notes (Optional, No Placeholder) */}
           <div className="flex items-center justify-between gap-4 pb-1">
             <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Notes</span>
             <input
@@ -416,11 +416,24 @@ export default function AddExpensePage() {
               onChange={(e) => setNotes(e.target.value)}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => setIsInputFocused(false)}
-              className="bg-transparent text-right font-semibold text-foreground focus:outline-none placeholder:text-muted-foreground/35 max-w-[200px] text-base"
+              className="bg-transparent text-right font-semibold text-foreground focus:outline-none max-w-[200px] text-base"
             />
           </div>
 
         </div>
+
+        {/* Sticky Done bar when typing description/notes */}
+        {isInputFocused && (
+          <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto bg-card border-t border-border p-3 shadow-2xl flex gap-3">
+            <button
+              type="button"
+              onClick={() => handleSubmit()}
+              className="flex-1 py-3 bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider rounded-xl hover:opacity-90 active:scale-95 transition shadow-md"
+            >
+              Done
+            </button>
+          </div>
+        )}
 
         {/* custom numeric keypad */}
         {!isInputFocused && (
@@ -443,7 +456,7 @@ export default function AddExpensePage() {
                 onClick={() => handleSubmit()}
                 className="flex-1 py-2.5 bg-primary text-primary-foreground font-black uppercase text-xs tracking-wider rounded shadow-md active:scale-95 transition cursor-pointer"
               >
-                Save Transaction
+                Done
               </button>
               <button
                 onClick={() => router.push('/transactions')}

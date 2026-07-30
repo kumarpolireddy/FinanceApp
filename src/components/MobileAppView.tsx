@@ -122,6 +122,7 @@ export default function MobileAppView() {
   const [formCategory, setFormCategory] = useState('');
   const [formSubcategory, setFormSubcategory] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   // Configuration settings (saved to localStorage)
   const [config, setConfig] = useState({
@@ -367,7 +368,7 @@ export default function MobileAppView() {
       date: new Date(formDate).toISOString(),
       type: formType,
       amount: amt,
-      description: formDescription.trim(),
+      description: formDescription.trim() || (formType === 'transfer' ? 'Transfer' : (formCategory || 'Expense')),
       account: formAccount,
       toAccount: formType === 'transfer' ? formToAccount : undefined,
       category: formType === 'transfer' ? 'Transfer' : formCategory,
@@ -1209,7 +1210,8 @@ export default function MobileAppView() {
       )}
 
       {/* ================= BOTTOM TAB NAVIGATION ================= */}
-      <nav className="absolute bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex select-none z-10">
+      {!isAddModalOpen && !isInputFocused && (
+        <nav className="absolute bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex select-none z-10">
         <button 
           onClick={() => { setActiveTab('daily'); setSelectedCalendarDay(null); }}
           className={`flex-1 flex flex-col justify-center items-center gap-1 transition ${
@@ -1247,6 +1249,7 @@ export default function MobileAppView() {
           <span className="text-[10px] font-black uppercase">More</span>
         </button>
       </nav>
+      )}
 
       {/* ================= ADD/EDIT SLIDE-UP MODAL ================= */}
       {isAddModalOpen && (
@@ -1264,7 +1267,7 @@ export default function MobileAppView() {
                   onClick={handleSave}
                   className="px-3.5 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
                 >
-                  Save
+                  Done
                 </button>
                 {editingTx && (
                   <button 
@@ -1316,12 +1319,13 @@ export default function MobileAppView() {
                   <label className="block text-3xs font-bold text-muted-foreground uppercase">Amount</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     required
                     value={formAmount}
                     onChange={(e) => setFormAmount(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                     className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
-                    placeholder="0.00"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -1331,21 +1335,23 @@ export default function MobileAppView() {
                     required
                     value={formDate}
                     onChange={(e) => setFormDate(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                     className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
                   />
                 </div>
               </div>
 
-              {/* Description */}
+              {/* Description (Optional) */}
               <div className="space-y-1.5">
-                <label className="block text-3xs font-bold text-muted-foreground uppercase">Description</label>
+                <label className="block text-3xs font-bold text-muted-foreground uppercase">Description (Optional)</label>
                 <input
                   type="text"
-                  required
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
                   className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
-                  placeholder="Swiggy, Salary, etc."
                 />
               </div>
 
@@ -1358,6 +1364,8 @@ export default function MobileAppView() {
                   <select
                     value={formAccount}
                     onChange={(e) => setFormAccount(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                     className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
                   >
                     {accounts.map(acc => (
@@ -1373,6 +1381,8 @@ export default function MobileAppView() {
                     <select
                       value={formToAccount}
                       onChange={(e) => setFormToAccount(e.target.value)}
+                      onFocus={() => setIsInputFocused(true)}
+                      onBlur={() => setIsInputFocused(false)}
                       required
                       className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
                     >
@@ -1399,6 +1409,8 @@ export default function MobileAppView() {
                       setFormCategory(e.target.value);
                       setFormSubcategory('');
                     }}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                     className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none text-xs"
                   >
                     <option value="">Select Category</option>
@@ -1411,15 +1423,16 @@ export default function MobileAppView() {
                 </div>
               )}
 
-              {/* Notes */}
+              {/* Notes (Optional) */}
               <div className="space-y-1.5">
                 <label className="block text-3xs font-bold text-muted-foreground uppercase">Notes (Optional)</label>
                 <textarea
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
                   rows={2}
                   className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none resize-none"
-                  placeholder="Add extra details..."
                 />
               </div>
 
@@ -1434,9 +1447,9 @@ export default function MobileAppView() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-primary text-primary-foreground font-extrabold text-xs rounded-xl hover:opacity-90 active:scale-95 transition shadow-md"
+                  className="flex-1 py-3 bg-primary text-primary-foreground font-black text-xs uppercase tracking-wider rounded-xl hover:opacity-90 active:scale-95 transition shadow-md"
                 >
-                  {editingTx ? 'Save Changes' : 'Save Transaction'}
+                  Done
                 </button>
               </div>
 
