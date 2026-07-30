@@ -372,79 +372,25 @@ export default function AddExpensePage() {
             </div>
           )}
 
-          {/* Category Dropdown & Expanding Subcategories */}
+          {/* Category Dropdown (Clean, No Icons, No Subcategories) */}
           {type !== 'transfer' && (
-            <div className="space-y-2 border-b border-border/30 pb-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Category</span>
-                <select
-                  value={category}
-                  onChange={(e) => {
-                    setCategory(e.target.value);
-                    setSubcategory('');
-                  }}
-                  className="bg-secondary text-right font-bold text-foreground focus:outline-none cursor-pointer text-sm px-3 py-1.5 rounded-lg border border-border max-w-[180px] truncate"
-                >
-                  <option value="" className="bg-secondary">Select Category</option>
-                  {categories.map((catName) => {
-                    const catObj = categoriesMeta.find((c) => c.name.toLowerCase() === catName.toLowerCase());
-                    return (
-                      <option key={catName} value={catName} className="bg-secondary">
-                        {catObj?.icon || '📦'} {catName}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              {/* Subcategories panel when category with subcategories is selected */}
-              {(() => {
-                const selectedCatObj = categoriesMeta.find(
-                  (c) => c.name.toLowerCase() === category.toLowerCase()
-                );
-                if (!selectedCatObj || !selectedCatObj.subcategories || selectedCatObj.subcategories.length === 0) {
-                  return null;
-                }
-
-                return (
-                  <div className="bg-muted/20 border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in mt-2">
-                    <span className="text-3xs font-extrabold text-muted-foreground uppercase block tracking-wider">
-                      Subcategories under {selectedCatObj.name}:
-                    </span>
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                      <button
-                        type="button"
-                        onClick={() => setSubcategory('')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
-                          !subcategory
-                            ? 'bg-amber-500 text-white border-amber-400 shadow-sm'
-                            : 'bg-muted/30 text-muted-foreground border-border hover:text-foreground'
-                        }`}
-                      >
-                        All {selectedCatObj.name}
-                      </button>
-
-                      {selectedCatObj.subcategories.map((sub) => {
-                        const isSubSelected = subcategory.toLowerCase() === sub.toLowerCase();
-                        return (
-                          <button
-                            key={sub}
-                            type="button"
-                            onClick={() => setSubcategory(sub)}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
-                              isSubSelected
-                                ? 'bg-amber-500 text-white border-amber-400 shadow-sm ring-2 ring-amber-400/30'
-                                : 'bg-card text-foreground border-border hover:border-amber-400/50'
-                            }`}
-                          >
-                            {sub}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
+            <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-2">
+              <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Category</span>
+              <select
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                  setSubcategory('');
+                }}
+                className="bg-transparent text-right font-semibold text-foreground focus:outline-none cursor-pointer text-base max-w-[200px] truncate"
+              >
+                <option value="" className="bg-secondary">Select Category</option>
+                {categories.map((catName) => (
+                  <option key={catName} value={catName} className="bg-secondary">
+                    {catName}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 

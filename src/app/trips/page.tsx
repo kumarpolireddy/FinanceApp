@@ -847,92 +847,24 @@ export default function TripsPage() {
             </div>
           </div>
 
-          {/* Category & Expanding Subcategories Picker */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-muted-foreground uppercase">
-                Category
-              </label>
-              {expenseCategory && (
-                <span className="text-2xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                  {expenseCategory} {expenseSubcategory ? `➔ ${expenseSubcategory}` : ''}
-                </span>
-              )}
-            </div>
-
-            {/* Main Category Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
-              {categories.map((cat) => {
-                const isSelected = expenseCategory.toLowerCase() === cat.name.toLowerCase();
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      setExpenseCategory(cat.name);
-                      setExpenseSubcategory('');
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 border ${
-                      isSelected
-                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                        : 'bg-muted/30 text-foreground border-border hover:border-primary/40'
-                    }`}
-                  >
-                    <span>{cat.icon || '📦'}</span>
-                    <span>{cat.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Subcategories panel when tapped */}
-            {(() => {
-              const selectedCatObj = categories.find(
-                (c) => c.name.toLowerCase() === expenseCategory.toLowerCase()
-              );
-              if (!selectedCatObj || !selectedCatObj.subcategories || selectedCatObj.subcategories.length === 0) {
-                return null;
-              }
-
-              return (
-                <div className="bg-muted/20 border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in">
-                  <span className="text-2xs font-extrabold text-muted-foreground uppercase block tracking-wider">
-                    Subcategories under {selectedCatObj.name}:
-                  </span>
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                    <button
-                      type="button"
-                      onClick={() => setExpenseSubcategory('')}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
-                        !expenseSubcategory
-                          ? 'bg-amber-500 text-white border-amber-400 shadow-sm'
-                          : 'bg-muted/30 text-muted-foreground border-border hover:text-foreground'
-                      }`}
-                    >
-                      All {selectedCatObj.name}
-                    </button>
-
-                    {selectedCatObj.subcategories.map((sub) => {
-                      const isSubSelected = expenseSubcategory.toLowerCase() === sub.toLowerCase();
-                      return (
-                        <button
-                          key={sub}
-                          type="button"
-                          onClick={() => setExpenseSubcategory(sub)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
-                            isSubSelected
-                              ? 'bg-amber-500 text-white border-amber-400 shadow-sm ring-2 ring-amber-400/30'
-                              : 'bg-card text-foreground border-border hover:border-amber-400/50'
-                          }`}
-                        >
-                          {sub}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
+          {/* Category Dropdown (Clean, No Icons, No Subcategories) */}
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1">Category</label>
+            <select
+              value={expenseCategory}
+              onChange={(e) => {
+                setExpenseCategory(e.target.value);
+                setExpenseSubcategory('');
+              }}
+              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary text-xs"
+            >
+              <option value="">Select Category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

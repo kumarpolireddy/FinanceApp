@@ -1387,78 +1387,27 @@ export default function MobileAppView() {
                 )}
               </div>
 
-              {/* Category Dropdown & Expanding Subcategories */}
+              {/* Category Dropdown (Clean, No Icons, No Subcategories) */}
               {formType !== 'transfer' && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="block text-3xs font-bold text-muted-foreground uppercase">
-                      Category
-                    </label>
-                    <select
-                      value={formCategory}
-                      onChange={(e) => {
-                        setFormCategory(e.target.value);
-                        setFormSubcategory('');
-                      }}
-                      className="bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none text-xs w-full max-w-[200px]"
-                    >
-                      <option value="">Select Category</option>
-                      {activeCategories.map((cat) => (
-                        <option key={cat.id} value={cat.name}>
-                          {cat.icon || '📦'} {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Subcategories panel when category with subcategories is selected */}
-                  {(() => {
-                    const selectedCatObj = activeCategories.find(
-                      (c) => c.name.toLowerCase() === formCategory.toLowerCase()
-                    );
-                    if (!selectedCatObj || !selectedCatObj.subcategories || selectedCatObj.subcategories.length === 0) {
-                      return null;
-                    }
-
-                    return (
-                      <div className="bg-[#0b0f1a] border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in mt-2">
-                        <span className="text-3xs font-extrabold text-muted-foreground uppercase block tracking-wider">
-                          Subcategories under {selectedCatObj.name}:
-                        </span>
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                          <button
-                            type="button"
-                            onClick={() => setFormSubcategory('')}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
-                              !formSubcategory
-                                ? 'bg-amber-500 text-white border-amber-400 shadow-sm'
-                                : 'bg-muted/30 text-muted-foreground border-border hover:text-foreground'
-                            }`}
-                          >
-                            All {selectedCatObj.name}
-                          </button>
-
-                          {selectedCatObj.subcategories.map((sub) => {
-                            const isSubSelected = formSubcategory.toLowerCase() === sub.toLowerCase();
-                            return (
-                              <button
-                                key={sub}
-                                type="button"
-                                onClick={() => setFormSubcategory(sub)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
-                                  isSubSelected
-                                    ? 'bg-amber-500 text-white border-amber-400 shadow-sm ring-2 ring-amber-400/30'
-                                    : 'bg-card text-foreground border-border hover:border-amber-400/50'
-                                }`}
-                              >
-                                {sub}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })()}
+                <div className="space-y-1.5">
+                  <label className="block text-3xs font-bold text-muted-foreground uppercase">
+                    Category
+                  </label>
+                  <select
+                    value={formCategory}
+                    onChange={(e) => {
+                      setFormCategory(e.target.value);
+                      setFormSubcategory('');
+                    }}
+                    className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none text-xs"
+                  >
+                    <option value="">Select Category</option>
+                    {activeCategories.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 
