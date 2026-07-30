@@ -16,7 +16,8 @@ import {
   Download, 
   Globe,
   Database,
-  ArrowLeft
+  ArrowLeft,
+  Plane,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ export default function MorePage() {
   const [subView, setSubView] = useState<'menu' | 'pc' | 'backup' | 'help'>('menu');
 
   const MENU_ITEMS = [
+    { label: 'Trips', icon: Plane, color: 'text-primary', path: '/trips' },
     { label: 'Analytics', icon: PieChart, color: 'text-primary', path: '/analytics' },
     { label: 'Budgets', icon: Briefcase, color: 'text-primary', path: '/budgets' },
     { label: 'Loans & Debts', icon: Wallet, color: 'text-primary', path: '/loans' },
