@@ -1689,38 +1689,49 @@ export default function MobileAppView() {
         </div>
       )}
 
-      {/* Floating Multi-Select Action Bar */}
+      {/* Floating Multi-Select Header/Footer & Delete Button Above FAB */}
       {isSelectionMode && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-4 py-2.5 flex items-center gap-3 animate-slide-up text-foreground">
-          <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full shrink-0">
-            {selectedTxnIds.length} Selected
-          </span>
+        <>
+          {/* Floating Selection Bar */}
+          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-4 py-2.5 flex items-center gap-3 animate-slide-up text-foreground">
+            <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full shrink-0">
+              {selectedTxnIds.length} Selected
+            </span>
 
-          <button
-            onClick={handleSelectAll}
-            className="text-xs font-semibold hover:text-primary transition shrink-0"
-          >
-            {selectedTxnIds.length === transactions.length ? 'Deselect' : 'Select All'}
-          </button>
+            <button
+              onClick={handleSelectAll}
+              className="text-xs font-semibold hover:text-primary transition shrink-0"
+            >
+              {selectedTxnIds.length === transactions.length ? 'Deselect' : 'Select All'}
+            </button>
 
+            <button
+              onClick={() => {
+                setIsSelectionMode(false);
+                setSelectedTxnIds([]);
+              }}
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition pl-2 border-l border-border/60 shrink-0"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* Floating Delete Trash Icon Button Directly Above the FAB (+) Button */}
           <button
+            type="button"
             onClick={handleBulkDelete}
             disabled={selectedTxnIds.length === 0}
-            className="flex items-center gap-1 px-3 py-1.5 bg-negative text-negative-foreground rounded-lg font-bold text-xs hover:bg-negative/90 disabled:opacity-40 transition shadow-sm shrink-0"
+            className="absolute bottom-40 right-4 w-12 h-12 bg-negative text-negative-foreground rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-40 transition-all z-20 cursor-pointer"
+            title={`Delete ${selectedTxnIds.length} selected transaction(s)`}
           >
-            <Trash2 size={13} /> Delete ({selectedTxnIds.length})
+            <Trash2 size={22} />
+            {selectedTxnIds.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-card border border-border text-foreground text-[10px] font-black w-5.5 h-5.5 rounded-full flex items-center justify-center shadow-sm">
+                {selectedTxnIds.length}
+              </span>
+            )}
           </button>
-
-          <button
-            onClick={() => {
-              setIsSelectionMode(false);
-              setSelectedTxnIds([]);
-            }}
-            className="text-xs font-semibold text-muted-foreground hover:text-foreground transition pl-2 border-l border-border/60 shrink-0"
-          >
-            Cancel
-          </button>
-        </div>
+        </>
       )}
 
     </div>
