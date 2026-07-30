@@ -13,6 +13,22 @@ export interface Transaction {
   amount: number;
   type: 'income' | 'expense' | 'transfer';
   notes?: string;
+  tripId?: string;
+  createdAt: string;
+}
+
+export interface Trip {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate?: string;
+  budget?: number;
+  currency?: string;
+  description?: string;
+  status: 'active' | 'completed' | 'planned';
+  color?: string;
+  icon?: string;
+  destination?: string;
   createdAt: string;
 }
 
@@ -105,6 +121,8 @@ const KEYS = {
   ACCOUNTS: 'wealthiq_accounts',
   BUDGETS: 'wealthiq_budgets',
   CATEGORIES: 'wealthiq_categories',
+  TRIPS: 'wealthiq_trips',
+  ACTIVE_TRIP_ID: 'wealthiq_active_trip_id',
 };
 
 // ── Default Categories ────────────────────────────────────────────────────────
@@ -266,8 +284,10 @@ export function saveTransaction(txn: Omit<Transaction, 'id' | 'createdAt'>): Tra
     dateStr = `${dateStr}T${currentISO.slice(11)}`;
   }
 
+  const activeTrip = getActiveTrip();
   const newTxn: Transaction = {
     ...txn,
+    tripId: txn.tripId || activeTrip?.id,
     date: dateStr,
     id: `txn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     createdAt: new Date().toISOString(),
@@ -308,6 +328,156 @@ export function updateTransaction(id: string, updates: Partial<Transaction>): vo
     return t;
   });
   localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(all));
+}
+
+// ── Trips CRUD & Management ──────────────────────────────────────────────────
+
+export function getTrips(): Trip[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(KEYS.TRIPS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveTrips(trips: Trip[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(KEYS.TRIPS, JSON.stringify(trips));
+  }
+}
+
+export function getActiveTrip(): Trip | null {
+  const trips = getTrips();
+  if (typeof window !== 'undefined') {
+    const activeId = localStorage.getItem(KEYS.ACTIVE_TRIP_ID);
+    if (activeId) {
+      const active = trips.find((t) => t.id === activeId && t.status === 'active');
+      if (active) return active;
+    }
+  }
+  return trips.find((t) => t.status === 'active') || null;
+}
+
+export function setActiveTrip(id: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (!id) {
+    localStorage.removeItem(KEYS.ACTIVE_TRIP_ID);
+    return;
+  }
+  const trips = getTrips();
+  const updated = trips.map((t) => ({
+    ...t,
+    status: t.id === id ? ('active' as const) : t.status === 'active' ? ('completed' as const) : t.status,
+  }));
+  saveTrips(updated);
+  localStorage.setItem(KEYS.ACTIVE_TRIP_ID, id);
+}
+
+export function addTrip(trip: Omit<Trip, 'id' | 'createdAt'>): Trip {
+  const trips = getTrips();
+  const newTrip: Trip = {
+    ...trip,
+    id: `trip-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    createdAt: new Date().toISOString(),
+  };
+  if (newTrip.status === 'active') {
+    trips.forEach((t) => {
+      if (t.status === 'active') t.status = 'completed';
+    });
+  }
+  trips.unshift(newTrip);
+  saveTrips(trips);
+  if (newTrip.status === 'active') {
+    setActiveTrip(newTrip.id);
+  }
+  return newTrip;
+}
+
+export function updateTrip(id: string, updates: Partial<Trip>): Trip | null {
+  const trips = getTrips();
+  let updatedTrip: Trip | null = null;
+  const newTrips = trips.map((t) => {
+    if (t.id === id) {
+      if (updates.status === 'active') {
+        trips.forEach((ot) => {
+          if (ot.id !== id && ot.status === 'active') ot.status = 'completed';
+        });
+      }
+      updatedTrip = { ...t, ...updates };
+      return updatedTrip;
+    }
+    return t;
+  });
+  saveTrips(newTrips);
+  if (updates.status === 'active') {
+    setActiveTrip(id);
+  } else if (updates.status && (updates.status as string) !== 'active') {
+    const active = getActiveTrip();
+    if (active?.id === id) {
+      setActiveTrip(null);
+    }
+  }
+  return updatedTrip;
+}
+
+export function deleteTrip(id: string): void {
+  const trips = getTrips().filter((t) => t.id !== id);
+  saveTrips(trips);
+  const active = getActiveTrip();
+  if (active?.id === id) {
+    setActiveTrip(null);
+  }
+}
+
+export function getTripSummary(tripId: string) {
+  const trips = getTrips();
+  const trip = trips.find((t) => t.id === tripId);
+  const transactions = getTransactions(true).filter((t) => t.tripId === tripId);
+
+  let totalExpense = 0;
+  let totalIncome = 0;
+  const catMap: Record<string, number> = {};
+
+  transactions.forEach((t) => {
+    const amt = Number(t.amount) || 0;
+    if (t.type === 'expense') {
+      totalExpense += amt;
+      catMap[t.category] = (catMap[t.category] || 0) + amt;
+    } else if (t.type === 'income') {
+      totalIncome += amt;
+    }
+  });
+
+  const categories = getCategories();
+  const categoryBreakdown = Object.entries(catMap)
+    .map(([catName, amount]) => {
+      const catObj = categories.find((c) => c.name === catName);
+      return {
+        category: catName,
+        amount,
+        color: catObj?.color || '#3b82f6',
+        icon: catObj?.icon || '📌',
+      };
+    })
+    .sort((a, b) => b.amount - a.amount);
+
+  const budget = trip?.budget || 0;
+  const remainingBudget = budget > 0 ? budget - totalExpense : 0;
+  const budgetUtilization = budget > 0 ? Math.min(100, Math.round((totalExpense / budget) * 100)) : 0;
+
+  return {
+    trip,
+    transactions,
+    totalExpense,
+    totalIncome,
+    netSpent: totalExpense - totalIncome,
+    budget,
+    remainingBudget,
+    budgetUtilization,
+    categoryBreakdown,
+  };
 }
 
 // ── Account Categories ────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { 
   Calendar as CalendarIcon, 
   List, 
@@ -19,7 +20,8 @@ import {
   X,
   ArrowDownLeft,
   ArrowUpRight,
-  TrendingUp
+  TrendingUp,
+  Plane
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -873,6 +875,19 @@ export default function MobileAppView() {
             {moreSubView === 'menu' && (
               <div className="space-y-4 pt-2">
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm divide-y divide-border/60">
+                  <Link 
+                    href="/trips"
+                    className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Plane size={18} className="text-primary" />
+                      <div>
+                        <span className="text-xs font-semibold text-foreground block">Trips & Travel Mode</span>
+                        <span className="text-2xs text-muted-foreground">Manage travel budgets & auto-log expenses</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-muted-foreground" />
+                  </Link>
                   <button 
                     onClick={() => setMoreSubView('config')}
                     className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
