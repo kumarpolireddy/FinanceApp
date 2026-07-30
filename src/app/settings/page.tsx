@@ -14,6 +14,8 @@ import {
   saveBudgetTemplates,
   getBudgetGlobalSettings,
   saveBudgetGlobalSettings,
+  getTripBgColor,
+  setTripBgColor,
   type Account,
   type BudgetTemplate,
   type BudgetGlobalSettings,
@@ -110,6 +112,7 @@ export default function SettingsPage() {
   >('accounts');
   const [currency, setCurrency] = useState('INR');
   const [theme, setTheme] = useState('dark');
+  const [tripBgColor, setTripBgColorState] = useState('#f59e0b');
   const [defaultAccount, setDefaultAccount] = useState('');
   const [budgetStartDay, setBudgetStartDay] = useState(1);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -331,6 +334,7 @@ export default function SettingsPage() {
       ) {
         setActiveTab(tab as any);
       }
+      setTripBgColorState(getTripBgColor());
     }
   }, []);
 
@@ -3254,6 +3258,63 @@ export default function SettingsPage() {
                   <option value="theme-royal-purple">💜 Royal Purple</option>
                   <option value="theme-sunset-orange">🧡 Sunset Orange</option>
                 </select>
+              </div>
+
+              {/* Trip Transactions Background Color Setting */}
+              <div className="md:col-span-2 border-t border-border/40 pt-4 mt-2">
+                <label className="block mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Trip Transactions Background Color
+                </label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Choose the highlight background color for trip-related transactions across the application.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  {[
+                    { label: 'Amber', color: '#f59e0b' },
+                    { label: 'Emerald', color: '#10b981' },
+                    { label: 'Blue', color: '#3b82f6' },
+                    { label: 'Purple', color: '#8b5cf6' },
+                    { label: 'Rose', color: '#f43f5e' },
+                    { label: 'Teal', color: '#14b8a6' },
+                    { label: 'Indigo', color: '#6366f1' },
+                    { label: 'Orange', color: '#f97316' },
+                  ].map((preset) => (
+                    <button
+                      key={preset.color}
+                      type="button"
+                      onClick={() => {
+                        setTripBgColorState(preset.color);
+                        setTripBgColor(preset.color);
+                        toast.success(`Trip background color updated to ${preset.label}`);
+                      }}
+                      className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all ${
+                        tripBgColor === preset.color
+                          ? 'border-primary ring-2 ring-primary/30 scale-105 shadow-md'
+                          : 'border-border hover:border-muted-foreground/40'
+                      }`}
+                      style={{ backgroundColor: `${preset.color}20` }}
+                    >
+                      <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: preset.color }} />
+                      <span style={{ color: preset.color }}>{preset.label}</span>
+                    </button>
+                  ))}
+
+                  {/* Custom Color Picker */}
+                  <div className="flex items-center gap-2 pl-2 border-l border-border/40">
+                    <input
+                      type="color"
+                      value={tripBgColor}
+                      onChange={(e) => {
+                        const newColor = e.target.value;
+                        setTripBgColorState(newColor);
+                        setTripBgColor(newColor);
+                      }}
+                      className="w-9 h-9 rounded-lg cursor-pointer bg-transparent border-0 p-0"
+                      title="Custom Trip Color"
+                    />
+                    <span className="text-xs font-mono font-medium text-slate-300 uppercase">{tripBgColor}</span>
+                  </div>
+                </div>
               </div>
 
               <div className="md:col-span-2">

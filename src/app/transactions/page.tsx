@@ -23,6 +23,7 @@ import {
   addTrip,
   updateTrip,
   getTripSummary,
+  getTripBgColor,
   type Transaction,
   type Account,
   type Category,
@@ -197,6 +198,7 @@ function TransactionsPageContent() {
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(null);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [showAccountChart, setShowAccountChart] = useState(false);
+  const [tripBgColor, setTripBgColorState] = useState('#f59e0b');
 
   // General Notes State
   interface GeneralNote {
@@ -1675,6 +1677,7 @@ function TransactionsPageContent() {
                             }
                             
                             const isTrip = Boolean(txn.tripId);
+                            const tripBgColor = isTrip ? getTripBgColor() : '';
 
                             return (
                               <div 
@@ -1682,15 +1685,22 @@ function TransactionsPageContent() {
                                 onClick={() => startEditing(txn)}
                                 className={`flex items-center justify-between py-2 pl-10 pr-3.5 transition cursor-pointer group relative border-b border-border/10 last:border-b-0 ${
                                   isTrip
-                                    ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
+                                    ? 'border-l-4'
                                     : 'hover:bg-secondary/45 active:bg-secondary/65'
                                 }`}
+                                style={isTrip ? {
+                                  backgroundColor: `${tripBgColor}22`,
+                                  borderLeftColor: tripBgColor,
+                                } : undefined}
                               >
                                 <div className="flex-1 min-w-0 pr-3">
                                   <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
                                     <span>{title}</span>
                                     {isTrip && (
-                                      <span className="text-[10px] font-bold text-amber-500 bg-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                                      <span 
+                                        className="text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0"
+                                        style={{ backgroundColor: `${tripBgColor}30`, color: tripBgColor }}
+                                      >
                                         ✈️ Trip
                                       </span>
                                     )}

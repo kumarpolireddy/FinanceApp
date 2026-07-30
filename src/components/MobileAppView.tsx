@@ -38,6 +38,7 @@ import {
   setActiveTrip,
   addTrip,
   updateTrip,
+  getTripBgColor,
   type Transaction,
   type Account,
   type Category,
@@ -633,21 +634,30 @@ export default function MobileAppView() {
 
                             const isTrip = Boolean(tx.tripId);
 
+                            const tripColor = isTrip ? getTripBgColor() : '';
+
                             return (
                               <div 
                                 key={tx.id} 
                                 onClick={() => openEdit(tx)}
                                 className={`flex justify-between items-center p-3 transition cursor-pointer ${
                                   isTrip
-                                    ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
+                                    ? 'border-l-4'
                                     : 'hover:bg-muted/10'
                                 }`}
+                                style={isTrip ? {
+                                  backgroundColor: `${tripColor}22`,
+                                  borderLeftColor: tripColor,
+                                } : undefined}
                               >
                                 <div className="space-y-0.5 min-w-0 pr-2">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="text-xs font-semibold text-foreground truncate">{tx.notes || tx.category}</span>
                                     {isTrip && (
-                                      <span className="text-4xs bg-amber-500/20 text-amber-500 border border-amber-500/40 px-1.5 py-0.5 rounded-full font-bold">
+                                      <span 
+                                        className="text-4xs px-1.5 py-0.5 rounded-full font-bold"
+                                        style={{ backgroundColor: `${tripColor}30`, color: tripColor, borderColor: `${tripColor}60` }}
+                                      >
                                         ✈️ Trip
                                       </span>
                                     )}

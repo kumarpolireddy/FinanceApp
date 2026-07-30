@@ -123,6 +123,7 @@ const KEYS = {
   CATEGORIES: 'wealthiq_categories',
   TRIPS: 'wealthiq_trips',
   ACTIVE_TRIP_ID: 'wealthiq_active_trip_id',
+  TRIP_BG_COLOR: 'wealthiq_trip_bg_color',
 };
 
 // ── Default Categories ────────────────────────────────────────────────────────
@@ -375,6 +376,16 @@ export function setActiveTrip(id: string | null): void {
   }));
   saveTrips(updated);
   localStorage.setItem(KEYS.ACTIVE_TRIP_ID, id);
+}
+
+export function getTripBgColor(): string {
+  if (typeof window === 'undefined') return '#f59e0b';
+  return localStorage.getItem(KEYS.TRIP_BG_COLOR) || '#f59e0b';
+}
+
+export function setTripBgColor(color: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(KEYS.TRIP_BG_COLOR, color);
 }
 
 export function addTrip(trip: Omit<Trip, 'id' | 'createdAt'>): Trip {
