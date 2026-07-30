@@ -25,6 +25,9 @@ import {
   ReceiptText,
   TrendingDown,
   TrendingUp,
+  ArrowLeft,
+  Camera,
+  Check,
 } from 'lucide-react';
 
 function cleanString(val: unknown): string {
@@ -269,318 +272,352 @@ export default function AddExpensePage() {
     deleteTransaction(txn.id, 'reverse');
     loadDayTxns(filterDate);
     setAccounts(getAccounts());
-    toast.success('Transaction deleted');
   }
 
-  const keypadButtons = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'];
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const ddd = days[d.getDay()];
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yy} (${ddd})   ${hh}:${min}`;
+  };
 
   return (
-    <AppLayout>
-      <div className={`max-w-md mx-auto px-4 pt-3 ${isInputFocused ? 'pb-8' : 'pb-[240px]'} space-y-4 bg-background transition-all`}>
-        
-        {/* Header Tabs (Segmented Select type) */}
-        <div className="flex bg-secondary p-1 border border-border rounded-lg">
-          {(['expense', 'income', 'transfer'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => {
-                setType(t);
-                setCategory('');
-                setSubcategory('');
-              }}
-              className={`flex-1 text-center py-2 rounded text-xs font-bold uppercase tracking-wider transition ${
-                type === t 
-                  ? 'bg-primary text-primary-foreground font-black' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+    <div className="fixed inset-0 z-50 bg-[#1F2027] flex flex-col text-[#F2F2F4] select-text animate-fade-in overflow-hidden">
+      {/* Header with Always Visible Save Button */}
+      <div className="flex items-center justify-between h-14 px-5 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
+        <div className="flex items-center">
+          <button 
+            type="button"
+            onClick={() => router.push('/transactions')}
+            className="text-[#F2F2F4] hover:bg-white/[0.08] transition flex items-center justify-center h-10 w-10 shrink-0 -ml-2 rounded-full"
+            title="Cancel"
+          >
+            <ArrowLeft size={24} />
+          </button>
+          <h2 className="text-[20px] font-medium text-[#F2F2F4] ml-2 capitalize">
+            {type}
+          </h2>
         </div>
 
-        {/* Dense Entry Form */}
-        <div className="bg-secondary p-3.5 rounded-lg border border-border/80 space-y-3.5 text-sm">
+        <button
+          type="button"
+          onClick={() => handleSubmit()}
+          className="px-4 py-2 bg-primary text-primary-foreground font-black text-xs uppercase tracking-wider rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
+        >
+          Save Transaction
+        </button>
+      </div>
+
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto pb-12">
+        <form onSubmit={handleSubmit} className="flex flex-col">
           
-          {/* Row 1: Amount Display (Huge and aligned) */}
-          <div className="flex items-center justify-between border-b border-border/60 pb-2">
-            <span className="text-xs font-bold text-muted-foreground uppercase">Amount (₹)</span>
-            <input
-              type="text"
-              readOnly
-              value={amount}
-              className="text-3xl font-bold font-mono tracking-tight text-right text-foreground bg-transparent focus:outline-none placeholder:text-muted-foreground/30 max-w-[200px]"
-            />
+          {/* Transaction Type Selector */}
+          <div className="grid grid-cols-3 gap-2.5 px-5 mt-2">
+            {(['income', 'expense', 'transfer'] as const).map((t) => {
+              const isActive = type === t;
+              let activeStyle = '';
+              if (isActive) {
+                if (t === 'income') {
+                  activeStyle = 'border border-[#22C55E] text-[#22C55E] bg-[#16171C]';
+                } else if (t === 'expense') {
+                  activeStyle = 'border border-[#EF4444] text-[#EF4444] bg-[#16171C]';
+                } else {
+                  activeStyle = 'border border-[#3B82F6] text-[#3B82F6] bg-[#16171C]';
+                }
+              } else {
+                activeStyle = 'border border-transparent text-[#A5A6AD] bg-[#16171C]';
+              }
+
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setType(t);
+                    setCategory('');
+                    setSubcategory('');
+                  }}
+                  className={`h-10 rounded-lg text-[16px] font-medium capitalize transition duration-150 ${activeStyle}`}
+                >
+                  {t}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Row 2: Date & Time */}
-          <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-2">
-            <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Date & Time</span>
-            <input
-              type="datetime-local"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent text-right font-semibold text-foreground focus:outline-none cursor-pointer text-base"
-            />
-          </div>
-
-          {/* Row 3: Account Select */}
-          {type === 'transfer' ? (
-            <>
-              <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-2">
-                <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">From Account</span>
-                <select
-                  value={account}
-                  onChange={(e) => setAccount(e.target.value)}
-                  className="bg-transparent text-right font-semibold text-foreground focus:outline-none cursor-pointer text-base"
-                >
-                  {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id} className="bg-secondary">{acc.name}</option>
-                  ))}
-                </select>
+          {/* Vertical Form Fields (Gap of 20dp between selector and form) */}
+          <div className="flex flex-col mt-5">
+            
+            {/* Date Row */}
+            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Date</span>
+              <div className="flex-1 flex justify-start text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
+                {formatDisplayDate(date)}
               </div>
-              <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-2">
-                <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">To Account</span>
-                <select
-                  value={toAccount}
-                  onChange={(e) => setToAccount(e.target.value)}
-                  className="bg-transparent text-right font-semibold text-foreground focus:outline-none cursor-pointer text-base"
-                >
-                  {accounts.filter(a => a.id !== account).map(acc => (
-                    <option key={acc.id} value={acc.id} className="bg-secondary">{acc.name}</option>
-                  ))}
-                </select>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Account</span>
-              <select
-                value={account}
-                onChange={(e) => setAccount(e.target.value)}
-                className="bg-transparent text-right font-semibold text-foreground focus:outline-none cursor-pointer text-base"
-              >
-                {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id} className="bg-secondary">{acc.name}</option>
-                ))}
-              </select>
+              <input
+                type="datetime-local"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
             </div>
-          )}
 
-          {/* Category Dropdown (Clean, No Icons, No Subcategories) */}
-          {type !== 'transfer' && (
-            <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Category</span>
-              <select
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                  setSubcategory('');
+            {/* Amount Row */}
+            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Amount</span>
+              <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
+                <span className="mr-1">₹</span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => setIsInputFocused(false)}
+                  required
+                  min="0.01"
+                  step="any"
+                  className="bg-transparent border-none text-left focus:outline-none text-[#F2F2F4] font-medium w-full p-0"
+                />
+              </div>
+            </div>
+
+            {/* Conditional Transfer Account Rows */}
+            {type === 'transfer' ? (
+              <>
+                {/* From Account */}
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
+                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
+                    <span>{accounts.find(a => a.id === account)?.name || 'Select account'}</span>
+                  </div>
+                  <select
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value)}
+                    required
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  >
+                    {accounts.map((acc) => (
+                      <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                        {acc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* To Account */}
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">To Account</span>
+                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
+                    <span>{accounts.find(a => a.id === toAccount)?.name || 'Select destination...'}</span>
+                  </div>
+                  <select
+                    value={toAccount}
+                    onChange={(e) => setToAccount(e.target.value)}
+                    required
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  >
+                    <option value="" disabled className="text-muted-foreground">Select destination...</option>
+                    {accounts.filter((acc) => acc.id !== account).map((acc) => (
+                      <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                        {acc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Category Row */}
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Category</span>
+                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
+                    <span>{category || 'Select category'}</span>
+                  </div>
+                  <select
+                    value={category}
+                    onChange={(e) => {
+                      setCategory(e.target.value);
+                      setSubcategory('');
+                    }}
+                    required
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  >
+                    <option value="" disabled className="text-muted-foreground">Select category</option>
+                    {categories.map((catName) => (
+                      <option key={catName} value={catName} className="bg-[#1F2027] text-[#F2F2F4]">
+                        {catName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Account Row */}
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
+                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
+                    <span>{accounts.find(a => a.id === account)?.name || 'Select account'}</span>
+                  </div>
+                  <select
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value)}
+                    required
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  >
+                    {accounts.map((acc) => (
+                      <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                        {acc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+
+            {/* Note Row */}
+            <div className="relative flex items-start py-4 border-b border-white/[0.08] px-5 min-h-[54px]">
+              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal mt-0.5">Note</span>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                rows={1}
+                className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 resize-none h-auto min-h-[26px]"
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = `${target.scrollHeight}px`;
                 }}
-                className="bg-transparent text-right font-semibold text-foreground focus:outline-none cursor-pointer text-base max-w-[200px] truncate"
-              >
-                <option value="" className="bg-secondary">Select Category</option>
-                {categories.map((catName) => (
-                  <option key={catName} value={catName} className="bg-secondary">
-                    {catName}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
-          )}
 
-          {/* Row 5: Description (Optional, No Placeholder) */}
-          <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-2">
-            <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Description</span>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
-              className="bg-transparent text-right font-semibold text-foreground focus:outline-none max-w-[200px] text-base"
-            />
           </div>
 
-          {/* Row 6: Notes (Optional, No Placeholder) */}
-          <div className="flex items-center justify-between gap-4 pb-1">
-            <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Notes</span>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
-              className="bg-transparent text-right font-semibold text-foreground focus:outline-none max-w-[200px] text-base"
-            />
+          {/* Description & Camera Section (Gap of 20dp between form and description) */}
+          <div className="flex flex-col mt-5">
+            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 pr-8"
+              />
+              <Camera size={20} className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />
+            </div>
           </div>
 
-        </div>
-
-        {/* Sticky Done bar when typing description/notes */}
-        {isInputFocused && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto bg-card border-t border-border p-3 shadow-2xl flex gap-3">
+          {/* Bottom Action Grid */}
+          <div className="px-5 mt-5">
             <button
               type="button"
               onClick={() => handleSubmit()}
-              className="flex-1 py-3 bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider rounded-xl hover:opacity-90 active:scale-95 transition shadow-md"
+              className="w-full h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
             >
-              Done
+              <Check size={18} />
+              <span>Save Transaction</span>
             </button>
           </div>
-        )}
 
-        {/* custom numeric keypad */}
-        {!isInputFocused && (
-          <div className="fixed bottom-0 md:bottom-4 left-0 right-0 z-40 max-w-md mx-auto bg-secondary border-t md:border border-border/80 p-3 shadow-2xl space-y-2">
-            <div className="grid grid-cols-3 gap-1.5 font-mono text-2xl font-bold">
-              {keypadButtons.map((btn) => (
-                <button
-                  key={`keypad-${btn}`}
-                  type="button"
-                  onClick={() => handleKeypadPress(btn)}
-                  className="py-4 bg-background hover:bg-muted/40 rounded border border-border/40 transition active:scale-95 text-foreground flex items-center justify-center cursor-pointer select-none"
-                >
-                  {btn}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex gap-2 pt-1">
-              <button
-                onClick={() => handleSubmit()}
-                className="flex-1 py-2.5 bg-primary text-primary-foreground font-black uppercase text-xs tracking-wider rounded shadow-md active:scale-95 transition cursor-pointer"
-              >
-                Done
-              </button>
-              <button
-                onClick={() => router.push('/transactions')}
-                className="flex-1 py-2.5 bg-background border border-border text-muted-foreground font-bold uppercase text-xs tracking-wider rounded active:scale-95 transition cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Today's logged transactions (dense summary for confirmation) */}
-        {todayTxns.length > 0 && (
-          <div className="bg-secondary/40 p-3 rounded-lg border border-border/60 space-y-2 text-xs">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pb-1 border-b border-border/50">Recorded Today ({todayTxns.length})</p>
-            <div className="divide-y divide-border/20 max-h-36 overflow-y-auto pr-1">
-              {todayTxns.map((t) => (
-                <div key={t.id} className="py-1.5 flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-bold text-foreground truncate max-w-[150px]">{t.description}</p>
-                    <p className="text-[11px] text-muted-foreground">{t.type === 'transfer' ? 'Transfer' : t.category} • {getAccountName(t.account)}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`font-mono text-sm font-bold ${t.type === 'income' ? 'text-positive' : t.type === 'expense' ? 'text-negative' : 'text-foreground'}`}>
-                      {t.type === 'income' ? '+' : t.type === 'expense' ? '-' : ''}{t.amount.toLocaleString('en-IN')}
-                    </span>
-                    <button 
-                      onClick={() => handleDelete(t)}
-                      className="text-muted-foreground hover:text-negative font-bold p-1 text-xs"
-                      title="Delete entry"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Modals for Add Category / Subcategory */}
-        {isAddCategoryOpen && (
-          <Modal
-            isOpen={isAddCategoryOpen}
-            onClose={() => setIsAddCategoryOpen(false)}
-            title="Create Custom Category"
-          >
-            <form onSubmit={handleAddCategorySubmit} className="space-y-3.5 text-2xs">
-              <div>
-                <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Category Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="e.g. Subscriptions"
-                  className="w-full rounded border border-border bg-background p-2 text-2xs focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1.5">Color Tag</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {COLOR_PRESETS.map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setNewCategoryColor(c)}
-                      className="w-5 h-5 rounded-full border transition active:scale-90"
-                      style={{ backgroundColor: c, borderColor: newCategoryColor === c ? '#ffffff' : 'transparent' }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1.5">Emoji Icon</label>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto bg-background p-1.5 border border-border rounded">
-                  {ICON_PRESETS.map(emoji => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => setNewCategoryIcon(emoji)}
-                      className={`text-sm p-1 rounded transition hover:bg-muted ${newCategoryIcon === emoji ? 'bg-primary/20 scale-110' : ''}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-1.5">
-                <button type="submit" className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded">Create</button>
-                <button type="button" onClick={() => setIsAddCategoryOpen(false)} className="flex-1 py-2 bg-secondary border border-border rounded text-muted-foreground">Cancel</button>
-              </div>
-            </form>
-          </Modal>
-        )}
-
-        {isAddSubcategoryOpen && (
-          <Modal
-            isOpen={isAddSubcategoryOpen}
-            onClose={() => setIsAddSubcategoryOpen(false)}
-            title="Create Custom Subcategory"
-          >
-            <form onSubmit={handleAddSubcategorySubmit} className="space-y-3.5 text-2xs">
-              <div>
-                <p className="text-muted-foreground mb-2">Creating subcategory for: <span className="font-bold text-foreground uppercase">{category}</span></p>
-                <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Subcategory Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={newSubcategoryName}
-                  onChange={(e) => setNewSubcategoryName(e.target.value)}
-                  placeholder="e.g. Netflix"
-                  className="w-full rounded border border-border bg-background p-2 text-2xs focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-1.5">
-                <button type="submit" className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded">Create</button>
-                <button type="button" onClick={() => setIsAddSubcategoryOpen(false)} className="flex-1 py-2 bg-secondary border border-border rounded text-muted-foreground">Cancel</button>
-              </div>
-            </form>
-          </Modal>
-        )}
-
+        </form>
       </div>
-    </AppLayout>
+
+      {isAddCategoryOpen && (
+        <Modal
+          isOpen={isAddCategoryOpen}
+          onClose={() => setIsAddCategoryOpen(false)}
+          title="Create Custom Category"
+        >
+          <form onSubmit={handleAddCategorySubmit} className="space-y-3.5 text-2xs">
+            <div>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Category Name *</label>
+              <input
+                type="text"
+                required
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g. Subscriptions"
+                className="w-full rounded border border-border bg-background p-2 text-2xs focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1.5">Color Tag</label>
+              <div className="flex flex-wrap gap-1.5">
+                {COLOR_PRESETS.map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setNewCategoryColor(c)}
+                    className="w-5 h-5 rounded-full border transition active:scale-90"
+                    style={{ backgroundColor: c, borderColor: newCategoryColor === c ? '#ffffff' : 'transparent' }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1.5">Emoji Icon</label>
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto bg-background p-1.5 border border-border rounded">
+                {ICON_PRESETS.map(emoji => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setNewCategoryIcon(emoji)}
+                    className={`text-sm p-1 rounded transition hover:bg-muted ${newCategoryIcon === emoji ? 'bg-primary/20 scale-110' : ''}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1.5">
+              <button type="submit" className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded">Create</button>
+              <button type="button" onClick={() => setIsAddCategoryOpen(false)} className="flex-1 py-2 bg-secondary border border-border rounded text-muted-foreground">Cancel</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {isAddSubcategoryOpen && (
+        <Modal
+          isOpen={isAddSubcategoryOpen}
+          onClose={() => setIsAddSubcategoryOpen(false)}
+          title="Create Custom Subcategory"
+        >
+          <form onSubmit={handleAddSubcategorySubmit} className="space-y-3.5 text-2xs">
+            <div>
+              <p className="text-muted-foreground mb-2">Creating subcategory for: <span className="font-bold text-foreground uppercase">{category}</span></p>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Subcategory Name *</label>
+              <input
+                type="text"
+                required
+                value={newSubcategoryName}
+                onChange={(e) => setNewSubcategoryName(e.target.value)}
+                placeholder="e.g. Netflix"
+                className="w-full rounded border border-border bg-background p-2 text-2xs focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-1.5">
+              <button type="submit" className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded">Create</button>
+              <button type="button" onClick={() => setIsAddSubcategoryOpen(false)} className="flex-1 py-2 bg-secondary border border-border rounded text-muted-foreground">Cancel</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+    </div>
   );
 }
