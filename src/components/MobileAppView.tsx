@@ -71,22 +71,31 @@ export default function MobileAppView() {
     getTrips().forEach((t) => {
       map[t.id] = t.name;
     });
+    const active = getActiveTrip();
+    if (active) {
+      map[active.id] = active.name;
+    }
     return map;
   }, [transactions]);
 
   const firstTripTxnMap = useMemo(() => {
     const map: Record<string, string> = {};
-    const tripTxns: Record<string, Transaction[]> = {};
-    getTransactions(true).forEach((t) => {
-      if (t.tripId) {
-        if (!tripTxns[t.tripId]) tripTxns[t.tripId] = [];
-        tripTxns[t.tripId].push(t);
+    const parseTime = (t: Transaction) => {
+      if (t.createdAt) {
+        const ts = new Date(t.createdAt).getTime();
+        if (!isNaN(ts) && ts > 0) return ts;
       }
-    });
-    Object.entries(tripTxns).forEach(([tripId, txs]) => {
-      txs.sort((a, b) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
-      if (txs.length > 0) {
-        map[tripId] = txs[0].id;
+      if (t.date) {
+        const iso = t.date.length === 16 ? `${t.date}:00` : t.date;
+        const ts = new Date(iso).getTime();
+        if (!isNaN(ts) && ts > 0) return ts;
+      }
+      return 0;
+    };
+    const sorted = [...transactions].sort((a, b) => parseTime(a) - parseTime(b));
+    sorted.forEach((t) => {
+      if (t.tripId && !map[t.tripId]) {
+        map[t.tripId] = t.id;
       }
     });
     return map;
@@ -663,7 +672,8 @@ export default function MobileAppView() {
                             const isFirstTripStartTxn = isTrip && firstTripTxnMap[tx.tripId!] === tx.id;
 
                             const tripColor = isTrip ? getTripBgColor() : '';
-                            const tripName = isTrip ? (tripsMap[tx.tripId!] || 'Trip') : '';
+                            const activeTrip = getActiveTrip();
+                            const tripName = isTrip ? (tripsMap[tx.tripId!] || activeTrip?.name || 'Trip') : '';
 
                             return (
                               <div 
