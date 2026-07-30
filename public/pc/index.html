@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WealthIQ PC Manager</title>
+  <!-- Google Fonts Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+
+  <!-- ==================== PAIRING PAGE ==================== -->
+  <div id="auth-screen" class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <span class="auth-icon">🛡️</span>
+        <h1>WealthIQ PC Manager</h1>
+        <p>Access your financial dashboard securely over local Wi-Fi</p>
+      </div>
+      <form id="pairing-form" class="auth-form">
+        <div class="form-group">
+          <label for="pairing-code">Pairing Code</label>
+          <input type="text" id="pairing-code" placeholder="Enter 6-digit code" maxlength="6" pattern="\d{6}" required autocomplete="off">
+          <p class="form-hint">Enter the 6-digit verification code displayed on your phone's PC Manager settings screen.</p>
+        </div>
+        <div id="auth-error" class="error-banner hidden">
+          <span class="error-msg">Invalid pairing code. Please try again.</span>
+        </div>
+        <button type="submit" id="unlock-btn" class="btn btn-primary btn-block">Unlock Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN APPLICATION ==================== -->
+  <div id="app-screen" class="app-container hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">📊</span>
+        <span class="logo-text">WealthIQ</span>
+        <span class="badge-pc">PC</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="dashboard">
+          <span class="nav-icon">🏠</span> Dashboard
+        </button>
+        <button class="nav-item" data-tab="transactions">
+          <span class="nav-icon">💸</span> Transactions
+        </button>
+        <button class="nav-item" data-tab="accounts">
+          <span class="nav-icon">🏦</span> Accounts
+        </button>
+        <button class="nav-item" data-tab="categories">
+          <span class="nav-icon">🏷️</span> Categories
+        </button>
+        <button class="nav-item" data-tab="export">
+          <span class="nav-icon">📥</span> Backup Export
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="session-card">
+          <div class="session-dot active"></div>
+          <div class="session-info">
+            <span class="session-label">Connected</span>
+            <span class="session-ip" id="display-ip">127.0.0.1</span>
+          </div>
+        </div>
+        <button id="disconnect-btn" class="btn btn-outline btn-block">
+          Disconnect
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="page-title">
+          <h2 id="current-tab-title">Dashboard</h2>
+        </div>
+        <div class="topbar-actions">
+          <button id="quick-add-btn" class="btn btn-primary">
+            <span class="btn-icon">+</span> Add Transaction
+          </button>
+        </div>
+      </header>
+
+      <!-- View Containers -->
+      <div class="view-content">
+
+        <!-- DASHBOARD VIEW -->
+        <section id="view-dashboard" class="tab-view active">
+          <!-- KPI Cards Grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <span class="kpi-label">Total Balance</span>
+                <h3 class="kpi-value" id="kpi-total-balance">₹0.00</h3>
+              </div>
+              <div class="kpi-icon bg-primary-light">🏦</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <span class="kpi-label">Income (This Month)</span>
+                <h3 class="kpi-value text-green" id="kpi-income">₹0.00</h3>
+              </div>
+              <div class="kpi-icon bg-green-light">📈</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <span class="kpi-label">Expenses (This Month)</span>
+                <h3 class="kpi-value text-red" id="kpi-expenses">₹0.00</h3>
+              </div>
+              <div class="kpi-icon bg-red-light">📉</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <span class="kpi-label">Net Cash Flow</span>
+                <h3 class="kpi-value" id="kpi-net-flow">₹0.00</h3>
+              </div>
+              <div class="kpi-icon bg-yellow-light">⚖️</div>
+            </div>
+          </div>
+
+          <!-- Main Dashboard Sections -->
+          <div class="dashboard-sections">
+            <!-- Recent Transactions Table -->
+            <div class="card recent-tx-card">
+              <div class="card-header">
+                <h3>Recent Transactions</h3>
+                <button class="link-btn" id="view-all-tx-link">View All</button>
+              </div>
+              <div class="table-container">
+                <table class="tx-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th>Category</th>
+                      <th>Account</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-recent-transactions">
+                    <!-- Loaded dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Accounts Sidebar -->
+            <div class="card accounts-card">
+              <div class="card-header">
+                <h3>Accounts & Balances</h3>
+              </div>
+              <div class="accounts-list" id="dashboard-accounts-list">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TRANSACTIONS VIEW -->
+        <section id="view-transactions" class="tab-view">
+          <div class="card filter-card">
+            <div class="filter-bar">
+              <div class="filter-group search-filter">
+                <label for="tx-search">Search</label>
+                <input type="text" id="tx-search" placeholder="Description or Notes...">
+              </div>
+              <div class="filter-group">
+                <label for="tx-filter-type">Type</label>
+                <select id="tx-filter-type">
+                  <option value="all">All Types</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                  <option value="transfer">Transfer</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="tx-filter-account">Account</label>
+                <select id="tx-filter-account">
+                  <option value="all">All Accounts</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="tx-filter-category">Category</label>
+                <select id="tx-filter-category">
+                  <option value="all">All Categories</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-bar-row2">
+              <div class="filter-group">
+                <label for="tx-filter-start-date">Start Date</label>
+                <input type="date" id="tx-filter-start-date">
+              </div>
+              <div class="filter-group">
+                <label for="tx-filter-end-date">End Date</label>
+                <input type="date" id="tx-filter-end-date">
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-outline" id="btn-reset-filters">Reset Filters</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card tx-log-card">
+            <div class="card-header">
+              <h3>Transaction Log</h3>
+              <div class="tx-stats-summary" id="tx-count-display">0 transactions found</div>
+            </div>
+            <div class="table-container">
+              <table class="tx-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>From Account</th>
+                    <th>To Account</th>
+                    <th>Amount</th>
+                    <th>Notes</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="transactions-log-list">
+                  <!-- Loaded dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACCOUNTS VIEW -->
+        <section id="view-accounts" class="tab-view">
+          <div class="accounts-page-layout">
+            <div class="card accounts-list-card">
+              <div class="card-header">
+                <h3>Accounts</h3>
+              </div>
+              <div class="accounts-grid" id="accounts-page-list">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+            <div class="card account-history-card">
+              <div class="card-header">
+                <h3 id="history-account-name">Select an Account</h3>
+                <span class="badge" id="history-account-type">-</span>
+              </div>
+              <div class="account-details-banner" id="history-account-banner" style="display:none;">
+                <div class="banner-stat">
+                  <span class="banner-stat-label">Current Balance</span>
+                  <span class="banner-stat-val" id="history-account-balance">₹0.00</span>
+                </div>
+                <div class="banner-stat">
+                  <span class="banner-stat-label">Lender/Bank</span>
+                  <span class="banner-stat-val" id="history-account-bank">-</span>
+                </div>
+              </div>
+              <div class="table-container">
+                <table class="tx-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th>Category</th>
+                      <th>Type</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="account-history-transactions">
+                    <tr>
+                      <td colspan="5" class="text-center text-muted">Click an account on the left to view transaction history</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CATEGORIES VIEW -->
+        <section id="view-categories" class="tab-view">
+          <div class="categories-page-layout">
+            <div class="card">
+              <div class="card-header border-bottom">
+                <h3>Expense Categories</h3>
+              </div>
+              <div class="categories-grid" id="categories-expense-list">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header border-bottom">
+                <h3>Income Categories</h3>
+              </div>
+              <div class="categories-grid" id="categories-income-list">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EXPORT VIEW -->
+        <section id="view-export" class="tab-view">
+          <div class="card max-w-md mx-auto py-8">
+            <div class="export-container">
+              <span class="export-banner-icon">📥</span>
+              <h3>Export Backup JSON</h3>
+              <p>Download a complete backup of your WealthIQ database. This file contains all transactions, accounts, categories, and settings. You can import this file inside the mobile application to restore your data.</p>
+              <button id="btn-export-download" class="btn btn-primary btn-lg btn-block">Download Backup File (.json)</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== TRANSACTION MODAL ==================== -->
+  <div id="tx-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Add Transaction</h3>
+        <button id="modal-close-btn" class="modal-close">×</button>
+      </div>
+      <form id="tx-form" class="modal-body">
+        <input type="hidden" id="tx-id">
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Type</label>
+            <div class="type-toggle">
+              <label class="type-option active">
+                <input type="radio" name="tx-type" value="expense" checked> Expense
+              </label>
+              <label class="type-option">
+                <input type="radio" name="tx-type" value="income"> Income
+              </label>
+              <label class="type-option">
+                <input type="radio" name="tx-type" value="transfer"> Transfer
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="tx-date">Date & Time</label>
+            <input type="datetime-local" id="tx-date" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="tx-amount">Amount (₹)</label>
+            <input type="number" id="tx-amount" min="0.01" step="0.01" placeholder="0.00" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="tx-description">Description</label>
+            <input type="text" id="tx-description" placeholder="Where did you spend it?" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1" id="group-source-account">
+            <label for="tx-account" id="label-source-account">Account</label>
+            <select id="tx-account" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group flex-1 hidden" id="group-dest-account">
+            <label for="tx-to-account">Destination Account</label>
+            <select id="tx-to-account">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row" id="row-category">
+          <div class="form-group flex-1">
+            <label for="tx-category">Category</label>
+            <select id="tx-category" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label for="tx-subcategory">Subcategory (Optional)</label>
+            <select id="tx-subcategory">
+              <option value="">None</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="tx-notes">Notes</label>
+            <textarea id="tx-notes" rows="2" placeholder="Add extra details..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="modal-cancel-btn" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Banner -->
+  <div id="toast" class="toast hidden">
+    <span id="toast-message">Success!</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
