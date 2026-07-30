@@ -1671,15 +1671,26 @@ function TransactionsPageContent() {
                               metadata = `${txn.category}  •  ${accName}`;
                             }
                             
+                            const isTrip = Boolean(txn.tripId);
+
                             return (
                               <div 
                                 key={txn.id}
                                 onClick={() => startEditing(txn)}
-                                className="flex items-center justify-between py-2 pl-10 pr-3.5 hover:bg-secondary/45 active:bg-secondary/65 transition cursor-pointer group relative border-b border-border/10 last:border-b-0"
+                                className={`flex items-center justify-between py-2 pl-10 pr-3.5 transition cursor-pointer group relative border-b border-border/10 last:border-b-0 ${
+                                  isTrip
+                                    ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
+                                    : 'hover:bg-secondary/45 active:bg-secondary/65'
+                                }`}
                               >
                                 <div className="flex-1 min-w-0 pr-3">
-                                  <div className="text-sm font-semibold text-foreground truncate">
-                                    {title}
+                                  <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
+                                    <span>{title}</span>
+                                    {isTrip && (
+                                      <span className="text-[10px] font-bold text-amber-500 bg-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                                        ✈️ Trip
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="text-[11px] font-medium text-muted-foreground truncate mt-0.5">
                                     {metadata}
@@ -1787,15 +1798,26 @@ function TransactionsPageContent() {
                             metadata = `${txn.category}  •  ${accName}`;
                           }
 
+                          const isTrip = Boolean(txn.tripId);
+
                           return (
                              <div 
                                key={txn.id}
                                onClick={() => startEditing(txn)}
-                               className="flex items-center justify-between py-2 pl-10 pr-3.5 hover:bg-secondary/45 active:bg-secondary/65 transition cursor-pointer border-b border-border/20 last:border-b-0"
+                               className={`flex items-center justify-between py-2 pl-10 pr-3.5 transition cursor-pointer border-b border-border/20 last:border-b-0 ${
+                                 isTrip
+                                   ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
+                                   : 'hover:bg-secondary/45 active:bg-secondary/65'
+                               }`}
                              >
                                <div className="flex-1 min-w-0 pr-3">
-                                 <div className="text-sm font-semibold text-foreground truncate">
-                                   {title}
+                                 <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
+                                   <span>{title}</span>
+                                   {isTrip && (
+                                     <span className="text-[10px] font-bold text-amber-500 bg-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                                       ✈️ Trip
+                                     </span>
+                                   )}
                                  </div>
                                  <div className="text-[11px] font-medium text-muted-foreground truncate mt-0.5">
                                    {metadata}

@@ -623,15 +623,26 @@ export default function MobileAppView() {
                             const sourceName = accounts.find(a => a.id === tx.account)?.name || 'Unknown';
                             const destName = isTransfer ? (accounts.find(a => a.id === tx.toAccount)?.name || 'Unknown') : '';
 
+                            const isTrip = Boolean(tx.tripId);
+
                             return (
                               <div 
                                 key={tx.id} 
                                 onClick={() => openEdit(tx)}
-                                className="flex justify-between items-center p-3 hover:bg-muted/10 transition cursor-pointer"
+                                className={`flex justify-between items-center p-3 transition cursor-pointer ${
+                                  isTrip
+                                    ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
+                                    : 'hover:bg-muted/10'
+                                }`}
                               >
                                 <div className="space-y-0.5 min-w-0 pr-2">
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="text-xs font-semibold text-foreground truncate">{tx.description}</span>
+                                    {isTrip && (
+                                      <span className="text-4xs bg-amber-500/20 text-amber-500 border border-amber-500/40 px-1.5 py-0.5 rounded-full font-bold">
+                                        ✈️ Trip
+                                      </span>
+                                    )}
                                     {!isTransfer && (
                                       <span className="text-4xs bg-card border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
                                         {tx.category}
