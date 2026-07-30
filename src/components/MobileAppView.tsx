@@ -24,7 +24,8 @@ import {
   Plane,
   ArrowLeft,
   Camera,
-  Check
+  Check,
+  RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -40,10 +41,15 @@ import {
   updateTrip,
   getTripBgColor,
   getTrips,
+  getRecycledTransactions,
+  restoreTransaction,
+  permanentlyDeleteTransaction,
+  emptyRecycleBin,
   type Transaction,
   type Account,
   type Category,
-  type Trip
+  type Trip,
+  type RecycledTransaction
 } from '@/lib/storage';
 import PCManagerComponent from './PCManager';
 
@@ -213,7 +219,7 @@ export default function MobileAppView() {
   };
   
   // More Sub-views
-  const [moreSubView, setMoreSubView] = useState<'menu' | 'config' | 'pc' | 'help' | 'backup'>('menu');
+  const [moreSubView, setMoreSubView] = useState<'menu' | 'config' | 'pc' | 'help' | 'backup' | 'recycle_bin'>('menu');
 
   // Form states
   const [formType, setFormType] = useState<'expense' | 'income' | 'transfer'>('expense');
@@ -1139,6 +1145,16 @@ export default function MobileAppView() {
                     <ChevronRight size={16} className="text-muted-foreground" />
                   </button>
                   <button 
+                    onClick={() => setMoreSubView('recycle_bin')}
+                    className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Trash2 size={18} className="text-negative" />
+                      <span className="text-xs font-semibold text-foreground">Recycle Bin</span>
+                    </div>
+                    <ChevronRight size={16} className="text-muted-foreground" />
+                  </button>
+                  <button 
                     onClick={() => setMoreSubView('backup')}
                     className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
                   >
@@ -1261,6 +1277,91 @@ export default function MobileAppView() {
                 </div>
               </div>
             )}
+
+            {/* Sub-view: RECYCLE BIN */}
+            {moreSubView === 'recycle_bin' && (() => {
+              const recycled = getRecycledTransactions();
+              return (
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-3xs font-extrabold text-foreground tracking-wider uppercase">Recycle Bin ({recycled.length})</h3>
+                    {recycled.length > 0 && (
+                      <button
+                        onClick={() => {
+                          if (confirm('Permanently delete all items in Recycle Bin?')) {
+                            emptyRecycleBin();
+                            toast.success('Recycle Bin emptied');
+                            setTransactions(getTransactions());
+                          }
+                        }}
+                        className="text-3xs font-bold text-negative hover:underline"
+                      >
+                        Empty Bin
+                      </button>
+                    )}
+                  </div>
+
+                  {recycled.length === 0 ? (
+                    <div className="bg-card border border-border rounded-xl p-8 text-center space-y-2">
+                      <Trash2 size={28} className="mx-auto text-muted-foreground/40" />
+                      <p className="text-xs font-bold text-foreground">Recycle Bin is Empty</p>
+                      <p className="text-3xs text-muted-foreground">Deleted transactions will appear here for easy recovery.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {recycled.map((item) => (
+                        <div 
+                          key={item.id}
+                          className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-2 shadow-xs"
+                        >
+                          <div className="space-y-0.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-foreground truncate">{item.notes || item.category}</span>
+                              <span className="text-4xs bg-muted text-muted-foreground px-1 py-0.5 rounded font-medium">{item.category}</span>
+                            </div>
+                            <span className="text-4xs text-muted-foreground block">
+                              Deleted: {new Date(item.deletedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`text-xs font-bold tabular-nums ${
+                              item.type === 'income' ? 'text-positive' : item.type === 'expense' ? 'text-negative' : 'text-info'
+                            }`}>
+                              ₹{item.amount.toLocaleString('en-IN')}
+                            </span>
+
+                            <button
+                              onClick={() => {
+                                restoreTransaction(item.id);
+                                toast.success('Transaction restored');
+                                setTransactions(getTransactions());
+                              }}
+                              className="px-2 py-1 bg-primary/10 text-primary text-3xs font-bold rounded hover:bg-primary hover:text-primary-foreground transition flex items-center gap-1 cursor-pointer"
+                            >
+                              <RotateCcw size={11} /> Restore
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                if (confirm('Permanently delete this transaction?')) {
+                                  permanentlyDeleteTransaction(item.id);
+                                  toast.success('Permanently deleted');
+                                  setTransactions(getTransactions());
+                                }
+                              }}
+                              className="p-1 text-muted-foreground hover:text-negative hover:bg-negative/10 rounded transition cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Sub-view: BACKUP & RESTORE */}
             {moreSubView === 'backup' && (

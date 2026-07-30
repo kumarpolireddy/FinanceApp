@@ -4,6 +4,13 @@ import React, { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import PCManagerComponent from '@/components/PCManager';
 import { 
+  getRecycledTransactions, 
+  restoreTransaction, 
+  permanentlyDeleteTransaction, 
+  emptyRecycleBin,
+  type RecycledTransaction 
+} from '@/lib/storage';
+import { 
   Settings, 
   Wrench, 
   Wallet, 
@@ -18,15 +25,45 @@ import {
   Database,
   ArrowLeft,
   Plane,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 export default function MorePage() {
   const router = useRouter();
-  const [subView, setSubView] = useState<'menu' | 'pc' | 'backup' | 'help'>('menu');
+  const [subView, setSubView] = useState<'menu' | 'pc' | 'backup' | 'help' | 'recycle_bin'>('menu');
+  const [recycledList, setRecycledList] = useState<RecycledTransaction[]>([]);
+
+  const loadRecycled = () => {
+    setRecycledList(getRecycledTransactions());
+  };
+
+  const handleRestore = (id: string) => {
+    restoreTransaction(id);
+    toast.success('Transaction restored successfully!');
+    loadRecycled();
+  };
+
+  const handlePermanentDelete = (id: string) => {
+    if (confirm('Permanently delete this transaction? This action cannot be undone.')) {
+      permanentlyDeleteTransaction(id);
+      toast.success('Transaction permanently deleted.');
+      loadRecycled();
+    }
+  };
+
+  const handleEmptyBin = () => {
+    if (confirm('Are you sure you want to empty the Recycle Bin? All deleted transactions will be erased forever.')) {
+      emptyRecycleBin();
+      toast.success('Recycle Bin emptied.');
+      loadRecycled();
+    }
+  };
 
   const MENU_ITEMS = [
+    { label: 'Recycle Bin', icon: Trash2, color: 'text-negative', action: () => { loadRecycled(); setSubView('recycle_bin'); } },
     { label: 'Trips', icon: Plane, color: 'text-primary', path: '/trips' },
     { label: 'Analytics', icon: PieChart, color: 'text-primary', path: '/analytics' },
     { label: 'Budgets', icon: Briefcase, color: 'text-primary', path: '/budgets' },
@@ -190,6 +227,83 @@ export default function MorePage() {
               <p className="font-bold text-foreground">How does PC sync work?</p>
               <p>Open PC Sync from the grid, ensure your computer and phone are on the same Wi-Fi network, and browse the address displayed on your phone.</p>
             </div>
+          </div>
+        )}
+
+        {/* 5. Sub-view: Recycle Bin */}
+        {subView === 'recycle_bin' && (
+          <div className="space-y-4 animate-slide-up">
+            <div className="flex items-center justify-between bg-secondary border border-border rounded-xl p-4 shadow-sm">
+              <div>
+                <h2 className="text-base font-bold text-foreground">Recycle Bin</h2>
+                <p className="text-xs text-muted-foreground">
+                  Restore deleted transactions back to your main ledger or erase permanently.
+                </p>
+              </div>
+              {recycledList.length > 0 && (
+                <button
+                  onClick={handleEmptyBin}
+                  className="px-3 py-1.5 bg-negative/10 text-negative border border-negative/30 rounded-lg text-xs font-bold hover:bg-negative hover:text-negative-foreground transition shrink-0 flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} /> Empty Bin
+                </button>
+              )}
+            </div>
+
+            {recycledList.length === 0 ? (
+              <div className="bg-secondary border border-border rounded-xl p-10 text-center space-y-2">
+                <Trash2 size={32} className="mx-auto text-muted-foreground/40" />
+                <p className="text-sm font-bold text-foreground">Recycle Bin is Empty</p>
+                <p className="text-xs text-muted-foreground">Deleted transactions will appear here so you can restore them anytime.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recycledList.map((item) => (
+                  <div 
+                    key={item.id}
+                    className="bg-secondary border border-border/80 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-foreground truncate">
+                          {item.notes || item.category}
+                        </span>
+                        <span className="text-3xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium">
+                          {item.category}
+                        </span>
+                      </div>
+                      <div className="text-2xs text-muted-foreground flex items-center gap-2">
+                        <span>Deleted: {new Date(item.deletedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-xs font-bold font-mono ${
+                        item.type === 'income' ? 'text-positive' : item.type === 'expense' ? 'text-negative' : 'text-info'
+                      }`}>
+                        ₹{item.amount.toLocaleString('en-IN')}
+                      </span>
+
+                      <button
+                        onClick={() => handleRestore(item.id)}
+                        className="px-2.5 py-1 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground text-xs font-bold rounded-md transition flex items-center gap-1 cursor-pointer"
+                        title="Restore transaction"
+                      >
+                        <RotateCcw size={13} /> Restore
+                      </button>
+
+                      <button
+                        onClick={() => handlePermanentDelete(item.id)}
+                        className="p-1.5 text-muted-foreground hover:text-negative hover:bg-negative/10 rounded-md transition cursor-pointer"
+                        title="Delete permanently"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

@@ -124,6 +124,7 @@ const KEYS = {
   TRIPS: 'wealthiq_trips',
   ACTIVE_TRIP_ID: 'wealthiq_active_trip_id',
   TRIP_BG_COLOR: 'wealthiq_trip_bg_color',
+  RECYCLE_BIN: 'wealthiq_recycle_bin',
 };
 
 // ── Default Categories ────────────────────────────────────────────────────────
@@ -301,10 +302,64 @@ export function saveTransaction(txn: Omit<Transaction, 'id' | 'createdAt'>): Tra
   return newTxn;
 }
 
+export interface RecycledTransaction extends Transaction {
+  deletedAt: string;
+}
+
+export function getRecycledTransactions(): RecycledTransaction[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(KEYS.RECYCLE_BIN);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveRecycledTransactions(items: RecycledTransaction[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(KEYS.RECYCLE_BIN, JSON.stringify(items));
+  }
+}
+
+export function restoreTransaction(id: string): void {
+  const recycled = getRecycledTransactions();
+  const target = recycled.find((t) => t.id === id);
+  if (target) {
+    const { deletedAt, ...restoredTxn } = target;
+    const all = getTransactions(true);
+    all.unshift(restoredTxn as Transaction);
+    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(all));
+
+    const remainingRecycled = recycled.filter((t) => t.id !== id);
+    saveRecycledTransactions(remainingRecycled);
+  }
+}
+
+export function permanentlyDeleteTransaction(id: string): void {
+  const recycled = getRecycledTransactions();
+  const remaining = recycled.filter((t) => t.id !== id);
+  saveRecycledTransactions(remaining);
+}
+
+export function emptyRecycleBin(): void {
+  saveRecycledTransactions([]);
+}
+
 export function deleteTransaction(id: string, option: 'reverse' | 'note' = 'reverse'): void {
   if (option === 'reverse') {
-    const all = getTransactions(true).filter((t) => t.id !== id);
-    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(all));
+    const all = getTransactions(true);
+    const target = all.find((t) => t.id === id);
+    if (target) {
+      const recycled = getRecycledTransactions();
+      const newRecycledItem: RecycledTransaction = {
+        ...target,
+        deletedAt: new Date().toISOString(),
+      };
+      saveRecycledTransactions([newRecycledItem, ...recycled]);
+    }
+    const remaining = all.filter((t) => t.id !== id);
+    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(remaining));
   } else {
     updateTransaction(id, { category: 'Deleted Category', subcategory: undefined });
   }
