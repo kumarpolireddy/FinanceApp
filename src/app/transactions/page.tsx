@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, Suspense, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useRef, Suspense, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { ChevronDown, Edit3, ChevronLeft, ChevronRight, Filter, BarChart3, Plus, ArrowLeft, Trash2, Copy, Star, Camera, Plane, Check } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
@@ -235,6 +235,70 @@ function TransactionsPageContent() {
     });
     return map;
   }, [transactions]);
+
+  // Multi-Select & Bulk Delete State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedTxnIds, setSelectedTxnIds] = useState<string[]>([]);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressActiveRef = useRef(false);
+
+  const handleItemTouchStart = (txnId: string) => {
+    isLongPressActiveRef.current = false;
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressActiveRef.current = true;
+      setIsSelectionMode(true);
+      setSelectedTxnIds((prev) =>
+        prev.includes(txnId) ? prev : [...prev, txnId]
+      );
+      if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(50);
+      }
+    }, 450);
+  };
+
+  const handleTouchEndOrCancel = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleTxnClick = (txn: Transaction) => {
+    if (isLongPressActiveRef.current) {
+      isLongPressActiveRef.current = false;
+      return;
+    }
+    if (isSelectionMode) {
+      setSelectedTxnIds((prev) =>
+        prev.includes(txn.id) ? prev.filter((id) => id !== txn.id) : [...prev, txn.id]
+      );
+    } else {
+      startEditing(txn);
+    }
+  };
+
+  const handleSelectAll = () => {
+    const allIds = transactions.map((t) => t.id);
+    if (selectedTxnIds.length === allIds.length) {
+      setSelectedTxnIds([]);
+    } else {
+      setSelectedTxnIds(allIds);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedTxnIds.length === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedTxnIds.length} selected transaction(s)?`)) {
+      selectedTxnIds.forEach((id) => {
+        deleteTransaction(id);
+      });
+      toast.success(`${selectedTxnIds.length} transaction(s) deleted`);
+      setSelectedTxnIds([]);
+      setIsSelectionMode(false);
+      setTransactions(getTransactions());
+    }
+  };
 
   // General Notes State
   interface GeneralNote {
@@ -1319,8 +1383,6 @@ function TransactionsPageContent() {
 
   return (
     <div 
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       className="max-w-2xl mx-auto px-0 md:px-3.5 py-2 space-y-2.5 bg-background min-h-[90vh]"
     >
       
@@ -1720,20 +1782,39 @@ function TransactionsPageContent() {
                             const activeTrip = getActiveTrip();
                             const tripName = isTrip ? (tripsMap[txn.tripId!] || activeTrip?.name || 'Trip') : '';
 
+                            const isSelected = selectedTxnIds.includes(txn.id);
+
                             return (
                               <div 
                                 key={txn.id}
-                                onClick={() => startEditing(txn)}
-                                className={`flex items-center justify-between py-2 pl-10 pr-3.5 transition cursor-pointer group relative border-b border-border/10 last:border-b-0 ${
-                                  isTrip
-                                    ? 'border-l-4'
-                                    : 'hover:bg-secondary/45 active:bg-secondary/65'
+                                onTouchStart={() => handleItemTouchStart(txn.id)}
+                                onTouchEnd={handleTouchEndOrCancel}
+                                onTouchMove={handleTouchEndOrCancel}
+                                onMouseDown={() => handleItemTouchStart(txn.id)}
+                                onMouseUp={handleTouchEndOrCancel}
+                                onMouseLeave={handleTouchEndOrCancel}
+                                onClick={() => handleTxnClick(txn)}
+                                className={`flex items-center justify-between py-2 ${isSelectionMode ? 'pl-3' : 'pl-10'} pr-3.5 transition cursor-pointer group relative border-b border-border/10 last:border-b-0 ${
+                                  isSelected
+                                    ? 'bg-primary/20 border-l-4 border-l-primary'
+                                    : isTrip
+                                      ? 'border-l-4'
+                                      : 'hover:bg-secondary/45 active:bg-secondary/65'
                                 }`}
-                                style={isTrip ? {
+                                style={isSelected ? undefined : (isTrip ? {
                                   backgroundColor: `${tripBgColor}22`,
                                   borderLeftColor: tripBgColor,
-                                } : undefined}
+                                } : undefined)}
                               >
+                                {isSelectionMode && (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => {}}
+                                    className="w-4 h-4 rounded accent-primary mr-3 cursor-pointer shrink-0"
+                                  />
+                                )}
+
                                 {/* Left: Notes / Category & Metadata */}
                                 <div className="flex-1 min-w-0 pr-2">
                                   <div className="text-sm font-semibold text-foreground truncate">
@@ -2822,6 +2903,40 @@ function TransactionsPageContent() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* Floating Multi-Select Action Bar */}
+      {isSelectionMode && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-5 py-3 flex items-center gap-4 animate-slide-up text-foreground">
+          <span className="text-xs font-bold bg-primary/20 text-primary px-2.5 py-1 rounded-full">
+            {selectedTxnIds.length} Selected
+          </span>
+
+          <button
+            onClick={handleSelectAll}
+            className="text-xs font-semibold hover:text-primary transition"
+          >
+            {selectedTxnIds.length === transactions.length ? 'Deselect All' : 'Select All'}
+          </button>
+
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedTxnIds.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-negative text-negative-foreground rounded-lg font-bold text-xs hover:bg-negative/90 disabled:opacity-40 transition shadow-sm"
+          >
+            <Trash2 size={14} /> Delete All ({selectedTxnIds.length})
+          </button>
+
+          <button
+            onClick={() => {
+              setIsSelectionMode(false);
+              setSelectedTxnIds([]);
+            }}
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground transition pl-2 border-l border-border/60"
+          >
+            Cancel
+          </button>
+        </div>
       )}
 
     </div>

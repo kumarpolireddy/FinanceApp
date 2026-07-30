@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { 
   Calendar as CalendarIcon, 
@@ -100,6 +100,69 @@ export default function MobileAppView() {
     });
     return map;
   }, [transactions]);
+
+  // Multi-Select & Bulk Delete State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedTxnIds, setSelectedTxnIds] = useState<string[]>([]);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressActiveRef = useRef(false);
+
+  const handleTouchStart = (txnId: string) => {
+    isLongPressActiveRef.current = false;
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressActiveRef.current = true;
+      setIsSelectionMode(true);
+      setSelectedTxnIds((prev) =>
+        prev.includes(txnId) ? prev : [...prev, txnId]
+      );
+      if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(50);
+      }
+    }, 450);
+  };
+
+  const handleTouchEndOrCancel = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleTxnClick = (tx: Transaction) => {
+    if (isLongPressActiveRef.current) {
+      isLongPressActiveRef.current = false;
+      return;
+    }
+    if (isSelectionMode) {
+      setSelectedTxnIds((prev) =>
+        prev.includes(tx.id) ? prev.filter((id) => id !== tx.id) : [...prev, tx.id]
+      );
+    } else {
+      openEdit(tx);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedTxnIds.length === transactions.length) {
+      setSelectedTxnIds([]);
+    } else {
+      setSelectedTxnIds(transactions.map((t) => t.id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedTxnIds.length === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedTxnIds.length} selected transaction(s)?`)) {
+      selectedTxnIds.forEach((id) => {
+        deleteTransaction(id);
+      });
+      toast.success(`${selectedTxnIds.length} transaction(s) deleted`);
+      setSelectedTxnIds([]);
+      setIsSelectionMode(false);
+      setTransactions(getTransactions());
+    }
+  };
   
   // Modals & Sub-views states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -675,20 +738,39 @@ export default function MobileAppView() {
                             const activeTrip = getActiveTrip();
                             const tripName = isTrip ? (tripsMap[tx.tripId!] || activeTrip?.name || 'Trip') : '';
 
+                            const isSelected = selectedTxnIds.includes(tx.id);
+
                             return (
                               <div 
                                 key={tx.id} 
-                                onClick={() => openEdit(tx)}
+                                onTouchStart={() => handleTouchStart(tx.id)}
+                                onTouchEnd={handleTouchEndOrCancel}
+                                onTouchMove={handleTouchEndOrCancel}
+                                onMouseDown={() => handleTouchStart(tx.id)}
+                                onMouseUp={handleTouchEndOrCancel}
+                                onMouseLeave={handleTouchEndOrCancel}
+                                onClick={() => handleTxnClick(tx)}
                                 className={`flex justify-between items-center p-3 transition cursor-pointer ${
-                                  isTrip
-                                    ? 'border-l-4'
-                                    : 'hover:bg-muted/10'
+                                  isSelected
+                                    ? 'bg-primary/20 border-l-4 border-l-primary'
+                                    : isTrip
+                                      ? 'border-l-4'
+                                      : 'hover:bg-muted/10'
                                 }`}
-                                style={isTrip ? {
+                                style={isSelected ? undefined : (isTrip ? {
                                   backgroundColor: `${tripColor}22`,
                                   borderLeftColor: tripColor,
-                                } : undefined}
+                                } : undefined)}
                               >
+                                {isSelectionMode && (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => {}}
+                                    className="w-4 h-4 rounded accent-primary mr-2.5 cursor-pointer shrink-0"
+                                  />
+                                )}
+
                                 {/* Left: Notes / Category */}
                                 <div className="space-y-0.5 min-w-0 flex-1 pr-2">
                                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -1604,6 +1686,40 @@ export default function MobileAppView() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Floating Multi-Select Action Bar */}
+      {isSelectionMode && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-4 py-2.5 flex items-center gap-3 animate-slide-up text-foreground">
+          <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full shrink-0">
+            {selectedTxnIds.length} Selected
+          </span>
+
+          <button
+            onClick={handleSelectAll}
+            className="text-xs font-semibold hover:text-primary transition shrink-0"
+          >
+            {selectedTxnIds.length === transactions.length ? 'Deselect' : 'Select All'}
+          </button>
+
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedTxnIds.length === 0}
+            className="flex items-center gap-1 px-3 py-1.5 bg-negative text-negative-foreground rounded-lg font-bold text-xs hover:bg-negative/90 disabled:opacity-40 transition shadow-sm shrink-0"
+          >
+            <Trash2 size={13} /> Delete ({selectedTxnIds.length})
+          </button>
+
+          <button
+            onClick={() => {
+              setIsSelectionMode(false);
+              setSelectedTxnIds([]);
+            }}
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground transition pl-2 border-l border-border/60 shrink-0"
+          >
+            Cancel
+          </button>
         </div>
       )}
 
