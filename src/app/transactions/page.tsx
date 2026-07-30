@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState, Suspense, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { ChevronDown, Edit3, ChevronLeft, ChevronRight, Filter, BarChart3, Plus, ArrowLeft, Trash2, Copy, Star, Camera, Plane } from 'lucide-react';
+import { ChevronDown, Edit3, ChevronLeft, ChevronRight, Filter, BarChart3, Plus, ArrowLeft, Trash2, Copy, Star, Camera, Plane, Check } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import Modal from '@/components/ui/Modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -2059,9 +2059,9 @@ function TransactionsPageContent() {
             <button
               type="button"
               onClick={handleSaveClick}
-              className="px-4 py-2 bg-primary text-primary-foreground font-extrabold text-xs rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
+              className="px-4 py-2 bg-primary text-primary-foreground font-black text-xs uppercase tracking-wider rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
             >
-              Done
+              Save Transaction
             </button>
           </div>
 
@@ -2269,36 +2269,47 @@ function TransactionsPageContent() {
                 </div>
               </div>
 
-              {/* Bottom Actions Grid (Gap of 20dp between description/camera and buttons) */}
-              <div className="grid grid-cols-3 gap-3 px-5 mt-5">
+              {/* Bottom Actions Grid */}
+              <div className="px-5 mt-5 space-y-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setDeletingTxn(editingTransaction);
-                    setEditingTransaction(null);
-                    setEditForm(null);
-                  }}
-                  className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
+                  onClick={handleSaveClick}
+                  className="w-full h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
                 >
-                  <Trash2 size={16} />
-                  <span>Delete</span>
+                  <Check size={18} />
+                  <span>Save Transaction</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleCopyTransaction}
-                  className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
-                >
-                  <Copy size={16} />
-                  <span>Copy</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBookmarkTransaction}
-                  className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
-                >
-                  <Star size={16} />
-                  <span>Bookmark</span>
-                </button>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeletingTxn(editingTransaction);
+                      setEditingTransaction(null);
+                      setEditForm(null);
+                    }}
+                    className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
+                  >
+                    <Trash2 size={16} />
+                    <span>Delete</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyTransaction}
+                    className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
+                  >
+                    <Copy size={16} />
+                    <span>Copy</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBookmarkTransaction}
+                    className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
+                  >
+                    <Star size={16} />
+                    <span>Bookmark</span>
+                  </button>
+                </div>
               </div>
 
             </form>
