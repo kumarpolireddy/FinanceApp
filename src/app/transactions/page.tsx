@@ -209,6 +209,24 @@ function TransactionsPageContent() {
     return map;
   }, [transactions]);
 
+  const firstTripTxnMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    const tripTxns: Record<string, Transaction[]> = {};
+    getTransactions(true).forEach((t) => {
+      if (t.tripId) {
+        if (!tripTxns[t.tripId]) tripTxns[t.tripId] = [];
+        tripTxns[t.tripId].push(t);
+      }
+    });
+    Object.entries(tripTxns).forEach(([tripId, txs]) => {
+      txs.sort((a, b) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
+      if (txs.length > 0) {
+        map[tripId] = txs[0].id;
+      }
+    });
+    return map;
+  }, [transactions]);
+
   // General Notes State
   interface GeneralNote {
     id: string;
@@ -1687,10 +1705,7 @@ function TransactionsPageContent() {
                             }
                             
                             const isTrip = Boolean(txn.tripId);
-                            const isFirstTripOccurrence = isTrip && !seenTripIds.has(txn.tripId!);
-                            if (isTrip) {
-                              seenTripIds.add(txn.tripId!);
-                            }
+                            const isFirstTripStartTxn = isTrip && firstTripTxnMap[txn.tripId!] === txn.id;
 
                             const tripBgColor = isTrip ? getTripBgColor() : '';
                             const tripName = isTrip ? (tripsMap[txn.tripId!] || 'Trip') : '';
@@ -1719,8 +1734,8 @@ function TransactionsPageContent() {
                                   </div>
                                 </div>
 
-                                {/* Middle: Trip Name (Show for first transaction of trip only) */}
-                                {isTrip && isFirstTripOccurrence && (
+                                {/* Middle: Trip Name (Show ONLY on the first transaction when trip started) */}
+                                {isTrip && isFirstTripStartTxn && (
                                   <div className="px-3 shrink-0 text-center">
                                     <span 
                                       className="text-xs font-bold max-w-[120px] truncate block"

@@ -73,6 +73,24 @@ export default function MobileAppView() {
     });
     return map;
   }, [transactions]);
+
+  const firstTripTxnMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    const tripTxns: Record<string, Transaction[]> = {};
+    getTransactions(true).forEach((t) => {
+      if (t.tripId) {
+        if (!tripTxns[t.tripId]) tripTxns[t.tripId] = [];
+        tripTxns[t.tripId].push(t);
+      }
+    });
+    Object.entries(tripTxns).forEach(([tripId, txs]) => {
+      txs.sort((a, b) => new Date(a.date || a.createdAt).getTime() - new Date(b.date || b.createdAt).getTime());
+      if (txs.length > 0) {
+        map[tripId] = txs[0].id;
+      }
+    });
+    return map;
+  }, [transactions]);
   
   // Modals & Sub-views states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -642,10 +660,7 @@ export default function MobileAppView() {
                             const sourceName = accounts.find(a => a.id === tx.account)?.name || 'Unknown';
                             const destName = isTransfer ? (accounts.find(a => a.id === tx.toAccount)?.name || 'Unknown') : '';
                             const isTrip = Boolean(tx.tripId);
-                            const isFirstTripOccurrence = isTrip && !seenTripIds.has(tx.tripId!);
-                            if (isTrip) {
-                              seenTripIds.add(tx.tripId!);
-                            }
+                            const isFirstTripStartTxn = isTrip && firstTripTxnMap[tx.tripId!] === tx.id;
 
                             const tripColor = isTrip ? getTripBgColor() : '';
                             const tripName = isTrip ? (tripsMap[tx.tripId!] || 'Trip') : '';
@@ -679,8 +694,8 @@ export default function MobileAppView() {
                                   </span>
                                 </div>
 
-                                {/* Middle: Trip Name (Clean text, no box, show for first occurrence only) */}
-                                {isTrip && isFirstTripOccurrence && (
+                                {/* Middle: Trip Name (Clean text, no box, show ONLY for earliest trip transaction) */}
+                                {isTrip && isFirstTripStartTxn && (
                                   <div className="px-2 shrink-0 text-center">
                                     <span 
                                       className="text-xs font-bold max-w-[90px] truncate block"
