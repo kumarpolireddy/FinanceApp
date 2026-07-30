@@ -437,7 +437,7 @@ export default function AddExpensePage() {
 
         {/* custom numeric keypad */}
         {!isInputFocused && (
-          <div className="fixed bottom-16 md:bottom-4 left-0 right-0 z-40 max-w-md mx-auto bg-secondary border-t md:border border-border/80 p-3 shadow-2xl space-y-2">
+          <div className="fixed bottom-0 md:bottom-4 left-0 right-0 z-40 max-w-md mx-auto bg-secondary border-t md:border border-border/80 p-3 shadow-2xl space-y-2">
             <div className="grid grid-cols-3 gap-1.5 font-mono text-2xl font-bold">
               {keypadButtons.map((btn) => (
                 <button

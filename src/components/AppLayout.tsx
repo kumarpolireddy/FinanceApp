@@ -226,26 +226,28 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </button>
         )}
 
-        {/* Mobile Bottom Tab Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-secondary border-t border-border flex justify-around items-center z-50 max-w-md mx-auto pb-safe">
-          {TABS.map((tab) => {
-            const IconComponent = tab.icon;
-            const isActive = activeTab === tab.id;
-            
-            return (
-              <button
-                key={tab.id}
-                onClick={() => router.push(tab.path)}
-                className={`flex-1 h-full flex flex-col justify-center items-center gap-1 transition-all ${
-                  isActive ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <IconComponent size={18} className={isActive ? 'stroke-[2.5px]' : 'stroke-[1.8px]'} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        {/* Mobile Bottom Tab Bar (Hidden on Add Expense page to avoid clutter while entering transaction data) */}
+        {!pathname.startsWith('/add-expense') && (
+          <nav className="fixed bottom-0 left-0 right-0 h-16 bg-secondary border-t border-border flex justify-around items-center z-50 max-w-md mx-auto pb-safe">
+            {TABS.map((tab) => {
+              const IconComponent = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => router.push(tab.path)}
+                  className={`flex-1 h-full flex flex-col justify-center items-center gap-1 transition-all ${
+                    isActive ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <IconComponent size={18} className={isActive ? 'stroke-[2.5px]' : 'stroke-[1.8px]'} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
 
       </div>
     );
