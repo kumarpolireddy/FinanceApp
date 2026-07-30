@@ -177,14 +177,14 @@ export default function TripsPage() {
 
   const handleAddExpenseToTrip = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!expenseDesc.trim() || !expenseAmount || !expenseAccount || !expenseCategory) {
-      toast.error('Please fill in all required expense fields');
+    if (!expenseAmount || !expenseAccount || !expenseCategory) {
+      toast.error('Please fill in amount, category, and account');
       return;
     }
 
     const targetTripId = selectedTripId || activeTripState?.id;
     saveTransaction({
-      description: expenseDesc.trim(),
+      description: expenseDesc.trim() || expenseCategory || 'Trip Expense',
       amount: parseFloat(expenseAmount),
       category: expenseCategory,
       subcategory: expenseSubcategory || undefined,
@@ -813,14 +813,12 @@ export default function TripsPage() {
       >
         <form onSubmit={handleAddExpenseToTrip} className="space-y-4 text-sm font-semibold">
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Description *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Description (Optional)</label>
             <input
               type="text"
-              placeholder="e.g. Hotel Booking, Dinner, Taxi"
               value={expenseDesc}
               onChange={(e) => setExpenseDesc(e.target.value)}
               className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
-              required
             />
           </div>
 

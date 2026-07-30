@@ -285,8 +285,10 @@ export function saveTransaction(txn: Omit<Transaction, 'id' | 'createdAt'>): Tra
   }
 
   const activeTrip = getActiveTrip();
+  const description = (txn.description || '').trim() || (txn.type === 'transfer' ? 'Transfer' : (txn.category || 'Expense'));
   const newTxn: Transaction = {
     ...txn,
+    description,
     tripId: txn.tripId || activeTrip?.id,
     date: dateStr,
     id: `txn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,

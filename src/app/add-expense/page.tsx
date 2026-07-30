@@ -142,10 +142,6 @@ export default function AddExpensePage() {
       toast.error('Please enter a valid amount.');
       return;
     }
-    if (!description.trim()) {
-      toast.error('Please enter a description.');
-      return;
-    }
     if (!account) {
       toast.error('Please select a payment account.');
       return;
