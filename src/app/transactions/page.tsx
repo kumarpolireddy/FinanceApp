@@ -24,6 +24,7 @@ import {
   updateTrip,
   getTripSummary,
   getTripBgColor,
+  getTrips,
   type Transaction,
   type Account,
   type Category,
@@ -199,6 +200,14 @@ function TransactionsPageContent() {
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [showAccountChart, setShowAccountChart] = useState(false);
   const [tripBgColor, setTripBgColorState] = useState('#f59e0b');
+
+  const tripsMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    getTrips().forEach((t) => {
+      map[t.id] = t.name;
+    });
+    return map;
+  }, [transactions]);
 
   // General Notes State
   interface GeneralNote {
@@ -1678,6 +1687,7 @@ function TransactionsPageContent() {
                             
                             const isTrip = Boolean(txn.tripId);
                             const tripBgColor = isTrip ? getTripBgColor() : '';
+                            const tripName = isTrip ? (tripsMap[txn.tripId!] || 'Trip') : '';
 
                             return (
                               <div 
@@ -1693,22 +1703,29 @@ function TransactionsPageContent() {
                                   borderLeftColor: tripBgColor,
                                 } : undefined}
                               >
-                                <div className="flex-1 min-w-0 pr-3">
-                                  <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
-                                    <span>{title}</span>
-                                    {isTrip && (
-                                      <span 
-                                        className="text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0"
-                                        style={{ backgroundColor: `${tripBgColor}30`, color: tripBgColor }}
-                                      >
-                                        ✈️ Trip
-                                      </span>
-                                    )}
+                                {/* Left: Notes / Category & Metadata */}
+                                <div className="flex-1 min-w-0 pr-2">
+                                  <div className="text-sm font-semibold text-foreground truncate">
+                                    {title}
                                   </div>
                                   <div className="text-[11px] font-medium text-muted-foreground truncate mt-0.5">
                                     {metadata}
                                   </div>
                                 </div>
+
+                                {/* Middle: Trip Name (No Icons, between note and amount) */}
+                                {isTrip && (
+                                  <div className="px-3 shrink-0 text-center">
+                                    <span 
+                                      className="text-[11px] font-bold px-2.5 py-1 rounded-md inline-block max-w-[120px] truncate"
+                                      style={{ backgroundColor: `${tripBgColor}30`, color: tripBgColor }}
+                                    >
+                                      {tripName}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Right: Amount */}
                                 <div className="text-right font-mono tabular-nums shrink-0 w-20">
                                   <span className={`text-sm font-bold block ${
                                     isTransfer 

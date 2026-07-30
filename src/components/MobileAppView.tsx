@@ -39,6 +39,7 @@ import {
   addTrip,
   updateTrip,
   getTripBgColor,
+  getTrips,
   type Transaction,
   type Account,
   type Category,
@@ -64,6 +65,14 @@ export default function MobileAppView() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  
+  const tripsMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    getTrips().forEach((t) => {
+      map[t.id] = t.name;
+    });
+    return map;
+  }, [transactions]);
   
   // Modals & Sub-views states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -631,10 +640,9 @@ export default function MobileAppView() {
                             const isTransfer = tx.type === 'transfer';
                             const sourceName = accounts.find(a => a.id === tx.account)?.name || 'Unknown';
                             const destName = isTransfer ? (accounts.find(a => a.id === tx.toAccount)?.name || 'Unknown') : '';
-
                             const isTrip = Boolean(tx.tripId);
-
                             const tripColor = isTrip ? getTripBgColor() : '';
+                            const tripName = isTrip ? (tripsMap[tx.tripId!] || 'Trip') : '';
 
                             return (
                               <div 
@@ -650,17 +658,10 @@ export default function MobileAppView() {
                                   borderLeftColor: tripColor,
                                 } : undefined}
                               >
-                                <div className="space-y-0.5 min-w-0 pr-2">
+                                {/* Left: Notes / Category */}
+                                <div className="space-y-0.5 min-w-0 flex-1 pr-2">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="text-xs font-semibold text-foreground truncate">{tx.notes || tx.category}</span>
-                                    {isTrip && (
-                                      <span 
-                                        className="text-4xs px-1.5 py-0.5 rounded-full font-bold"
-                                        style={{ backgroundColor: `${tripColor}30`, color: tripColor, borderColor: `${tripColor}60` }}
-                                      >
-                                        ✈️ Trip
-                                      </span>
-                                    )}
                                     {!isTransfer && (
                                       <span className="text-4xs bg-card border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
                                         {tx.category}
@@ -669,9 +670,22 @@ export default function MobileAppView() {
                                   </div>
                                   <span className="text-3xs text-muted-foreground font-medium block truncate">
                                     {isTransfer ? `${sourceName} ➔ ${destName}` : sourceName}
-                                    {tx.notes ? ` • ${tx.notes}` : ''}
                                   </span>
                                 </div>
+
+                                {/* Middle: Trip Name */}
+                                {isTrip && (
+                                  <div className="px-2 shrink-0 text-center">
+                                    <span 
+                                      className="text-3xs font-bold px-2 py-0.5 rounded-md inline-block max-w-[90px] truncate"
+                                      style={{ backgroundColor: `${tripColor}30`, color: tripColor }}
+                                    >
+                                      {tripName}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Right: Amount */}
                                 <span className={`text-xs font-bold tabular-nums flex-shrink-0 ${
                                   tx.type === 'income' ? 'text-positive' : tx.type === 'expense' ? 'text-negative' : 'text-muted-foreground'
                                 }`}>
