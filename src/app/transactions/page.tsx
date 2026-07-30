@@ -1645,8 +1645,9 @@ function TransactionsPageContent() {
               <div className="space-y-4">
                 {groupedDailyTransactions.length === 0 ? (
                   <p className="text-center text-xs text-muted-foreground py-10 font-medium">No records found for this period.</p>
-                ) : (
-                  groupedDailyTransactions.map((group) => {
+                ) : (() => {
+                  const seenTripIds = new Set<string>();
+                  return groupedDailyTransactions.map((group) => {
                     const day = group.date.getDate();
                     const weekday = getDayName(group.date.toISOString().slice(0, 10));
                     
@@ -1686,6 +1687,11 @@ function TransactionsPageContent() {
                             }
                             
                             const isTrip = Boolean(txn.tripId);
+                            const isFirstTripOccurrence = isTrip && !seenTripIds.has(txn.tripId!);
+                            if (isTrip) {
+                              seenTripIds.add(txn.tripId!);
+                            }
+
                             const tripBgColor = isTrip ? getTripBgColor() : '';
                             const tripName = isTrip ? (tripsMap[txn.tripId!] || 'Trip') : '';
 
@@ -1713,8 +1719,8 @@ function TransactionsPageContent() {
                                   </div>
                                 </div>
 
-                                {/* Middle: Trip Name (Clean text, no box) */}
-                                {isTrip && (
+                                {/* Middle: Trip Name (Show for first transaction of trip only) */}
+                                {isTrip && isFirstTripOccurrence && (
                                   <div className="px-3 shrink-0 text-center">
                                     <span 
                                       className="text-xs font-bold max-w-[120px] truncate block"
@@ -1753,8 +1759,8 @@ function TransactionsPageContent() {
                         </div>
                       </div>
                     );
-                  })
-                )}
+                  });
+                })()}
               </div>
             )}
 

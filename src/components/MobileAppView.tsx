@@ -608,8 +608,9 @@ export default function MobileAppView() {
                   <div className="text-center py-12 text-muted-foreground text-xs">
                     No transactions found for this period.
                   </div>
-                ) : (
-                  groupedDailyTransactions.map(([day, txs]) => {
+                ) : (() => {
+                  const seenTripIds = new Set<string>();
+                  return groupedDailyTransactions.map(([day, txs]) => {
                     const dateObj = new Date(txs[0].date);
                     const weekDay = dateObj.toLocaleDateString('en-IN', { weekday: 'short' });
                     
@@ -641,6 +642,11 @@ export default function MobileAppView() {
                             const sourceName = accounts.find(a => a.id === tx.account)?.name || 'Unknown';
                             const destName = isTransfer ? (accounts.find(a => a.id === tx.toAccount)?.name || 'Unknown') : '';
                             const isTrip = Boolean(tx.tripId);
+                            const isFirstTripOccurrence = isTrip && !seenTripIds.has(tx.tripId!);
+                            if (isTrip) {
+                              seenTripIds.add(tx.tripId!);
+                            }
+
                             const tripColor = isTrip ? getTripBgColor() : '';
                             const tripName = isTrip ? (tripsMap[tx.tripId!] || 'Trip') : '';
 
@@ -673,8 +679,8 @@ export default function MobileAppView() {
                                   </span>
                                 </div>
 
-                                {/* Middle: Trip Name (Clean text, no box) */}
-                                {isTrip && (
+                                {/* Middle: Trip Name (Clean text, no box, show for first occurrence only) */}
+                                {isTrip && isFirstTripOccurrence && (
                                   <div className="px-2 shrink-0 text-center">
                                     <span 
                                       className="text-xs font-bold max-w-[90px] truncate block"
@@ -698,8 +704,8 @@ export default function MobileAppView() {
                         </div>
                       </div>
                     );
-                  })
-                )}
+                  });
+                })()}
               </div>
             )}
 
