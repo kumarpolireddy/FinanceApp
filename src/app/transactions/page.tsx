@@ -1673,6 +1673,9 @@ function TransactionsPageContent() {
                             } else {
                               metadata = `${txn.category}  •  ${accName}`;
                             }
+                            if (txn.notes) {
+                              metadata += `  •  📝 ${txn.notes}`;
+                            }
                             
                             const isTrip = Boolean(txn.tripId);
 
@@ -1799,6 +1802,9 @@ function TransactionsPageContent() {
                             metadata = `${accName} → ${toAccName || 'Unknown'}`;
                           } else {
                             metadata = `${txn.category}  •  ${accName}`;
+                          }
+                          if (txn.notes) {
+                            metadata += `  •  📝 ${txn.notes}`;
                           }
 
                           const isTrip = Boolean(txn.tripId);

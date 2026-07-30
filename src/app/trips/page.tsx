@@ -645,13 +645,18 @@ export default function TripsPage() {
                     <div className="divide-y divide-border">
                       {currentSummary.transactions.map((txn) => (
                         <div key={txn.id} className="py-3 flex items-center justify-between gap-3 text-xs">
-                          <div>
-                            <p className="font-bold text-foreground">{txn.description}</p>
-                            <p className="text-2xs text-muted-foreground mt-0.5">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-foreground truncate">{txn.description}</p>
+                            <p className="text-2xs text-muted-foreground mt-0.5 truncate">
                               {txn.category} • {txn.date ? txn.date.slice(0, 10) : ''}
                             </p>
+                            {txn.notes ? (
+                              <p className="text-2xs text-amber-400 font-semibold italic mt-1 flex items-center gap-1">
+                                📝 {txn.notes}
+                              </p>
+                            ) : null}
                           </div>
-                          <div className="text-right font-black text-negative">
+                          <div className="text-right font-black text-negative shrink-0">
                             -₹{Number(txn.amount).toLocaleString('en-IN')}
                           </div>
                         </div>
