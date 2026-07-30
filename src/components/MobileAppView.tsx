@@ -673,12 +673,12 @@ export default function MobileAppView() {
                                   </span>
                                 </div>
 
-                                {/* Middle: Trip Name */}
+                                {/* Middle: Trip Name (Clean text, no box) */}
                                 {isTrip && (
                                   <div className="px-2 shrink-0 text-center">
                                     <span 
-                                      className="text-3xs font-bold px-2 py-0.5 rounded-md inline-block max-w-[90px] truncate"
-                                      style={{ backgroundColor: `${tripColor}30`, color: tripColor }}
+                                      className="text-xs font-bold max-w-[90px] truncate block"
+                                      style={{ color: tripColor }}
                                     >
                                       {tripName}
                                     </span>

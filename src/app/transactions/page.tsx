@@ -1713,12 +1713,12 @@ function TransactionsPageContent() {
                                   </div>
                                 </div>
 
-                                {/* Middle: Trip Name (No Icons, between note and amount) */}
+                                {/* Middle: Trip Name (Clean text, no box) */}
                                 {isTrip && (
                                   <div className="px-3 shrink-0 text-center">
                                     <span 
-                                      className="text-[11px] font-bold px-2.5 py-1 rounded-md inline-block max-w-[120px] truncate"
-                                      style={{ backgroundColor: `${tripBgColor}30`, color: tripBgColor }}
+                                      className="text-xs font-bold max-w-[120px] truncate block"
+                                      style={{ color: tripBgColor }}
                                     >
                                       {tripName}
                                     </span>
