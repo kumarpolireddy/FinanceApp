@@ -21,6 +21,7 @@ import {
   getActiveTrip,
   setActiveTrip,
   addTrip,
+  updateTrip,
   getTripSummary,
   type Transaction,
   type Account,
@@ -144,9 +145,10 @@ function TransactionsPageContent() {
   const handleTripButtonClick = () => {
     const current = getActiveTrip();
     if (current) {
+      updateTrip(current.id, { status: 'completed' });
       setActiveTrip(null);
       refreshActiveTrip();
-      toast.info(`Trip "${current.name}" stopped`);
+      toast.success(`Trip "${current.name}" completed!`);
     } else {
       setNewTripName('');
       setNewTripDestination('');

@@ -31,9 +31,14 @@ import {
   saveTransaction, 
   updateTransaction, 
   deleteTransaction,
+  getActiveTrip,
+  setActiveTrip,
+  addTrip,
+  updateTrip,
   type Transaction,
   type Account,
-  type Category
+  type Category,
+  type Trip
 } from '@/lib/storage';
 import PCManagerComponent from './PCManager';
 
@@ -60,6 +65,49 @@ export default function MobileAppView() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(null);
+
+  // Trip Mode State & Handlers
+  const [activeTrip, setActiveTripState] = useState<Trip | null>(null);
+  const [isTripInputPromptOpen, setIsTripInputPromptOpen] = useState(false);
+  const [tripInputName, setTripInputName] = useState('');
+
+  const refreshActiveTrip = () => {
+    setActiveTripState(getActiveTrip());
+  };
+
+  useEffect(() => {
+    refreshActiveTrip();
+  }, []);
+
+  const handleTripButtonClick = () => {
+    const current = getActiveTrip();
+    if (current) {
+      updateTrip(current.id, { status: 'completed' });
+      setActiveTrip(null);
+      refreshActiveTrip();
+      toast.success(`Trip "${current.name}" completed!`);
+    } else {
+      setTripInputName('');
+      setIsTripInputPromptOpen(true);
+    }
+  };
+
+  const handleStartTripSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tripInputName.trim()) {
+      toast.error('Trip Name is required');
+      return;
+    }
+    const created = addTrip({
+      name: tripInputName.trim(),
+      startDate: new Date().toISOString().slice(0, 10),
+      status: 'active',
+      icon: '✈️',
+    });
+    refreshActiveTrip();
+    setIsTripInputPromptOpen(false);
+    toast.success(`Trip "${created.name}" started!`);
+  };
   
   // More Sub-views
   const [moreSubView, setMoreSubView] = useState<'menu' | 'config' | 'pc' | 'help' | 'backup'>('menu');
@@ -470,8 +518,34 @@ export default function MobileAppView() {
 
         {/* 1. DAILY TRANSACTION LEDGER */}
         {activeTab === 'daily' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             
+            {/* Header Title & Trip Toggle Button */}
+            <div className="px-4 pt-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-black text-foreground tracking-tight uppercase">Transactions</h1>
+                <button
+                  onClick={handleTripButtonClick}
+                  className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer ${
+                    activeTrip
+                      ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse ring-2 ring-amber-400/40'
+                      : 'bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20'
+                  }`}
+                  title={activeTrip ? `Tap to complete ${activeTrip.name}` : 'Start Trip'}
+                >
+                  <Plane size={12} className={activeTrip ? 'animate-bounce' : ''} />
+                  <span>{activeTrip ? activeTrip.name : 'Trip'}</span>
+                </button>
+              </div>
+
+              <Link
+                href="/trips"
+                className="text-3xs font-bold text-muted-foreground hover:text-primary transition flex items-center gap-0.5"
+              >
+                Trips &rarr;
+              </Link>
+            </div>
+
             {/* Top Sub-tabs */}
             <div className="flex p-1 bg-card border-b border-border sticky top-0 z-10">
               {(['daily', 'monthly', 'annually', 'total'] as const).map((t) => (
@@ -1353,6 +1427,54 @@ export default function MobileAppView() {
                 </button>
               </div>
 
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= START TRIP SLIDE-UP MODAL ================= */}
+      {isTripInputPromptOpen && (
+        <div className="absolute inset-0 bg-black/60 z-50 flex items-end">
+          <div className="w-full bg-card border-t border-border rounded-t-2xl p-5 space-y-4 animate-slide-up">
+            <div className="flex justify-between items-center border-b border-border pb-3">
+              <h2 className="text-base font-extrabold text-foreground">New Trip</h2>
+              <button 
+                onClick={() => setIsTripInputPromptOpen(false)}
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleStartTripSubmit} className="space-y-4 text-xs font-semibold">
+              <div className="space-y-1.5">
+                <label className="block text-3xs font-bold text-muted-foreground uppercase">Trip Name *</label>
+                <input
+                  type="text"
+                  placeholder="Trip Name"
+                  value={tripInputName}
+                  onChange={(e) => setTripInputName(e.target.value)}
+                  className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2.5 text-foreground font-bold outline-none"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsTripInputPromptOpen(false)}
+                  className="flex-1 py-2.5 bg-card border border-border font-extrabold text-xs rounded-xl hover:bg-muted/20 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-primary text-primary-foreground font-extrabold text-xs rounded-xl hover:opacity-90 transition"
+                >
+                  Start Trip
+                </button>
+              </div>
             </form>
           </div>
         </div>
