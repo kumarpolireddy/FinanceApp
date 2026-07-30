@@ -372,52 +372,92 @@ export default function AddExpensePage() {
             </div>
           )}
 
-          {/* Row 4: Category & Subcategory */}
+          {/* Category & Expanding Subcategories Picker */}
           {type !== 'transfer' && (
-            <div className="grid grid-cols-2 gap-4 border-b border-border/30 pb-2">
-              <div className="flex items-center justify-between gap-2">
+            <div className="space-y-2 border-b border-border/30 pb-3">
+              <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Category</span>
-                <select
-                  value={category}
-                  onChange={(e) => {
-                    if (e.target.value === 'ADD_NEW') {
-                      setIsAddCategoryOpen(true);
-                      return;
-                    }
-                    setCategory(e.target.value);
-                    const targetCat = categoriesMeta.find(c => c.name.toLowerCase() === e.target.value.toLowerCase());
-                    setSubcategory(targetCat?.subcategories?.[0] || '');
-                  }}
-                  className="bg-transparent text-right font-semibold text-foreground focus:outline-none cursor-pointer text-base select-none max-w-[120px] truncate"
-                >
-                  <option value="" className="bg-secondary">Select</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat} className="bg-secondary">{cat}</option>
-                  ))}
-                  <option value="ADD_NEW" className="bg-secondary text-primary font-bold">+ New...</option>
-                </select>
+                {category && (
+                  <span className="text-3xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                    {category} {subcategory ? `➔ ${subcategory}` : ''}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold text-muted-foreground uppercase shrink-0">Subcat</span>
-                <select
-                  value={subcategory}
-                  onChange={(e) => {
-                    if (e.target.value === 'ADD_NEW') {
-                      setIsAddSubcategoryOpen(true);
-                      return;
-                    }
-                    setSubcategory(e.target.value);
-                  }}
-                  disabled={!category}
-                  className="bg-transparent text-right font-semibold text-foreground focus:outline-none cursor-pointer text-base max-w-[120px] truncate disabled:opacity-50"
-                >
-                  <option value="" className="bg-secondary">None</option>
-                  {activeCategorySubcategories.map(sub => (
-                    <option key={sub} value={sub} className="bg-secondary">{sub}</option>
-                  ))}
-                  {category && <option value="ADD_NEW" className="bg-secondary text-primary font-bold">+ New...</option>}
-                </select>
+
+              {/* Main Category Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+                {categories.map((catName) => {
+                  const catObj = categoriesMeta.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+                  const isSelected = category.toLowerCase() === catName.toLowerCase();
+                  return (
+                    <button
+                      key={catName}
+                      type="button"
+                      onClick={() => {
+                        setCategory(catName);
+                        setSubcategory('');
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 border ${
+                        isSelected
+                          ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                          : 'bg-muted/30 text-foreground border-border hover:border-primary/40'
+                      }`}
+                    >
+                      <span>{catObj?.icon || '📦'}</span>
+                      <span>{catName}</span>
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Subcategories panel when tapped */}
+              {(() => {
+                const selectedCatObj = categoriesMeta.find(
+                  (c) => c.name.toLowerCase() === category.toLowerCase()
+                );
+                if (!selectedCatObj || !selectedCatObj.subcategories || selectedCatObj.subcategories.length === 0) {
+                  return null;
+                }
+
+                return (
+                  <div className="bg-muted/20 border border-border rounded-xl p-2.5 space-y-1.5 animate-fade-in">
+                    <span className="text-3xs font-extrabold text-muted-foreground uppercase block tracking-wider">
+                      Subcategories under {selectedCatObj.name}:
+                    </span>
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                      <button
+                        type="button"
+                        onClick={() => setSubcategory('')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
+                          !subcategory
+                            ? 'bg-amber-500 text-white border-amber-400 shadow-sm'
+                            : 'bg-muted/30 text-muted-foreground border-border hover:text-foreground'
+                        }`}
+                      >
+                        All {selectedCatObj.name}
+                      </button>
+
+                      {selectedCatObj.subcategories.map((sub) => {
+                        const isSubSelected = subcategory.toLowerCase() === sub.toLowerCase();
+                        return (
+                          <button
+                            key={sub}
+                            type="button"
+                            onClick={() => setSubcategory(sub)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
+                              isSubSelected
+                                ? 'bg-amber-500 text-white border-amber-400 shadow-sm ring-2 ring-amber-400/30'
+                                : 'bg-card text-foreground border-border hover:border-amber-400/50'
+                            }`}
+                          >
+                            {sub}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
