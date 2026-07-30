@@ -1286,31 +1286,34 @@ function TransactionsPageContent() {
       className="max-w-2xl mx-auto px-0 md:px-3.5 py-2 space-y-2.5 bg-background min-h-[90vh]"
     >
       
-      {/* 0. Top Title Bar with Heading "Transactions" & Trip Button */}
-      <div className="px-3.5 md:px-0 pt-1 pb-2 border-b border-border/40 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
+      {/* 0. Top Title Bar with Heading "Transactions" & Centered Trip Button */}
+      <div className="px-3.5 md:px-0 pt-1 pb-2 border-b border-border/40 grid grid-cols-3 items-center">
+        <div className="flex items-center justify-start">
           <h1 className="text-lg md:text-xl font-black text-foreground tracking-tight uppercase">Transactions</h1>
-          
+        </div>
+        
+        <div className="flex justify-center">
           <button
             onClick={handleTripButtonClick}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer ${
+            className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[160px] ${
               activeTrip
                 ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse ring-2 ring-amber-400/40'
                 : 'bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20'
             }`}
             title={activeTrip ? `Tap to stop ${activeTrip.name}` : 'Start Trip'}
           >
-            <Plane size={13} className={activeTrip ? 'animate-bounce' : ''} />
-            <span>{activeTrip ? activeTrip.name : 'Trip'}</span>
+            {activeTrip ? activeTrip.name : 'Trip'}
           </button>
         </div>
 
-        <button
-          onClick={() => router.push('/trips')}
-          className="text-2xs font-bold text-muted-foreground hover:text-primary transition flex items-center gap-1"
-        >
-          Trips &rarr;
-        </button>
+        <div className="flex justify-end">
+          <button
+            onClick={() => router.push('/trips')}
+            className="text-2xs font-bold text-muted-foreground hover:text-primary transition"
+          >
+            Trips &rarr;
+          </button>
+        </div>
       </div>
 
       {/* 1. Header Navigation: Month Selector, Search/Filter buttons */}

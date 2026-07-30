@@ -520,30 +520,34 @@ export default function MobileAppView() {
         {activeTab === 'daily' && (
           <div className="space-y-3">
             
-            {/* Header Title & Trip Toggle Button */}
-            <div className="px-4 pt-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-black text-foreground tracking-tight uppercase">Transactions</h1>
+            {/* Header Title & Centered Trip Button */}
+            <div className="px-4 pt-2.5 grid grid-cols-3 items-center">
+              <div className="flex items-center justify-start">
+                <h1 className="text-xs font-black text-foreground tracking-tight uppercase">Transactions</h1>
+              </div>
+
+              <div className="flex justify-center">
                 <button
                   onClick={handleTripButtonClick}
-                  className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer ${
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[130px] ${
                     activeTrip
                       ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse ring-2 ring-amber-400/40'
                       : 'bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20'
                   }`}
                   title={activeTrip ? `Tap to complete ${activeTrip.name}` : 'Start Trip'}
                 >
-                  <Plane size={12} className={activeTrip ? 'animate-bounce' : ''} />
-                  <span>{activeTrip ? activeTrip.name : 'Trip'}</span>
+                  {activeTrip ? activeTrip.name : 'Trip'}
                 </button>
               </div>
 
-              <Link
-                href="/trips"
-                className="text-3xs font-bold text-muted-foreground hover:text-primary transition flex items-center gap-0.5"
-              >
-                Trips &rarr;
-              </Link>
+              <div className="flex justify-end">
+                <Link
+                  href="/trips"
+                  className="text-3xs font-bold text-muted-foreground hover:text-primary transition"
+                >
+                  Trips &rarr;
+                </Link>
+              </div>
             </div>
 
             {/* Top Sub-tabs */}
