@@ -714,25 +714,25 @@ export default function SettingsPage() {
     const balanceVal = Number(accountForm.balance) || 0;
 
     const payload: Partial<Account> = {
-      name: accountForm.name.trim(),
+      name: (accountForm.name || '').trim(),
       type: accountForm.type,
       balance: balanceVal,
       color: accountForm.color,
       visible: accountForm.visible,
-      icon: accountForm.icon.trim() || undefined,
+      icon: (accountForm.icon || '').trim() || undefined,
     };
 
     if (accountForm.type === 'accounts') {
-      payload.bankName = accountForm.bankName.trim() || undefined;
-      payload.accountNumber = accountForm.accountNumber.trim() || undefined;
-      payload.notes = accountForm.notes.trim() || undefined;
+      payload.bankName = (accountForm.bankName || '').trim() || undefined;
+      payload.accountNumber = (accountForm.accountNumber || '').trim() || undefined;
+      payload.notes = (accountForm.notes || '').trim() || undefined;
     } else if (accountForm.type === 'cash') {
-      payload.notes = accountForm.notes.trim() || undefined;
+      payload.notes = (accountForm.notes || '').trim() || undefined;
     } else if (accountForm.type === 'credit') {
       payload.creditLimit = Number(accountForm.creditLimit) || undefined;
-      payload.dueDate = accountForm.dueDate.trim() || undefined;
+      payload.dueDate = (accountForm.dueDate || '').trim() || undefined;
       payload.minPayment = Number(accountForm.minPayment) || undefined;
-      payload.billingCycle = accountForm.billingCycle.trim() || undefined;
+      payload.billingCycle = (accountForm.billingCycle || '').trim() || undefined;
       if (balanceVal > 0) {
         payload.balance = -balanceVal;
       }
@@ -744,11 +744,11 @@ export default function SettingsPage() {
       payload.interestRate = Number(accountForm.interestRate) || undefined;
       payload.dueDate = accountForm.isInformal
         ? (accountForm as any).expectedRepaymentDate?.trim() || undefined
-        : accountForm.dueDate.trim() || undefined;
+        : (accountForm.dueDate || '').trim() || undefined;
 
       // New Loan Fields
-      payload.lenderName = accountForm.lenderName.trim() || undefined;
-      payload.startDate = accountForm.startDate.trim() || undefined;
+      payload.lenderName = (accountForm.lenderName || '').trim() || undefined;
+      payload.startDate = (accountForm.startDate || '').trim() || undefined;
       payload.interestType = accountForm.interestType as any;
       payload.tenureMonths = accountForm.isInformal
         ? undefined
@@ -757,21 +757,21 @@ export default function SettingsPage() {
             : Number(accountForm.tenureMonths)) || undefined;
       payload.firstEmiDate = accountForm.isInformal
         ? undefined
-        : accountForm.firstEmiDate.trim() || undefined;
+        : (accountForm.firstEmiDate || '').trim() || undefined;
       payload.emiDueDay = accountForm.isInformal
         ? undefined
         : Number(accountForm.emiDueDay) || undefined;
-      payload.loanAccountNumber = accountForm.loanAccountNumber.trim() || undefined;
+      payload.loanAccountNumber = (accountForm.loanAccountNumber || '').trim() || undefined;
       payload.processingFee = Number(accountForm.processingFee) || undefined;
       payload.prepaymentCharges = Number(accountForm.prepaymentCharges) || undefined;
       payload.latePaymentCharges = Number(accountForm.latePaymentCharges) || undefined;
       payload.linkedPaymentAccountId = accountForm.linkedPaymentAccountId || undefined;
       payload.autoCreateEmi = accountForm.isInformal ? false : !!accountForm.autoCreateEmi;
       payload.loanStatus = accountForm.loanStatus as any;
-      payload.notes = accountForm.notes.trim() || undefined;
+      payload.notes = (accountForm.notes || '').trim() || undefined;
       payload.isInformal = !!(accountForm as any).isInformal;
       payload.isInformalLoan = !!(accountForm as any).isInformal;
-      payload.interestStartDate = accountForm.startDate.trim(); // Starts from exact taken date
+      payload.interestStartDate = (accountForm.startDate || '').trim(); // Starts from exact taken date
       payload.expectedRepaymentDate = accountForm.isInformal
         ? (accountForm as any).expectedRepaymentDate?.trim() || undefined
         : undefined;
@@ -1210,9 +1210,6 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto px-4 py-3 space-y-4 bg-background">
         <div>
           <h1 className="text-sm font-black uppercase text-foreground">Settings</h1>
-          <p className="text-3xs text-muted-foreground mt-0.5">
-            Configure accounts, categories, budgets, and system backups.
-          </p>
         </div>
 
         {/* Navigation Tabs */}
@@ -1405,35 +1402,6 @@ export default function SettingsPage() {
                     {/* Main Account fields */}
                     {accountForm.type === 'accounts' && (
                       <>
-                        <div>
-                          <label className="block mb-1 text-2xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Bank Name
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={accountForm.bankName}
-                            onChange={(e) =>
-                              setAccountForm({ ...accountForm, bankName: e.target.value })
-                            }
-                            placeholder="e.g. State Bank of India"
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
-                          />
-                        </div>
-                        <div>
-                          <label className="block mb-1 text-2xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Account Number
-                          </label>
-                          <input
-                            type="text"
-                            value={accountForm.accountNumber}
-                            onChange={(e) =>
-                              setAccountForm({ ...accountForm, accountNumber: e.target.value })
-                            }
-                            placeholder="Optional account number..."
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
-                          />
-                        </div>
                         {!editingId && (
                           <div>
                             <label className="block mb-1 text-2xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -2146,20 +2114,6 @@ export default function SettingsPage() {
                                 ₹{acc.balance.toLocaleString('en-IN')}
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-2xs text-muted-foreground">
-                              <div>
-                                Bank:{' '}
-                                <span className="text-foreground font-medium">
-                                  {acc.bankName || '—'}
-                                </span>
-                              </div>
-                              <div>
-                                Number:{' '}
-                                <span className="text-foreground font-mono">
-                                  {acc.accountNumber || '—'}
-                                </span>
-                              </div>
-                            </div>
                             <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/30">
                               <button
                                 onClick={() => {
@@ -2219,20 +2173,8 @@ export default function SettingsPage() {
                               Account Name
                             </th>
                             <th
-                              className="py-2.5 px-4 text-2xs font-bold text-muted-foreground uppercase tracking-wider"
-                              style={{ width: '180px' }}
-                            >
-                              Bank
-                            </th>
-                            <th
-                              className="py-2.5 px-4 text-2xs font-bold text-muted-foreground uppercase tracking-wider"
-                              style={{ width: '150px' }}
-                            >
-                              Account Number
-                            </th>
-                            <th
                               className="py-2.5 px-4 text-2xs font-bold text-muted-foreground uppercase tracking-wider text-right"
-                              style={{ width: '140px' }}
+                              style={{ width: '180px' }}
                             >
                               Balance
                             </th>
@@ -2248,7 +2190,7 @@ export default function SettingsPage() {
                           {getProcessedAccounts('accounts').length === 0 ? (
                             <tr>
                               <td
-                                colSpan={5}
+                                colSpan={3}
                                 className="py-4 text-center text-xs text-muted-foreground"
                               >
                                 No bank accounts matching filters.
@@ -2269,12 +2211,6 @@ export default function SettingsPage() {
                                       </span>
                                     )}
                                   </div>
-                                </td>
-                                <td className="py-2 px-4 text-xs text-foreground/90 truncate">
-                                  {acc.bankName || '—'}
-                                </td>
-                                <td className="py-2 px-4 text-xs text-muted-foreground font-mono truncate">
-                                  {acc.accountNumber || '—'}
                                 </td>
                                 <td className="py-2 px-4 text-xs font-bold text-right text-primary font-mono tabular-nums">
                                   ₹{acc.balance.toLocaleString('en-IN')}

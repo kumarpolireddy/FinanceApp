@@ -315,9 +315,6 @@ export default function TripsPage() {
               <Play size={18} />
             </div>
             <p className="text-sm font-semibold text-foreground">No Active Trip Running</p>
-            <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              Activate a trip when going on a vacation or event. All transactions you record will automatically be tracked under that trip!
-            </p>
           </div>
         )}
 
@@ -678,7 +675,6 @@ export default function TripsPage() {
             <label className="block text-xs text-muted-foreground mb-1">Trip Name *</label>
             <input
               type="text"
-              placeholder="e.g. Goa Vacation, Business Trip to Mumbai"
               value={tripName}
               onChange={(e) => setTripName(e.target.value)}
               className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
@@ -691,7 +687,6 @@ export default function TripsPage() {
               <label className="block text-xs text-muted-foreground mb-1">Destination</label>
               <input
                 type="text"
-                placeholder="e.g. Goa, India"
                 value={tripDestination}
                 onChange={(e) => setTripDestination(e.target.value)}
                 className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
@@ -742,7 +737,6 @@ export default function TripsPage() {
               <label className="block text-xs text-muted-foreground mb-1">Trip Budget (₹)</label>
               <input
                 type="number"
-                placeholder="e.g. 25000"
                 value={tripBudget}
                 onChange={(e) => setTripBudget(e.target.value)}
                 className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
@@ -765,7 +759,6 @@ export default function TripsPage() {
           <div>
             <label className="block text-xs text-muted-foreground mb-1">Description / Notes</label>
             <textarea
-              placeholder="Add notes, itinerary details..."
               value={tripDescription}
               onChange={(e) => setTripDescription(e.target.value)}
               rows={2}

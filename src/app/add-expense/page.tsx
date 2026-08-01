@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   Camera,
   Check,
+  Delete,
 } from 'lucide-react';
 
 function cleanString(val: unknown): string {
@@ -86,6 +87,14 @@ export default function AddExpensePage() {
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [deletingTxn, setDeletingTxn] = useState<Transaction | null>(null);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      amountInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   useEffect(() => {
     const accs = getAccounts();
@@ -130,12 +139,18 @@ export default function AddExpensePage() {
   }
 
   function handleKeypadPress(val: string) {
-    if (val === '⌫') {
+    if (val === '⌫' || val === 'backspace') {
       setAmount((prev) => prev.slice(0, -1));
+    } else if (val === 'C' || val === 'clear') {
+      setAmount('');
     } else if (val === '.') {
       setAmount((prev) => (prev.includes('.') ? prev : prev + '.'));
+    } else if (val.startsWith('+')) {
+      const addVal = parseFloat(val.replace('+', '')) || 0;
+      const current = parseFloat(amount) || 0;
+      setAmount((current + addVal).toString());
     } else {
-      setAmount((prev) => prev + val);
+      setAmount((prev) => (prev === '0' ? val : prev + val));
     }
   }
 
@@ -290,7 +305,7 @@ export default function AddExpensePage() {
 
   return (
     <div className="fixed inset-0 z-50 bg-[#1F2027] flex flex-col text-[#F2F2F4] select-text animate-fade-in overflow-hidden">
-      {/* Header with Always Visible Save Button */}
+      {/* Header */}
       <div className="flex items-center justify-between h-14 px-5 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
         <div className="flex items-center">
           <button 
@@ -305,14 +320,6 @@ export default function AddExpensePage() {
             {type}
           </h2>
         </div>
-
-        <button
-          type="button"
-          onClick={() => handleSubmit()}
-          className="px-4 py-2 bg-primary text-primary-foreground font-black text-xs uppercase tracking-wider rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
-        >
-          Save Transaction
-        </button>
       </div>
 
       {/* Content Area */}
@@ -377,7 +384,9 @@ export default function AddExpensePage() {
               <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                 <span className="mr-1">₹</span>
                 <input
+                  ref={amountInputRef}
                   type="number"
+                  inputMode="decimal"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   onFocus={() => setIsInputFocused(true)}

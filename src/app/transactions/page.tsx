@@ -2851,7 +2851,6 @@ function TransactionsPageContent() {
               </label>
               <input
                 type="text"
-                placeholder="Trip Name"
                 value={newTripName}
                 onChange={(e) => setNewTripName(e.target.value)}
                 className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
@@ -2866,7 +2865,6 @@ function TransactionsPageContent() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Destination"
                   value={newTripDestination}
                   onChange={(e) => setNewTripDestination(e.target.value)}
                   className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
@@ -2878,7 +2876,6 @@ function TransactionsPageContent() {
                 </label>
                 <input
                   type="number"
-                  placeholder="Budget"
                   value={newTripBudget}
                   onChange={(e) => setNewTripBudget(e.target.value)}
                   className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"

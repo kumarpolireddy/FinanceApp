@@ -174,6 +174,16 @@ export default function MobileAppView() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(null);
+  const mobileAmountInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isAddModalOpen) {
+      const raf = requestAnimationFrame(() => {
+        mobileAmountInputRef.current?.focus();
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [isAddModalOpen]);
 
   // Trip Mode State & Handlers
   const [activeTrip, setActiveTripState] = useState<Trip | null>(null);
@@ -1611,7 +1621,9 @@ export default function MobileAppView() {
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                     <span className="mr-1">₹</span>
                     <input
+                      ref={mobileAmountInputRef}
                       type="number"
+                      inputMode="decimal"
                       value={formAmount}
                       onChange={(e) => setFormAmount(e.target.value)}
                       onFocus={() => setIsInputFocused(true)}
@@ -1782,7 +1794,6 @@ export default function MobileAppView() {
                 <label className="block text-3xs font-bold text-muted-foreground uppercase">Trip Name *</label>
                 <input
                   type="text"
-                  placeholder="Trip Name"
                   value={tripInputName}
                   onChange={(e) => setTripInputName(e.target.value)}
                   className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2.5 text-foreground font-bold outline-none"

@@ -3,9 +3,7 @@ import { imageHosts } from './image-hosts.config.mjs';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  experimental: {
-    allowedDevOrigins: ['localhost:3000', '192.168.1.30:3000', '192.168.137.1:3000', '10.0.2.2:3000'],
-  },
+  allowedDevOrigins: ['localhost:3000', '127.0.0.1:3000', '192.168.137.1:3000', '192.168.137.1', '192.168.1.30:3000', '192.168.1.30', '10.0.2.2:3000', '10.0.2.2'],
   productionBrowserSourceMaps: true,
   distDir: process.env.DIST_DIR || '.next',
   typescript: {
@@ -26,14 +24,14 @@ const nextConfig = {
       dev: dev
     }
   ) {
-    config.module.rules.push({
-      test: /\.(jsx|tsx)$/,
-      exclude: [/node_modules/],
-      use: [{
-        loader: '@dhiwise/component-tagger/nextLoader',
-      }],
-    });
     if (dev) {
+      config.module.rules.push({
+        test: /\.(jsx|tsx)$/,
+        exclude: [/node_modules/],
+        use: [{
+          loader: '@dhiwise/component-tagger/nextLoader',
+        }],
+      });
       const ignoredPaths = (process.env.WATCH_IGNORED_PATHS || '')
         .split(',')
         .map((p) => p.trim())
