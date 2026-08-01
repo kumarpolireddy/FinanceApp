@@ -1453,12 +1453,33 @@ export default function MobileAppView() {
       {/* ================= BOTTOM TAB NAVIGATION ================= */}
       {!isAddModalOpen && !isInputFocused && (
         <nav className="absolute bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex select-none z-10">
-        <button 
-          onClick={() => { setActiveTab('daily'); setSelectedCalendarDay(null); }}
-          className={`flex-1 flex flex-col justify-center items-center gap-1 transition ${
-            activeTab === 'daily' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
+          
+          {/* Delete Trash Icon Button on LEFT side of Dashboard/Daily icon when transactions are selected */}
+          {isSelectionMode && (
+            <button 
+              onClick={handleBulkDelete}
+              disabled={selectedTxnIds.length === 0}
+              className="flex-1 flex flex-col justify-center items-center gap-1 transition text-negative hover:text-negative/80 active:scale-95 disabled:opacity-40 relative cursor-pointer"
+              title={`Delete ${selectedTxnIds.length} selected transaction(s)`}
+            >
+              <div className="relative">
+                <Trash2 size={18} />
+                {selectedTxnIds.length > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 bg-negative text-negative-foreground text-[9px] font-black px-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center shadow-xs">
+                    {selectedTxnIds.length}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider">Delete</span>
+            </button>
+          )}
+
+          <button 
+            onClick={() => { setActiveTab('daily'); setSelectedCalendarDay(null); }}
+            className={`flex-1 flex flex-col justify-center items-center gap-1 transition ${
+              activeTab === 'daily' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
           <List size={18} />
           <span className="text-[10px] font-black uppercase">Daily</span>
         </button>
@@ -1790,49 +1811,30 @@ export default function MobileAppView() {
         </div>
       )}
 
-      {/* Floating Multi-Select Header/Footer & Delete Button Above FAB */}
+      {/* Floating Multi-Select Header/Footer Bar */}
       {isSelectionMode && (
-        <>
-          {/* Floating Selection Bar */}
-          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-4 py-2.5 flex items-center gap-3 animate-slide-up text-foreground">
-            <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full shrink-0">
-              {selectedTxnIds.length} Selected
-            </span>
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-4 py-2.5 flex items-center gap-3 animate-slide-up text-foreground">
+          <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full shrink-0">
+            {selectedTxnIds.length} Selected
+          </span>
 
-            <button
-              onClick={handleSelectAll}
-              className="text-xs font-semibold hover:text-primary transition shrink-0"
-            >
-              {selectedTxnIds.length === transactions.length ? 'Deselect' : 'Select All'}
-            </button>
-
-            <button
-              onClick={() => {
-                setIsSelectionMode(false);
-                setSelectedTxnIds([]);
-              }}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition pl-2 border-l border-border/60 shrink-0"
-            >
-              Cancel
-            </button>
-          </div>
-
-          {/* Floating Delete Trash Icon Button Directly Above the FAB (+) Button */}
           <button
-            type="button"
-            onClick={handleBulkDelete}
-            disabled={selectedTxnIds.length === 0}
-            className="absolute bottom-40 right-4 w-12 h-12 bg-negative text-negative-foreground rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-40 transition-all z-20 cursor-pointer"
-            title={`Delete ${selectedTxnIds.length} selected transaction(s)`}
+            onClick={handleSelectAll}
+            className="text-xs font-semibold hover:text-primary transition shrink-0"
           >
-            <Trash2 size={22} />
-            {selectedTxnIds.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-card border border-border text-foreground text-[10px] font-black w-5.5 h-5.5 rounded-full flex items-center justify-center shadow-sm">
-                {selectedTxnIds.length}
-              </span>
-            )}
+            {selectedTxnIds.length === transactions.length ? 'Deselect' : 'Select All'}
           </button>
-        </>
+
+          <button
+            onClick={() => {
+              setIsSelectionMode(false);
+              setSelectedTxnIds([]);
+            }}
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground transition pl-2 border-l border-border/60 shrink-0"
+          >
+            Cancel
+          </button>
+        </div>
       )}
 
     </div>

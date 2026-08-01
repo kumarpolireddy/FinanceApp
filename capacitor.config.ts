@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'wealthiq',
   webDir: 'out',
   server: {
-    url: 'http://192.168.1.30:3000',
+    url: 'http://localhost:3000',
     cleartext: true
   }
 };

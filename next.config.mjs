@@ -3,6 +3,9 @@ import { imageHosts } from './image-hosts.config.mjs';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
+  experimental: {
+    allowedDevOrigins: ['localhost:3000', '192.168.1.30:3000', '192.168.137.1:3000', '10.0.2.2:3000'],
+  },
   productionBrowserSourceMaps: true,
   distDir: process.env.DIST_DIR || '.next',
   typescript: {
