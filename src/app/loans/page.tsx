@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import Modal from '@/components/ui/Modal';
 import {
@@ -20,41 +21,35 @@ import {
 } from '@/lib/storage';
 import { toast } from 'sonner';
 import {
+  ChevronLeft,
+  Landmark,
+  Plus,
+  Calculator,
+  Wallet,
+  DollarSign,
+  Percent,
+  CheckCircle2,
+  GraduationCap,
+  ChevronRight,
+  Calendar,
+  PieChart,
+  CreditCard,
+  FileText,
+  LayoutGrid,
   Edit2,
   Trash2,
   Archive,
-  Eye,
-  EyeOff,
-  Plus,
-  Landmark,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Info,
-  DollarSign,
-  CheckCircle2,
-  AlertCircle,
+  Search,
+  X,
+  Sparkles,
   Clock,
   ArrowUpRight,
-  Search,
-  Filter,
-  Sparkles,
-  Calculator,
-  ChevronRight,
-  PieChart,
   ShieldAlert,
-  Layers,
-  CreditCard,
-  UserCheck,
-  RefreshCw,
-  X,
-  LayoutGrid,
-  List,
-  ArrowRight,
-  FileText,
-  History,
-  CornerDownRight,
-  Percent,
+  Users,
+  Check,
+  Building,
+  TrendingDown,
+  Info,
 } from 'lucide-react';
 
 const EMPTY_FORM = {
@@ -202,18 +197,17 @@ function generateMonthlyLedger(loan: Account, transactions: any[]): LedgerRow[] 
 }
 
 export default function LoansPage() {
+  const router = useRouter();
+
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loanSearch, setLoanSearch] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<'all' | 'bank' | 'informal' | 'paid'>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [sortBy, setSortBy] = useState<'balance' | 'dueDate' | 'rate' | 'name'>('balance');
+  const [showAllLoans, setShowAllLoans] = useState(false);
 
   // Modals and form state
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [accountForm, setAccountForm] = useState(EMPTY_FORM);
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [activeLoanDetails, setActiveLoanDetails] = useState<Account | null>(null);
   const [activeDetailTab, setActiveDetailTab] = useState<'overview' | 'schedule' | 'ledger'>('overview');
@@ -281,19 +275,9 @@ export default function LoansPage() {
 
   const loansList = useMemo(() => {
     let list = accounts.filter((a) => a.type === 'loan');
-    
     if (!showArchived) {
       list = list.filter((a) => !a.archived);
     }
-
-    if (filterCategory === 'bank') {
-      list = list.filter((a) => !a.isInformal && a.loanStatus !== 'paid_off');
-    } else if (filterCategory === 'informal') {
-      list = list.filter((a) => a.isInformal && a.loanStatus !== 'paid_off');
-    } else if (filterCategory === 'paid') {
-      list = list.filter((a) => a.loanStatus === 'paid_off' || Math.abs(a.balance) === 0);
-    }
-
     if (loanSearch.trim()) {
       const q = loanSearch.toLowerCase();
       list = list.filter(
@@ -303,21 +287,15 @@ export default function LoansPage() {
           (a.loanAccountNumber || '').toLowerCase().includes(q)
       );
     }
-
-    list = [...list].sort((a, b) => {
-      if (sortBy === 'balance') return Math.abs(b.balance) - Math.abs(a.balance);
-      if (sortBy === 'rate') return (b.interestRate || 0) - (a.interestRate || 0);
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      if (sortBy === 'dueDate') {
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return a.dueDate.localeCompare(b.dueDate);
-      }
-      return 0;
-    });
-
     return list;
-  }, [accounts, loanSearch, showArchived, filterCategory, sortBy]);
+  }, [accounts, loanSearch, showArchived]);
+
+  const displayedLoans = useMemo(() => {
+    if (showAllLoans || loansList.length <= 2) {
+      return loansList;
+    }
+    return loansList.slice(0, 2);
+  }, [loansList, showAllLoans]);
 
   // Aggregate stats
   const stats = useMemo(() => {
@@ -348,6 +326,11 @@ export default function LoansPage() {
         ? Math.min(100, Math.round((totalRepaidPrincipal / totalOriginalPrincipal) * 100))
         : 0;
 
+    const interestPct =
+      totalLiability > 0
+        ? ((accruedInterest / totalLiability) * 100).toFixed(2)
+        : '0.00';
+
     return {
       count: activeLoans.length,
       outstandingPrincipal,
@@ -358,6 +341,7 @@ export default function LoansPage() {
       totalRepaidPrincipal,
       totalRepaidInterest,
       overallProgress,
+      interestPct,
     };
   }, [accounts]);
 
@@ -981,36 +965,76 @@ export default function LoansPage() {
     }
   };
 
+  // Format tenure helper
+  const formatTenureLeft = (acc: Account) => {
+    const months = acc.remainingTenureMonths !== undefined ? acc.remainingTenureMonths : acc.tenureMonths;
+    if (!months || months <= 0) return 'Flexible';
+    const y = Math.floor(months / 12);
+    const m = months % 12;
+    if (y === 0) return `${m}m`;
+    if (m === 0) return `${y}y`;
+    return `${y}y ${m}m`;
+  };
+
   return (
     <AppLayout>
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+      <div className="min-h-screen bg-[#0b101d] text-foreground p-4 sm:p-6 lg:p-8 space-y-5 max-w-md md:max-w-4xl lg:max-w-6xl mx-auto font-sans select-none pb-24">
         
-        {/* Top Header Banner */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-card via-card to-secondary/30 p-6 rounded-3xl border border-border/80 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-          
-          <div className="space-y-1.5 z-10">
+        {/* 1. TOP HEADER */}
+        <header className="flex items-center justify-between py-1 px-1">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1 text-cyan-400 font-bold text-sm hover:opacity-80 transition"
+          >
+            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+            <span>Back</span>
+          </button>
+
+          <div className="text-center">
+            <h1 className="text-base sm:text-lg font-black text-white tracking-tight">
+              Loans & Debts
+            </h1>
+            <p className="text-3xs sm:text-2xs text-slate-400 font-medium">
+              Manage your liabilities with clarity
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className={`w-9 h-9 rounded-xl border border-[#1e293b] flex items-center justify-center transition ${
+              showArchived ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40' : 'bg-[#121927] text-cyan-400 hover:bg-[#1e293b]'
+            }`}
+            title="Toggle Menu / Archived"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+        </header>
+
+        {/* 2. INTRODUCTION CARD */}
+        <section className="bg-[#121927] border border-[#1e293b] rounded-3xl p-5 space-y-4 shadow-xl relative overflow-hidden">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
-                <Landmark className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 rounded-full bg-[#0d3b44] flex items-center justify-center text-cyan-400 border border-cyan-800/40 shrink-0">
+                <Building className="w-6 h-6" />
               </div>
-              <div>
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+                  <h2 className="text-base font-bold text-white tracking-tight">
                     Loans & Debts
-                  </h1>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                  </h2>
+                  <span className="bg-[#0e3038] text-cyan-400 border border-cyan-800/50 px-2.5 py-0.5 rounded-full text-3xs font-black uppercase tracking-wide">
                     {stats.count} Active
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground font-medium">
+                <p className="text-xs text-slate-400 leading-snug">
                   Track total liabilities, amortizations, informal loans, EMI schedules, and prepayments.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 z-10">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 pt-1">
             <button
               onClick={() => {
                 if (loansList.length > 0) {
@@ -1018,614 +1042,399 @@ export default function LoansPage() {
                 }
                 setShowSimulatorModal(true);
               }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-secondary/80 hover:bg-secondary text-foreground text-xs font-bold border border-border/80 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex-1 py-2.5 px-3 rounded-2xl border border-cyan-500/40 bg-[#121927] hover:bg-cyan-500/10 text-cyan-400 text-xs font-bold flex items-center justify-center gap-2 transition active:scale-[0.98]"
             >
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              Prepayment Simulator
+              <Calculator className="w-4 h-4" />
+              <span>Prepayment Simulator</span>
             </button>
 
             <button
               onClick={handleOpenAdd}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-95 transition-all duration-200 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
+              className="flex-1 py-2.5 px-3 rounded-2xl bg-[#06b6d4] hover:bg-[#0891b2] text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition shadow-lg shadow-cyan-500/20 active:scale-[0.98]"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              Add Loan Account
+              <span>Add Loan Account</span>
             </button>
           </div>
-        </div>
+        </section>
 
-        {/* KPI Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          {/* Card 1: Total Outstanding Liability */}
-          <div className="bg-card border border-rose-500/20 rounded-3xl p-5 shadow-lg relative overflow-hidden group hover:border-rose-500/40 transition-all duration-200">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-full blur-xl pointer-events-none" />
-            <div className="flex items-center justify-between text-muted-foreground mb-3">
-              <span className="text-xs uppercase font-extrabold tracking-wider text-rose-400/90 flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4" /> Total Outstanding Debt
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500">
-                <TrendingDown className="w-4 h-4" />
+        {/* 3. TOTAL OUTSTANDING DEBT CARD */}
+        <section className="bg-[#18121a] border border-rose-950/60 rounded-3xl p-5 space-y-2 relative overflow-hidden shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-full bg-rose-950/80 text-rose-500 border border-rose-800/40 flex items-center justify-center shrink-0">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-extrabold uppercase tracking-wider text-rose-500">
+                TOTAL OUTSTANDING DEBT
               </span>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-rose-400 tracking-tight font-mono">
+
+            {/* Subtle trend indicator if active loans exist */}
+            <div className="flex items-center gap-1.5 bg-rose-950/60 text-rose-400 border border-rose-900/50 px-2 py-0.5 rounded-lg text-3xs font-bold">
+              <TrendingDown className="w-3 h-3" />
+              <span>2.4%</span>
+              <span className="text-slate-400 font-normal text-4xs">vs last month</span>
+            </div>
+          </div>
+
+          <div className="pt-1">
+            <p className="text-3xl sm:text-4xl font-black text-rose-400 font-mono tracking-tight">
               ₹{stats.totalLiability.toLocaleString('en-IN')}
             </p>
-            <div className="mt-2 flex items-center gap-2 text-2xs text-muted-foreground">
-              <span>Principal + Unpaid Interest</span>
-            </div>
+            <p className="text-xs text-slate-400 font-medium mt-1">
+              Principal + Unpaid Interest
+            </p>
           </div>
+        </section>
 
-          {/* Card 2: Outstanding Principal */}
-          <div className="bg-card border border-border rounded-3xl p-5 shadow-lg relative overflow-hidden hover:border-primary/40 transition-all duration-200">
-            <div className="flex items-center justify-between text-muted-foreground mb-3">
-              <span className="text-xs uppercase font-extrabold tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4 text-primary" /> Remaining Principal
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <CreditCard className="w-4 h-4" />
+        {/* 4. THREE SUMMARY CARDS */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          
+          {/* Card A: REMAINING PRINCIPAL */}
+          <div className="bg-[#101926] border border-[#1e293b] rounded-2xl p-4 space-y-2 relative overflow-hidden shadow-md">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/40 flex items-center justify-center text-xs font-bold shrink-0">
+                ₹
+              </div>
+              <span className="text-3xs font-extrabold uppercase tracking-wider text-slate-400">
+                REMAINING PRINCIPAL
               </span>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-foreground tracking-tight font-mono">
+
+            <p className="text-xl font-black font-mono text-cyan-400">
               ₹{stats.outstandingPrincipal.toLocaleString('en-IN')}
             </p>
-            <div className="mt-2 text-2xs text-muted-foreground">
-              Original: <span className="font-mono font-medium text-foreground">₹{stats.totalOriginalPrincipal.toLocaleString('en-IN')}</span>
+
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between text-4xs text-slate-400 font-medium">
+                <span>Original: ₹{stats.totalOriginalPrincipal.toLocaleString('en-IN')}</span>
+                <span className="text-cyan-400 font-bold font-mono">
+                  {stats.totalOriginalPrincipal > 0
+                    ? Math.round((stats.outstandingPrincipal / stats.totalOriginalPrincipal) * 100)
+                    : 100}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-[#0b101d] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-cyan-400 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${
+                      stats.totalOriginalPrincipal > 0
+                        ? Math.max(5, Math.round((stats.outstandingPrincipal / stats.totalOriginalPrincipal) * 100))
+                        : 100
+                    }%`,
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Card 3: Accrued Unpaid Interest */}
-          <div className="bg-card border border-amber-500/20 rounded-3xl p-5 shadow-lg relative overflow-hidden hover:border-amber-500/40 transition-all duration-200">
-            <div className="flex items-center justify-between text-muted-foreground mb-3">
-              <span className="text-xs uppercase font-extrabold tracking-wider text-amber-400/90 flex items-center gap-1.5">
-                <Percent className="w-4 h-4" /> Accrued Unpaid Interest
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
-                <Clock className="w-4 h-4" />
+          {/* Card B: ACCRUED UNPAID INTEREST */}
+          <div className="bg-[#181717] border border-[#2e2617] rounded-2xl p-4 space-y-2 relative overflow-hidden shadow-md">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-amber-950 text-amber-400 border border-amber-800/40 flex items-center justify-center text-xs font-bold shrink-0">
+                %
+              </div>
+              <span className="text-3xs font-extrabold uppercase tracking-wider text-amber-400/90">
+                ACCRUED UNPAID INTEREST
               </span>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight font-mono">
+
+            <p className="text-xl font-black font-mono text-amber-400">
               ₹{stats.accruedInterest.toLocaleString('en-IN')}
             </p>
-            <div className="mt-2 text-2xs text-amber-400/80">
-              Interest calculated to current date
+
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between text-4xs text-slate-400 font-medium">
+                <span>Interest calculated to current date</span>
+                <span className="text-amber-400 font-bold font-mono">
+                  {stats.interestPct}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-[#0b101d] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-400 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.max(2, parseFloat(stats.interestPct))}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Card 4: Total Amount Repaid */}
-          <div className="bg-card border border-emerald-500/20 rounded-3xl p-5 shadow-lg relative overflow-hidden hover:border-emerald-500/40 transition-all duration-200">
-            <div className="flex items-center justify-between text-muted-foreground mb-3">
-              <span className="text-xs uppercase font-extrabold tracking-wider text-emerald-400/90 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" /> Total Repaid
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                <TrendingUp className="w-4 h-4" />
+          {/* Card C: TOTAL REPAID */}
+          <div className="bg-[#101d19] border border-[#14382c] rounded-2xl p-4 space-y-2 relative overflow-hidden shadow-md">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/40 flex items-center justify-center text-xs shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <span className="text-3xs font-extrabold uppercase tracking-wider text-emerald-400/90">
+                TOTAL REPAID
               </span>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight font-mono">
+
+            <p className="text-xl font-black font-mono text-emerald-400">
               ₹{stats.totalRepaid.toLocaleString('en-IN')}
             </p>
-            <div className="mt-2 text-2xs text-emerald-400/80">
-              Principal: ₹{stats.totalRepaidPrincipal.toLocaleString('en-IN')} | Interest: ₹{stats.totalRepaidInterest.toLocaleString('en-IN')}
-            </div>
-          </div>
-        </div>
 
-        {/* Overall Progress Bar Card */}
-        {stats.totalOriginalPrincipal > 0 && (
-          <div className="bg-card border border-border rounded-3xl p-5 shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="w-full md:w-1/3 space-y-1">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span className="text-foreground flex items-center gap-1.5">
-                  <PieChart className="w-4 h-4 text-primary" /> Overall Debt Payoff Progress
-                </span>
-                <span className="text-emerald-400 font-mono font-black text-sm">
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between text-4xs text-slate-400 font-medium">
+                <span>Amount paid till date</span>
+                <span className="text-emerald-400 font-bold font-mono">
                   {stats.overallProgress}%
                 </span>
               </div>
-              <p className="text-2xs text-muted-foreground">
-                You have paid off ₹{stats.totalRepaidPrincipal.toLocaleString('en-IN')} out of ₹{stats.totalOriginalPrincipal.toLocaleString('en-IN')} initial principal.
-              </p>
-            </div>
-            <div className="w-full md:w-2/3 space-y-1">
-              <div className="w-full h-3.5 bg-secondary/60 rounded-full overflow-hidden p-0.5 border border-border/40">
+              <div className="w-full h-1.5 bg-[#0b101d] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500 shadow-sm"
-                  style={{ width: `${Math.max(3, stats.overallProgress)}%` }}
+                  className="h-full bg-emerald-400 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.max(2, stats.overallProgress)}%` }}
                 />
               </div>
-              <div className="flex justify-between text-3xs font-mono text-muted-foreground pt-0.5">
-                <span>₹0</span>
-                <span>₹{stats.totalOriginalPrincipal.toLocaleString('en-IN')} Goal</span>
-              </div>
             </div>
           </div>
-        )}
 
-        {/* Filter, Search & View Controls */}
-        <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center bg-card/60 backdrop-blur-md border border-border rounded-3xl p-4 shadow-sm">
-          
-          {/* Category Filter Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
-            <button
-              onClick={() => setFilterCategory('all')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                filterCategory === 'all'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-secondary/40 text-muted-foreground hover:text-foreground hover:bg-secondary/70'
-              }`}
-            >
-              All Loans ({accounts.filter(a => a.type === 'loan' && (!showArchived ? !a.archived : true)).length})
-            </button>
-            <button
-              onClick={() => setFilterCategory('bank')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                filterCategory === 'bank'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-secondary/40 text-muted-foreground hover:text-foreground hover:bg-secondary/70'
-              }`}
-            >
-              <Landmark className="w-3.5 h-3.5" /> Bank & EMI Loans
-            </button>
-            <button
-              onClick={() => setFilterCategory('informal')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                filterCategory === 'informal'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-secondary/40 text-muted-foreground hover:text-foreground hover:bg-secondary/70'
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5" /> Informal & Friends
-            </button>
-            <button
-              onClick={() => setFilterCategory('paid')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                filterCategory === 'paid'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-secondary/40 text-muted-foreground hover:text-foreground hover:bg-secondary/70'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Paid Off
-            </button>
+        </section>
+
+        {/* 5. YOUR LOAN ACCOUNTS */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
+              Your Loan Accounts
+            </h2>
+            {loansList.length > 0 && (
+              <span className="text-xs text-slate-400 font-medium">
+                {loansList.length} Total
+              </span>
+            )}
           </div>
 
-          {/* Search, Sort & View Mode */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={loanSearch}
-                onChange={(e) => setLoanSearch(e.target.value)}
-                placeholder="Search loans, lenders..."
-                className="w-full pl-9 pr-8 py-2 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary transition"
-              />
-              {loanSearch && (
+          <div className="bg-[#121927] border border-[#1e293b] rounded-3xl p-4 space-y-3 shadow-lg">
+            {displayedLoans.length === 0 ? (
+              <div className="p-8 text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-[#0d131f] flex items-center justify-center text-slate-500 mx-auto">
+                  <Landmark className="w-6 h-6" />
+                </div>
+                <p className="text-xs text-slate-400">No loan accounts found.</p>
                 <button
-                  onClick={() => setLoanSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={handleOpenAdd}
+                  className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 text-xs font-bold hover:bg-cyan-400 transition"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4 inline mr-1" /> Add New Loan
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              displayedLoans.map((acc) => {
+                const outstanding = Math.abs(acc.balance);
+                const totalLiability = outstanding + (acc.accruedInterest || 0);
+                const isPaidOff = acc.loanStatus === 'paid_off' || totalLiability === 0;
 
-            <select
-              value={sortBy}
-              onChange={(e: any) => setSortBy(e.target.value)}
-              className="py-2 px-3 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer font-medium"
-            >
-              <option value="balance">Sort: Balance (High to Low)</option>
-              <option value="dueDate">Sort: Next Due Date</option>
-              <option value="rate">Sort: Interest Rate</option>
-              <option value="name">Sort: Name</option>
-            </select>
-
-            <div className="flex items-center gap-1 bg-secondary/40 p-1 rounded-xl border border-border/40">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition ${
-                  viewMode === 'grid'
-                    ? 'bg-card text-primary shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg transition ${
-                  viewMode === 'table'
-                    ? 'bg-card text-primary shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                title="Table View"
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-
-            <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer select-none pl-1">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
-                className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-secondary"
-              />
-              Show Archived
-            </label>
-          </div>
-        </div>
-
-        {/* Loan Accounts Rendering */}
-        {loansList.length === 0 ? (
-          <div className="bg-card border border-border rounded-3xl p-12 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto text-muted-foreground">
-              <Landmark className="w-8 h-8 opacity-60" />
-            </div>
-            <div className="max-w-md mx-auto space-y-1">
-              <h3 className="text-base font-bold text-foreground">No loan accounts found</h3>
-              <p className="text-xs text-muted-foreground">
-                {loanSearch
-                  ? `No loans match your search query "${loanSearch}". Try clearing filters.`
-                  : 'You have no loans listed in this category. Click "+ Add Loan Account" to create your first debt tracking profile.'}
-              </p>
-            </div>
-            <button
-              onClick={handleOpenAdd}
-              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition shadow-md"
-            >
-              <Plus className="w-4 h-4 inline mr-1" /> Add New Loan
-            </button>
-          </div>
-        ) : viewMode === 'grid' ? (
-          /* Grid View of Cards */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loansList.map((acc) => {
-              const outstanding = Math.abs(acc.balance);
-              const totalLiability = outstanding + (acc.accruedInterest || 0);
-              const original = acc.originalAmount || outstanding;
-              const repaid = acc.totalPrincipalRepaid || Math.max(0, original - outstanding);
-              const progressPct = original > 0 ? Math.min(100, Math.round((repaid / original) * 100)) : 0;
-              const isPaidOff = acc.loanStatus === 'paid_off' || totalLiability === 0;
-
-              return (
-                <div
-                  key={acc.id}
-                  className="bg-card border border-border/80 rounded-3xl p-6 shadow-md hover:shadow-xl hover:border-primary/40 transition-all duration-200 space-y-5 flex flex-col justify-between group relative overflow-hidden"
-                >
-                  <div className="space-y-4">
-                    
-                    {/* Card Top Row */}
-                    <div className="flex items-start justify-between gap-3">
+                return (
+                  <div
+                    key={acc.id}
+                    onClick={() => {
+                      setActiveLoanDetails(acc);
+                      setActiveDetailTab('overview');
+                    }}
+                    className="bg-[#0d131f] border border-[#1e293b] rounded-2xl p-4 space-y-3 cursor-pointer hover:border-cyan-500/40 transition-all duration-200 group"
+                  >
+                    {/* Top Row */}
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-secondary/80 border border-border/60 flex items-center justify-center text-lg shadow-sm">
-                          {acc.icon || (acc.isInformal ? '🤝' : '🏦')}
+                        <div className="w-10 h-10 rounded-2xl bg-blue-950/80 border border-blue-800/40 flex items-center justify-center text-blue-400 shrink-0">
+                          {acc.icon && acc.icon !== '📉' ? (
+                            <span className="text-base">{acc.icon}</span>
+                          ) : (
+                            <GraduationCap className="w-5 h-5" />
+                          )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-extrabold text-base text-foreground tracking-tight line-clamp-1">
+                            <h3 className="font-bold text-sm text-white tracking-tight">
                               {acc.name}
                             </h3>
-                            {acc.archived && (
-                              <span className="text-3xs font-black text-rose-400 border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 rounded uppercase">
-                                Archived
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-2xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
-                            <span>Lender: <strong className="text-foreground">{acc.lenderName || 'Direct'}</strong></span>
-                            <span>•</span>
-                            <span className="capitalize text-primary font-semibold">
-                              {acc.isInformal ? 'Informal/Friend' : acc.interestType}
+                            <span
+                              className={`text-4xs font-black uppercase px-2 py-0.5 rounded-full border ${
+                                isPaidOff
+                                  ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/50'
+                                  : 'bg-emerald-950/80 text-emerald-400 border-emerald-800/50'
+                              }`}
+                            >
+                              {isPaidOff ? 'Paid' : 'Active'}
                             </span>
+                          </div>
+                          <p className="text-xs text-slate-400 font-medium">
+                            Account No. •••• {acc.loanAccountNumber ? acc.loanAccountNumber.slice(-4) : acc.id.slice(-4)}
                           </p>
                         </div>
                       </div>
 
-                      <span
-                        className={`text-3xs font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                          isPaidOff
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : acc.isInformal
-                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                            : 'bg-primary/10 text-primary border border-primary/20'
-                        }`}
-                      >
-                        {isPaidOff ? 'Paid Off' : acc.loanStatus || 'Active'}
-                      </span>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="space-y-1.5 bg-secondary/20 p-3 rounded-2xl border border-border/40">
-                      <div className="flex justify-between items-center text-3xs font-bold">
-                        <span className="text-muted-foreground uppercase">Principal Repaid</span>
-                        <span className="text-emerald-400 font-mono">{progressPct}% Paid</span>
-                      </div>
-                      <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.max(4, progressPct)}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-3xs text-muted-foreground font-mono pt-0.5">
-                        <span>Paid: ₹{repaid.toLocaleString('en-IN')}</span>
-                        <span>Orig: ₹{original.toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-
-                    {/* Balance & Key Metrics */}
-                    <div className="grid grid-cols-2 gap-3 bg-secondary/30 p-3.5 rounded-2xl border border-border/40 text-xs">
-                      <div>
-                        <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
-                          Total Outstanding
-                        </span>
-                        <span className="text-lg font-black text-rose-400 font-mono">
+                      <div className="flex items-center gap-1">
+                        <span className="text-base font-black font-mono text-white">
                           ₹{totalLiability.toLocaleString('en-IN')}
                         </span>
-                        {acc.accruedInterest ? (
-                          <span className="block text-4xs text-amber-400 font-mono">
-                            Incl. ₹{acc.accruedInterest.toLocaleString('en-IN')} interest
-                          </span>
-                        ) : null}
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition-colors" />
                       </div>
+                    </div>
 
-                      <div>
-                        <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
-                          {acc.isInformal ? 'Repayment' : 'Monthly EMI'}
+                    {/* Divider */}
+                    <div className="border-t border-[#1e293b]" />
+
+                    {/* Bottom 4 Metric Columns */}
+                    <div className="grid grid-cols-4 gap-2 text-center divide-x divide-[#1e293b]/80 pt-0.5">
+                      <div className="px-1">
+                        <span className="text-4xs font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                          EMI Amount
                         </span>
-                        <span className="text-base font-bold text-foreground font-mono">
-                          {acc.isInformal ? (
-                            <span className="text-xs text-muted-foreground font-sans font-semibold">Flexible</span>
-                          ) : (
-                            `₹${(acc.emiAmount || 0).toLocaleString('en-IN')}`
-                          )}
+                        <span className="text-xs font-bold font-mono text-cyan-400">
+                          {acc.isInformal ? 'Flexible' : `₹${(acc.emiAmount || 0).toLocaleString('en-IN')}`}
                         </span>
                       </div>
 
-                      <div>
-                        <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
+                      <div className="px-1">
+                        <span className="text-4xs font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                           Interest Rate
                         </span>
-                        <span className="font-semibold text-foreground font-mono">
-                          {acc.interestRate ? `${acc.interestRate}%` : '0% Interest-Free'}
-                        </span>
-                      </div>
-
-                      <div>
-                        <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
-                          Next Due Date
-                        </span>
-                        <span className="font-medium text-foreground">
-                          {acc.dueDate || '—'}
-                        </span>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* Actions Footer */}
-                  <div className="pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 flex-1">
-                      {acc.isInformal ? (
-                        <button
-                          onClick={() => {
-                            setFriendRepayingLoan(acc);
-                            setRepayAmount('');
-                            setRepayDate(new Date().toISOString().slice(0, 10));
-                            setRepayAccountId(acc.linkedPaymentAccountId || '');
-                            setRepayNotes('');
-                          }}
-                          className="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-95 transition shadow-md flex items-center justify-center gap-1"
-                        >
-                          <DollarSign className="w-3.5 h-3.5" /> Record Repayment
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => {
-                              setPayingLoan(acc);
-                              setPayEmiAmount(String(acc.emiAmount || ''));
-                              setPayEmiDate(new Date().toISOString().slice(0, 10));
-                              setPayEmiAccountId(acc.linkedPaymentAccountId || '');
-                            }}
-                            className="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-95 transition shadow-md flex items-center justify-center gap-1"
-                          >
-                            <DollarSign className="w-3.5 h-3.5" /> Pay EMI
-                          </button>
-                          <button
-                            onClick={() => {
-                              setPrepayingLoan(acc);
-                              setPrepayAmount('');
-                              setPrepayDate(new Date().toISOString().slice(0, 10));
-                              setPrepayAccountId(acc.linkedPaymentAccountId || '');
-                              setPrepayNotes('');
-                            }}
-                            className="px-3 py-2 rounded-xl text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground border border-border transition flex items-center justify-center gap-1"
-                          >
-                            Prepay
-                          </button>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => {
-                          setActiveLoanDetails(acc);
-                          setActiveDetailTab('overview');
-                        }}
-                        className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition"
-                        title="View Full Details & Schedule"
-                      >
-                        <FileText className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleOpenEdit(acc)}
-                        className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition"
-                        title="Edit Loan Settings"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteAccountTarget(acc)}
-                        className="p-2 rounded-xl text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition"
-                        title="Delete Loan"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          /* Table View */
-          <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-lg">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-foreground">
-                <thead className="bg-secondary/50 text-muted-foreground uppercase text-3xs font-extrabold tracking-wider border-b border-border">
-                  <tr>
-                    <th className="p-4">Loan / Lender</th>
-                    <th className="p-4">Total Liability</th>
-                    <th className="p-4">Repayment Progress</th>
-                    <th className="p-4">EMI / Terms</th>
-                    <th className="p-4">Interest</th>
-                    <th className="p-4">Next Due</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40 font-medium">
-                  {loansList.map((acc) => {
-                    const outstanding = Math.abs(acc.balance);
-                    const totalLiability = outstanding + (acc.accruedInterest || 0);
-                    const original = acc.originalAmount || outstanding;
-                    const repaid = acc.totalPrincipalRepaid || Math.max(0, original - outstanding);
-                    const progressPct = original > 0 ? Math.min(100, Math.round((repaid / original) * 100)) : 0;
-                    const isPaidOff = acc.loanStatus === 'paid_off' || totalLiability === 0;
-
-                    return (
-                      <tr key={acc.id} className="hover:bg-secondary/30 transition">
-                        <td className="p-4">
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-lg">{acc.icon || '📉'}</span>
-                            <div>
-                              <div className="font-bold text-foreground flex items-center gap-1.5">
-                                {acc.name}
-                                {acc.archived && (
-                                  <span className="text-4xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1 py-0.2 rounded">
-                                    Archived
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-3xs text-muted-foreground">
-                                {acc.lenderName || 'Direct'}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="p-4 font-mono">
-                          <span className="font-extrabold text-rose-400 text-sm">
-                            ₹{totalLiability.toLocaleString('en-IN')}
-                          </span>
-                          {acc.accruedInterest ? (
-                            <span className="block text-4xs text-amber-400">
-                              +₹{acc.accruedInterest.toLocaleString('en-IN')} int
-                            </span>
-                          ) : null}
-                        </td>
-
-                        <td className="p-4 w-48">
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-3xs font-mono">
-                              <span>₹{repaid.toLocaleString('en-IN')} paid</span>
-                              <span className="text-emerald-400 font-bold">{progressPct}%</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-emerald-400 rounded-full"
-                                style={{ width: `${progressPct}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="p-4 font-mono">
-                          {acc.isInformal ? (
-                            <span className="text-muted-foreground font-sans text-xs font-semibold">Flexible</span>
-                          ) : (
-                            `₹${(acc.emiAmount || 0).toLocaleString('en-IN')}/mo`
-                          )}
-                        </td>
-
-                        <td className="p-4 font-mono">
+                        <span className="text-xs font-bold font-mono text-cyan-400">
                           {acc.interestRate ? `${acc.interestRate}%` : '0%'}
-                        </td>
+                        </span>
+                      </div>
 
-                        <td className="p-4">
+                      <div className="px-1">
+                        <span className="text-4xs font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                          Next EMI
+                        </span>
+                        <span className="text-xs font-bold font-mono text-cyan-400">
                           {acc.dueDate || '—'}
-                        </td>
+                        </span>
+                      </div>
 
-                        <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {acc.isInformal ? (
-                              <button
-                                onClick={() => {
-                                  setFriendRepayingLoan(acc);
-                                  setRepayAmount('');
-                                  setRepayDate(new Date().toISOString().slice(0, 10));
-                                  setRepayAccountId(acc.linkedPaymentAccountId || '');
-                                  setRepayNotes('');
-                                }}
-                                className="px-2.5 py-1.5 rounded-lg text-3xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition"
-                              >
-                                Repay
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setPayingLoan(acc);
-                                  setPayEmiAmount(String(acc.emiAmount || ''));
-                                  setPayEmiDate(new Date().toISOString().slice(0, 10));
-                                  setPayEmiAccountId(acc.linkedPaymentAccountId || '');
-                                }}
-                                className="px-2.5 py-1.5 rounded-lg text-3xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition"
-                              >
-                                Pay EMI
-                              </button>
-                            )}
+                      <div className="px-1">
+                        <span className="text-4xs font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                          Tenure Left
+                        </span>
+                        <span className="text-xs font-bold font-mono text-cyan-400">
+                          {formatTenureLeft(acc)}
+                        </span>
+                      </div>
+                    </div>
 
-                            <button
-                              onClick={() => {
-                                setActiveLoanDetails(acc);
-                                setActiveDetailTab('overview');
-                              }}
-                              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition"
-                              title="Details"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenEdit(acc)}
-                              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  </div>
+                );
+              })
+            )}
+
+            {/* View All Loans Action Button */}
+            {loansList.length > 2 && (
+              <button
+                onClick={() => setShowAllLoans(!showAllLoans)}
+                className="w-full py-3 rounded-2xl bg-[#0d131f] border border-[#1e293b] text-cyan-400 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#121927] transition"
+              >
+                <span>{showAllLoans ? 'Show Less Loans' : 'View All Loans'}</span>
+                <ChevronRight className={`w-4 h-4 transition-transform ${showAllLoans ? 'rotate-90' : ''}`} />
+              </button>
+            )}
           </div>
-        )}
+        </section>
+
+        {/* 6. QUICK ACTIONS */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
+            Quick Actions
+          </h2>
+
+          <div className="grid grid-cols-4 gap-2.5">
+            
+            {/* EMI Schedule */}
+            <button
+              onClick={() => {
+                if (loansList.length > 0) {
+                  setActiveLoanDetails(loansList[0]);
+                  setActiveDetailTab('schedule');
+                } else {
+                  handleOpenAdd();
+                }
+              }}
+              className="bg-[#0d131f] border border-[#1e293b] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:border-cyan-500/40 transition active:scale-95 cursor-pointer shadow-md"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-[#0d3b44] border border-cyan-800/40 flex items-center justify-center text-cyan-400 shrink-0">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <span className="text-3xs sm:text-2xs font-bold text-slate-300 text-center leading-tight">
+                EMI Schedule
+              </span>
+            </button>
+
+            {/* Amortization */}
+            <button
+              onClick={() => {
+                if (loansList.length > 0) {
+                  setActiveLoanDetails(loansList[0]);
+                  setActiveDetailTab('overview');
+                } else {
+                  handleOpenAdd();
+                }
+              }}
+              className="bg-[#0d131f] border border-[#1e293b] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:border-emerald-500/40 transition active:scale-95 cursor-pointer shadow-md"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-emerald-950/80 border border-emerald-800/40 flex items-center justify-center text-emerald-400 shrink-0">
+                <PieChart className="w-5 h-5" />
+              </div>
+              <span className="text-3xs sm:text-2xs font-bold text-slate-300 text-center leading-tight">
+                Amortization
+              </span>
+            </button>
+
+            {/* Make Payment */}
+            <button
+              onClick={() => {
+                if (loansList.length > 0) {
+                  const target = loansList[0];
+                  if (target.isInformal) {
+                    setFriendRepayingLoan(target);
+                    setRepayAmount('');
+                    setRepayDate(new Date().toISOString().slice(0, 10));
+                    setRepayAccountId(target.linkedPaymentAccountId || '');
+                  } else {
+                    setPayingLoan(target);
+                    setPayEmiAmount(String(target.emiAmount || ''));
+                    setPayEmiDate(new Date().toISOString().slice(0, 10));
+                    setPayEmiAccountId(target.linkedPaymentAccountId || '');
+                  }
+                } else {
+                  handleOpenAdd();
+                }
+              }}
+              className="bg-[#0d131f] border border-[#1e293b] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:border-purple-500/40 transition active:scale-95 cursor-pointer shadow-md"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-purple-950/80 border border-purple-800/40 flex items-center justify-center text-purple-400 shrink-0">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <span className="text-3xs sm:text-2xs font-bold text-slate-300 text-center leading-tight">
+                Make Payment
+              </span>
+            </button>
+
+            {/* Reports */}
+            <button
+              onClick={() => {
+                if (loansList.length > 0) {
+                  setActiveLoanDetails(loansList[0]);
+                  setActiveDetailTab('ledger');
+                } else {
+                  handleOpenAdd();
+                }
+              }}
+              className="bg-[#0d131f] border border-[#1e293b] rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:border-amber-500/40 transition active:scale-95 cursor-pointer shadow-md"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-amber-950/80 border border-amber-800/40 flex items-center justify-center text-amber-400 shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <span className="text-3xs sm:text-2xs font-bold text-slate-300 text-center leading-tight">
+                Reports
+              </span>
+            </button>
+
+          </div>
+        </section>
 
       </div>
 
@@ -1646,7 +1455,7 @@ export default function LoansPage() {
                 onClick={() => setActiveDetailTab('overview')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
                   activeDetailTab === 'overview'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-cyan-500 text-slate-950 shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                 }`}
               >
@@ -1658,7 +1467,7 @@ export default function LoansPage() {
                   onClick={() => setActiveDetailTab('schedule')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
                     activeDetailTab === 'schedule'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      ? 'bg-cyan-500 text-slate-950 shadow-sm'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                   }`}
                 >
@@ -1670,11 +1479,11 @@ export default function LoansPage() {
                 onClick={() => setActiveDetailTab('ledger')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
                   activeDetailTab === 'ledger'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-cyan-500 text-slate-950 shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                 }`}
               >
-                <History className="w-4 h-4" /> Ledger & History ({activeLoanRepayments.length})
+                <FileText className="w-4 h-4" /> Ledger & History ({activeLoanRepayments.length})
               </button>
             </div>
 
@@ -1713,7 +1522,7 @@ export default function LoansPage() {
                 {/* Specs Details Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-                    <h4 className="font-extrabold text-xs uppercase text-primary tracking-wider flex items-center gap-1.5">
+                    <h4 className="font-extrabold text-xs uppercase text-cyan-400 tracking-wider flex items-center gap-1.5">
                       <FileText className="w-4 h-4" /> Financial Specifications
                     </h4>
                     <div className="space-y-2 text-xs divide-y divide-border/30">
@@ -1741,7 +1550,7 @@ export default function LoansPage() {
                   </div>
 
                   <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-                    <h4 className="font-extrabold text-xs uppercase text-primary tracking-wider flex items-center gap-1.5">
+                    <h4 className="font-extrabold text-xs uppercase text-cyan-400 tracking-wider flex items-center gap-1.5">
                       <CreditCard className="w-4 h-4" /> Additional & Payment Details
                     </h4>
                     <div className="space-y-2 text-xs divide-y divide-border/30">
@@ -1830,7 +1639,7 @@ export default function LoansPage() {
                 {/* Repayments Recorded List */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <h4 className="font-extrabold text-xs uppercase text-primary tracking-wider">
+                    <h4 className="font-extrabold text-xs uppercase text-cyan-400 tracking-wider">
                       Recorded Repayment Logs
                     </h4>
                   </div>
@@ -1884,7 +1693,7 @@ export default function LoansPage() {
 
                 {/* Monthly Ledger Table */}
                 <div className="space-y-3">
-                  <h4 className="font-extrabold text-xs uppercase text-primary tracking-wider">
+                  <h4 className="font-extrabold text-xs uppercase text-cyan-400 tracking-wider">
                     Calculated Monthly Interest & Principal Ledger
                   </h4>
                   <div className="border border-border rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto">
@@ -1917,7 +1726,22 @@ export default function LoansPage() {
             )}
 
             {/* Modal Bottom Actions */}
-            <div className="pt-4 border-t border-border flex justify-end gap-3">
+            <div className="pt-4 border-t border-border flex justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleOpenEdit(activeLoanDetails)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-secondary text-foreground hover:bg-secondary/80 transition flex items-center gap-1.5"
+                >
+                  <Edit2 className="w-3.5 h-3.5" /> Edit Loan
+                </button>
+                <button
+                  onClick={() => setDeleteAccountTarget(activeLoanDetails)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              </div>
+
               <button
                 onClick={() => setActiveLoanDetails(null)}
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-secondary text-foreground hover:bg-secondary/80 transition"
@@ -1969,7 +1793,7 @@ export default function LoansPage() {
 
           {simResults && (
             <div className="space-y-4">
-              <h4 className="text-xs font-black uppercase text-primary tracking-wider">Comparison Scenarios</h4>
+              <h4 className="text-xs font-black uppercase text-cyan-400 tracking-wider">Comparison Scenarios</h4>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
@@ -1996,12 +1820,12 @@ export default function LoansPage() {
                 </div>
 
                 {/* Scenario B: Reduce EMI */}
-                <div className="bg-card border border-primary/30 rounded-2xl p-4 space-y-3 relative overflow-hidden">
+                <div className="bg-card border border-cyan-500/30 rounded-2xl p-4 space-y-3 relative overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-primary uppercase">Option 2: Reduce Monthly EMI</span>
+                    <span className="text-xs font-extrabold text-cyan-400 uppercase">Option 2: Reduce Monthly EMI</span>
                   </div>
                   <div className="space-y-1">
-                    <div className="text-2xl font-black text-primary font-mono">
+                    <div className="text-2xl font-black text-cyan-400 font-mono">
                       ₹{simResults.newEmiOption.toLocaleString('en-IN')}/mo
                     </div>
                     <p className="text-2xs text-muted-foreground">
@@ -2010,7 +1834,7 @@ export default function LoansPage() {
                   </div>
                   <div className="pt-2 border-t border-border/40 text-xs">
                     <span className="text-muted-foreground">Est. Interest Savings: </span>
-                    <span className="font-mono font-bold text-primary">₹{simResults.interestSavedEmi.toLocaleString('en-IN')}</span>
+                    <span className="font-mono font-bold text-cyan-400">₹{simResults.interestSavedEmi.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -2046,8 +1870,8 @@ export default function LoansPage() {
                 required
                 value={accountForm.name}
                 onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
-                placeholder="e.g. HDFC Home Loan, Friend Rahul Loan"
-                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+                placeholder="e.g. SBI Education Loan, HDFC Home Loan"
+                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
               />
             </div>
 
@@ -2057,8 +1881,8 @@ export default function LoansPage() {
                 type="text"
                 value={accountForm.lenderName}
                 onChange={(e) => setAccountForm({ ...accountForm, lenderName: e.target.value })}
-                placeholder="e.g. HDFC Bank, SBI, John"
-                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+                placeholder="e.g. SBI, HDFC, Friend John"
+                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
               />
             </div>
 
@@ -2069,8 +1893,8 @@ export default function LoansPage() {
                 required
                 value={accountForm.originalAmount}
                 onChange={(e) => setAccountForm({ ...accountForm, originalAmount: e.target.value })}
-                placeholder="e.g. 500000"
-                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                placeholder="e.g. 50000"
+                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono"
               />
             </div>
 
@@ -2081,8 +1905,8 @@ export default function LoansPage() {
                 required
                 value={accountForm.balance}
                 onChange={(e) => setAccountForm({ ...accountForm, balance: e.target.value })}
-                placeholder="e.g. 450000"
-                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                placeholder="e.g. 50000"
+                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono"
               />
             </div>
 
@@ -2093,8 +1917,8 @@ export default function LoansPage() {
                 step="0.01"
                 value={accountForm.interestRate}
                 onChange={(e) => setAccountForm({ ...accountForm, interestRate: e.target.value })}
-                placeholder="e.g. 8.5"
-                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                placeholder="e.g. 6.90"
+                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono"
               />
             </div>
 
@@ -2105,7 +1929,7 @@ export default function LoansPage() {
                 required
                 value={accountForm.startDate}
                 onChange={(e) => setAccountForm({ ...accountForm, startDate: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+                className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
               />
             </div>
 
@@ -2117,7 +1941,7 @@ export default function LoansPage() {
               id="isInformal"
               checked={accountForm.isInformal}
               onChange={(e) => setAccountForm({ ...accountForm, isInformal: e.target.checked })}
-              className="rounded border-border text-primary h-4 w-4"
+              className="rounded border-border text-cyan-500 h-4 w-4"
             />
             <label htmlFor="isInformal" className="text-xs font-semibold text-foreground cursor-pointer">
               This is an informal / personal loan from a friend or relative (Flexible EMI)
@@ -2132,8 +1956,8 @@ export default function LoansPage() {
                   type="number"
                   value={accountForm.tenureMonths}
                   onChange={(e) => setAccountForm({ ...accountForm, tenureMonths: e.target.value, tenureType: 'months' })}
-                  placeholder="e.g. 60"
-                  className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                  placeholder="e.g. 176"
+                  className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono"
                 />
               </div>
 
@@ -2143,8 +1967,8 @@ export default function LoansPage() {
                   type="number"
                   value={accountForm.emiAmount}
                   onChange={(e) => setAccountForm({ ...accountForm, emiAmount: e.target.value })}
-                  placeholder="e.g. 10250"
-                  className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                  placeholder="e.g. 3500"
+                  className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono"
                 />
               </div>
             </div>
@@ -2152,8 +1976,8 @@ export default function LoansPage() {
 
           {/* EMI Preview Card */}
           {emiPreview && !accountForm.isInformal && (
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 space-y-2 text-xs">
-              <div className="font-extrabold text-primary uppercase text-3xs tracking-wider">
+            <div className="bg-cyan-950/40 border border-cyan-800/40 rounded-2xl p-4 space-y-2 text-xs">
+              <div className="font-extrabold text-cyan-400 uppercase text-3xs tracking-wider">
                 Calculated EMI Estimate
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono">
@@ -2174,7 +1998,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
+              className="px-5 py-2 rounded-xl text-xs font-black bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition shadow-md"
             >
               {editingId ? 'Update Loan' : 'Create Loan'}
             </button>
@@ -2197,7 +2021,7 @@ export default function LoansPage() {
               required
               value={payEmiDate}
               onChange={(e) => setPayEmiDate(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
             />
           </div>
 
@@ -2208,8 +2032,8 @@ export default function LoansPage() {
               required
               value={payEmiAmount}
               onChange={(e) => setPayEmiAmount(e.target.value)}
-              placeholder="e.g. 15000"
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono text-base font-bold text-rose-400"
+              placeholder="e.g. 3500"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono text-base font-bold text-rose-400"
             />
           </div>
 
@@ -2219,7 +2043,7 @@ export default function LoansPage() {
               required
               value={payEmiAccountId}
               onChange={(e) => setPayEmiAccountId(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-medium"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-medium"
             >
               <option value="">Select Account...</option>
               {paymentAccountOptions.map((a) => (
@@ -2240,7 +2064,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
+              className="px-5 py-2 rounded-xl text-xs font-black bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition shadow-md"
             >
               Confirm EMI Payment
             </button>
@@ -2263,7 +2087,7 @@ export default function LoansPage() {
               required
               value={prepayDate}
               onChange={(e) => setPrepayDate(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
             />
           </div>
 
@@ -2274,8 +2098,8 @@ export default function LoansPage() {
               required
               value={prepayAmount}
               onChange={(e) => setPrepayAmount(e.target.value)}
-              placeholder="e.g. 100000"
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono text-base font-bold text-emerald-400"
+              placeholder="e.g. 50000"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono text-base font-bold text-emerald-400"
             />
           </div>
 
@@ -2287,7 +2111,7 @@ export default function LoansPage() {
                 onClick={() => setPrepayStrategy('tenure')}
                 className={`p-3 rounded-xl border text-xs font-bold text-center transition ${
                   prepayStrategy === 'tenure'
-                    ? 'border-primary bg-primary/10 text-primary'
+                    ? 'border-cyan-500 bg-cyan-950/40 text-cyan-400'
                     : 'border-border bg-card text-muted-foreground'
                 }`}
               >
@@ -2298,7 +2122,7 @@ export default function LoansPage() {
                 onClick={() => setPrepayStrategy('emi')}
                 className={`p-3 rounded-xl border text-xs font-bold text-center transition ${
                   prepayStrategy === 'emi'
-                    ? 'border-primary bg-primary/10 text-primary'
+                    ? 'border-cyan-500 bg-cyan-950/40 text-cyan-400'
                     : 'border-border bg-card text-muted-foreground'
                 }`}
               >
@@ -2313,7 +2137,7 @@ export default function LoansPage() {
               required
               value={prepayAccountId}
               onChange={(e) => setPrepayAccountId(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-medium"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-medium"
             >
               <option value="">Select Account...</option>
               {paymentAccountOptions.map((a) => (
@@ -2330,8 +2154,8 @@ export default function LoansPage() {
               type="text"
               value={prepayNotes}
               onChange={(e) => setPrepayNotes(e.target.value)}
-              placeholder="e.g. Annual bonus prepayment"
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+              placeholder="e.g. Prepayment towards principal"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
             />
           </div>
 
@@ -2345,7 +2169,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-white hover:opacity-90 transition shadow-md"
+              className="px-5 py-2 rounded-xl text-xs font-black bg-emerald-500 text-white hover:bg-emerald-400 transition shadow-md"
             >
               Confirm Prepayment
             </button>
@@ -2368,7 +2192,7 @@ export default function LoansPage() {
               required
               value={repayDate}
               onChange={(e) => setRepayDate(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
             />
           </div>
 
@@ -2380,7 +2204,7 @@ export default function LoansPage() {
               value={repayAmount}
               onChange={(e) => setRepayAmount(e.target.value)}
               placeholder="e.g. 5000"
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono text-base font-bold text-emerald-400"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono text-base font-bold text-emerald-400"
             />
           </div>
 
@@ -2390,7 +2214,7 @@ export default function LoansPage() {
               required
               value={repayAccountId}
               onChange={(e) => setRepayAccountId(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-medium"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-medium"
             >
               <option value="">Select Account...</option>
               {paymentAccountOptions.map((a) => (
@@ -2408,7 +2232,7 @@ export default function LoansPage() {
               value={repayNotes}
               onChange={(e) => setRepayNotes(e.target.value)}
               placeholder="e.g. Partial repayment via UPI"
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
             />
           </div>
 
@@ -2422,7 +2246,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
+              className="px-5 py-2 rounded-xl text-xs font-black bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition shadow-md"
             >
               Save Repayment
             </button>
@@ -2444,7 +2268,7 @@ export default function LoansPage() {
               required
               value={repaymentForm.date}
               onChange={(e) => setRepaymentForm({ ...repaymentForm, date: e.target.value })}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
             />
           </div>
 
@@ -2455,7 +2279,7 @@ export default function LoansPage() {
               required
               value={repaymentForm.amount}
               onChange={(e) => setRepaymentForm({ ...repaymentForm, amount: e.target.value })}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500 font-mono"
             />
           </div>
 
@@ -2465,7 +2289,7 @@ export default function LoansPage() {
               type="text"
               value={repaymentForm.notes}
               onChange={(e) => setRepaymentForm({ ...repaymentForm, notes: e.target.value })}
-              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
+              className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-cyan-500"
             />
           </div>
 
@@ -2479,7 +2303,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
+              className="px-5 py-2 rounded-xl text-xs font-black bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition shadow-md"
             >
               Update Repayment
             </button>
@@ -2506,7 +2330,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={handleDeleteRepayment}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:opacity-90 transition shadow-md"
+              className="px-5 py-2 rounded-xl text-xs font-black bg-rose-500 text-white hover:bg-rose-400 transition shadow-md"
             >
               Delete Repayment
             </button>
@@ -2533,7 +2357,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={handleDeleteExecute}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:opacity-90 transition shadow-md"
+              className="px-5 py-2 rounded-xl text-xs font-black bg-rose-500 text-white hover:bg-rose-400 transition shadow-md"
             >
               Delete Account
             </button>

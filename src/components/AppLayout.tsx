@@ -138,7 +138,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const activeTab = (() => {
     if (pathname.startsWith('/transactions')) return 'transactions';
     if (pathname.startsWith('/analytics')) return 'statistics';
-    if (pathname.startsWith('/accounts')) return 'accounts';
+    if (pathname.startsWith('/accounts') || pathname.startsWith('/loans')) return 'accounts';
     if (pathname.startsWith('/more')) return 'more';
     return '';
   })();
