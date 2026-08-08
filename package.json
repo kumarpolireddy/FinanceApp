@@ -48,7 +48,9 @@
     "serve": "next start",
     "type-check": "tsc --noEmit",
     "cap:sync": "npx cap sync",
-    "cap:open": "npx cap open android"
+    "cap:open": "npx cap open android",
+    "adb:reverse": "adb reverse tcp:3000 tcp:3000",
+    "dev:live": "adb reverse tcp:3000 tcp:3000 && next dev -H 0.0.0.0 -p 3000"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
