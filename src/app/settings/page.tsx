@@ -2078,8 +2078,7 @@ export default function SettingsPage() {
                       onClick={() => openAddForm('accounts')}
                       className="px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/10 text-primary text-2xs font-bold hover:bg-primary/20 transition flex items-center gap-1"
                     >
-                      <span>+</span>
-                      <span className="hidden sm:inline">Add Bank Account</span>
+                      <span>Add</span>
                     </button>
                     <span 
                       onClick={() => toggleCategoryCollapse('accounts')}
@@ -2295,8 +2294,7 @@ export default function SettingsPage() {
                       onClick={() => openAddForm('cash')}
                       className="px-2.5 py-1 rounded-lg border border-positive/20 bg-positive/10 text-positive text-2xs font-bold hover:bg-positive/20 transition flex items-center gap-1"
                     >
-                      <span>+</span>
-                      <span className="hidden sm:inline">Add Cash Account</span>
+                      <span>Add</span>
                     </button>
                     <span 
                       onClick={() => toggleCategoryCollapse('cash')}
@@ -2524,8 +2522,7 @@ export default function SettingsPage() {
                       onClick={() => openAddForm('credit')}
                       className="px-2.5 py-1 rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500 text-2xs font-bold hover:bg-amber-500/20 transition flex items-center gap-1"
                     >
-                      <span>+</span>
-                      <span className="hidden sm:inline">Add Credit Card</span>
+                      <span>Add</span>
                     </button>
                     <span 
                       onClick={() => toggleCategoryCollapse('credit')}
@@ -2813,8 +2810,7 @@ export default function SettingsPage() {
                       onClick={() => openAddForm('loan')}
                       className="px-2.5 py-1 rounded-lg border border-negative/20 bg-negative/10 text-negative text-2xs font-bold hover:bg-negative/20 transition flex items-center gap-1"
                     >
-                      <span>+</span>
-                      <span className="hidden sm:inline">Add Loan Account</span>
+                      <span>Add</span>
                     </button>
                     <span 
                       onClick={() => toggleCategoryCollapse('loan')}
