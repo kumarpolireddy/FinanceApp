@@ -229,6 +229,7 @@ function parseRowsWithMappings(rows: any[], mappings: ColumnMapping[]): PreviewR
 }
 
 export default function DataImportPage() {
+  const [importMode, setImportMode] = useState<'sqlite' | 'spreadsheet'>('sqlite');
   const [currentStep, setCurrentStep] = useState<WizardStep>('upload');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>(INITIAL_COLUMN_MAPPINGS);
@@ -249,8 +250,155 @@ export default function DataImportPage() {
 
   const stepIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
+  const handleImportSqlite = async (file: File) => {
+    setIsImporting(true);
+    setCurrentStep('importing');
+    const toastId = toast.loading(`Importing Money Manager backup file "${file.name}"...`);
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const { parseMoneyManagerSqlite } = await import('@/lib/moneyManagerSqliteParser');
+      const result = await parseMoneyManagerSqlite(buffer);
+
+      if (!result.success || (result as any).error) {
+        throw new Error((result as any).error || 'Failed to parse Money Manager SQLite file');
+      }
+
+      // 1. Process & Save Accounts
+      const existingAccounts = getAccounts();
+      const newAccounts = [...existingAccounts];
+      let newAccountsCreated = 0;
+      const accountIdMap: Record<string, string> = {};
+
+      result.accounts.forEach((acc) => {
+        let existingAcc = newAccounts.find(
+          (a) => a.name.toLowerCase().trim() === acc.name.toLowerCase().trim()
+        );
+        if (!existingAcc) {
+          existingAcc = {
+            id: acc.id || `acc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            name: acc.name,
+            type: acc.type,
+            balance: 0,
+            color: acc.color,
+            visible: true,
+            icon: acc.icon,
+          };
+          newAccounts.push(existingAcc);
+          newAccountsCreated++;
+        }
+        accountIdMap[acc.name] = existingAcc.id;
+      });
+
+      saveAccounts(newAccounts);
+
+      // 2. Process & Save Categories
+      const existingCategories = getCategories();
+      const newCategories = [...existingCategories];
+      let newCategoriesCreated = 0;
+
+      result.categories.forEach((cat) => {
+        let existingCat = newCategories.find(
+          (c) => c.name.toLowerCase().trim() === cat.name.toLowerCase().trim()
+        );
+        if (!existingCat) {
+          existingCat = {
+            id: cat.id || `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            name: cat.name,
+            type: cat.type,
+            color: cat.color,
+            icon: '📦',
+            subcategories: cat.subcategories || [],
+          };
+          newCategories.push(existingCat);
+          newCategoriesCreated++;
+        } else {
+          // Merge missing subcategories into existing category
+          const subs = new Set(existingCat.subcategories || []);
+          (cat.subcategories || []).forEach((s) => subs.add(s));
+          existingCat.subcategories = Array.from(subs);
+        }
+      });
+
+      saveCategories(newCategories);
+
+      // 3. Process & Save Transactions
+      const existingTransactions = getTransactions();
+      const parsedTransactions: Transaction[] = [];
+      let duplicatesCount = 0;
+
+      const findAccId = (nameStr: string): string => {
+        if (!nameStr) return newAccounts[0]?.id || 'acc-cash';
+        const clean = nameStr.toLowerCase().trim();
+        const found = newAccounts.find((a) => a.name.toLowerCase().trim() === clean);
+        return found ? found.id : (newAccounts[0]?.id || 'acc-cash');
+      };
+
+      result.transactions.forEach((tx, index) => {
+        const accountId = findAccId(tx.account);
+        const toAccountId = tx.toAccount ? findAccId(tx.toAccount) : undefined;
+
+        // Duplicate check
+        const isDuplicate = existingTransactions.some(
+          (t) =>
+            t.date === tx.date &&
+            t.amount === tx.amount &&
+            t.type === tx.type &&
+            t.description &&
+            t.description.toLowerCase() === tx.description.toLowerCase()
+        );
+
+        if (isDuplicate) {
+          duplicatesCount++;
+          return;
+        }
+
+        parsedTransactions.push({
+          id: tx.id || `txn-${Date.now()}-${index}`,
+          date: tx.date,
+          description: tx.description,
+          category: (tx.category as any) || 'Other',
+          subcategory: tx.subcategory,
+          account: accountId,
+          toAccount: toAccountId,
+          amount: tx.amount,
+          type: tx.type,
+          notes: tx.notes || '',
+          createdAt: new Date(Date.now() + index).toISOString(),
+        });
+      });
+
+      const mergedTransactions = [...existingTransactions, ...parsedTransactions];
+      localStorage.setItem('wealthiq_transactions', JSON.stringify(mergedTransactions));
+
+      setImportStats({
+        transactions: parsedTransactions.length,
+        duplicates: duplicatesCount,
+        categories: newCategoriesCreated,
+        accounts: newAccountsCreated,
+      });
+
+      setImportDone(true);
+      toast.success(
+        `${parsedTransactions.length} transactions imported successfully from "${file.name}"!`,
+        { id: toastId }
+      );
+    } catch (err: any) {
+      setCurrentStep('upload');
+      toast.error(err.message || 'SQLite import failed', { id: toastId });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const handleFileSelected = async (file: File) => {
     setSelectedFile(file);
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext === 'sqlite' || ext === 'db') {
+      await handleImportSqlite(file);
+      return;
+    }
 
     try {
       const XLSX = await import('xlsx');
@@ -756,7 +904,7 @@ export default function DataImportPage() {
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {currentStep === 'upload' &&
-                    'Drag and drop your .xlsx or .csv export from Money Manager'}
+                    'Select or drag & drop your Money Manager SQLite backup file (.sqlite / .db) or spreadsheet'}
                   {currentStep === 'map-columns' &&
                     'Confirm how your spreadsheet columns map to WealthIQ fields'}
                   {currentStep === 'map-categories' &&
@@ -793,44 +941,100 @@ export default function DataImportPage() {
             <div className="p-6">
               {currentStep === 'upload' && (
                 <div className="space-y-6">
-                  <DropZone
-                    onFileSelected={handleFileSelected}
-                    selectedFile={selectedFile}
-                    onClear={() => setSelectedFile(null)}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[
-                      {
-                        id: 'fmt-xlsx',
-                        title: 'Money Manager Excel',
-                        desc: 'Standard .xlsx export from Money Manager app. All columns auto-detected.',
-                        badge: 'Recommended',
-                      },
-                      {
-                        id: 'fmt-csv',
-                        title: 'Money Manager CSV',
-                        desc: 'CSV export from Money Manager. Encoding auto-detected.',
-                        badge: 'Supported',
-                      },
-                      {
-                        id: 'fmt-custom',
-                        title: 'Custom Spreadsheet',
-                        desc: 'Any Excel/CSV with date, amount, and category columns. Manual mapping required.',
-                        badge: 'Advanced',
-                      },
-                    ].map((fmt) => (
-                      <div key={fmt.id} className="p-4 rounded-xl bg-muted/20 border border-border">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm font-semibold text-foreground">{fmt.title}</p>
-                          <span className="text-2xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            {fmt.badge}
-                          </span>
+                  {/* Import Mode Selector */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setImportMode('sqlite')}
+                      className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                        importMode === 'sqlite'
+                          ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20'
+                          : 'border-border bg-card hover:bg-muted/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                          <Database className="w-5 h-5" />
                         </div>
-                        <p className="text-xs text-muted-foreground">{fmt.desc}</p>
+                        <span className="px-2.5 py-0.5 rounded-full text-3xs font-extrabold bg-primary/10 text-primary border border-primary/20">
+                          Option 1 • Money Manager Backup
+                        </span>
                       </div>
-                    ))}
+                      <div>
+                        <h3 className="font-bold text-base text-foreground mb-1">
+                          Money Manager SQLite Backup
+                        </h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Upload your Money Manager <code className="text-primary font-bold">.sqlite</code> or <code className="text-primary font-bold">.db</code> database file. Direct 1-click import!
+                        </p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setImportMode('spreadsheet')}
+                      className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                        importMode === 'spreadsheet'
+                          ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20'
+                          : 'border-border bg-card hover:bg-muted/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center font-bold">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <span className="px-2.5 py-0.5 rounded-full text-3xs font-bold bg-muted text-muted-foreground border border-border">
+                          Option 2 • Spreadsheets
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-foreground mb-1">
+                          Excel / CSV Spreadsheets
+                        </h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Upload <code className="font-bold">.xlsx</code> or <code className="font-bold">.csv</code> files and map columns manually via wizard.
+                        </p>
+                      </div>
+                    </button>
                   </div>
+
+                  {importMode === 'sqlite' ? (
+                    <div className="border-2 border-dashed border-primary/40 rounded-2xl p-10 bg-card/40 text-center space-y-4 shadow-sm">
+                      <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center mx-auto shadow-inner">
+                        <Database className="w-8 h-8" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-extrabold text-foreground">
+                          Upload Money Manager SQLite Database
+                        </h3>
+                        <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                          Select your Money Manager database file (<span className="text-primary font-bold">.sqlite</span> or <span className="text-primary font-bold">.db</span>). All accounts, categories, income, expenses, and transfers will be extracted automatically.
+                        </p>
+                      </div>
+
+                      <div className="pt-2">
+                        <label className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground font-bold text-xs hover:opacity-95 transition shadow-lg shadow-primary/25 cursor-pointer active:scale-95">
+                          <Upload className="w-4 h-4" />
+                          Choose Money Manager SQLite File (.sqlite / .db)
+                          <input
+                            type="file"
+                            accept=".sqlite,.db,application/x-sqlite3,application/octet-stream,*/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleFileSelected(f);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <DropZone
+                      onFileSelected={handleFileSelected}
+                      selectedFile={selectedFile}
+                      onClear={() => setSelectedFile(null)}
+                    />
+                  )}
 
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-info-subtle border border-info-subtle">
                     <Database size={16} className="text-info flex-shrink-0 mt-0.5" />

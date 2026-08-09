@@ -15,7 +15,7 @@ const ACCEPTED_TYPES = [
   'text/csv',
 ];
 
-const ACCEPTED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
+const ACCEPTED_EXTENSIONS = ['.xlsx', '.xls', '.csv', '.sqlite', '.db'];
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -31,7 +31,7 @@ export default function DropZone({ onFileSelected, selectedFile, onClear }: Drop
   const validateFile = (file: File): string | null => {
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!ACCEPTED_EXTENSIONS.includes(ext)) {
-      return `Unsupported file type: ${ext}. Please upload .xlsx, .xls, or .csv files.`;
+      return `Unsupported file type: ${ext}. Please upload .xlsx, .xls, .csv, or .sqlite files.`;
     }
     if (file.size > 50 * 1024 * 1024) {
       return 'File exceeds 50MB limit. Please split large files before importing.';
@@ -138,16 +138,22 @@ export default function DropZone({ onFileSelected, selectedFile, onClear }: Drop
           <Upload size={24} />
         </div>
         <p className="text-base font-semibold text-foreground mb-1">
-          {isDragging ? 'Drop your file here' : 'Drag & drop your Money Manager file'}
+          {isDragging
+            ? 'Drop your Money Manager file here'
+            : 'Drag & drop your Money Manager Backup (.sqlite / .db) or Excel file'}
         </p>
         <p className="text-sm text-muted-foreground mb-4 text-center">
-          Supports Money Manager Excel exports (.xlsx), CSV exports, and custom spreadsheets
+          Upload your Money Manager SQLite database backup file (<span className="text-primary font-semibold">.sqlite / .db</span>) or Excel/CSV export
         </p>
         <div className="flex items-center gap-2 mb-4">
-          {['.xlsx', '.xls', '.csv'].map((ext) => (
+          {['.sqlite', '.db', '.xlsx', '.csv'].map((ext) => (
             <span
               key={`ext-${ext}`}
-              className="text-xs font-medium px-2 py-1 rounded bg-muted text-muted-foreground border border-border"
+              className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+                ext === '.sqlite' || ext === '.db'
+                  ? 'bg-primary/10 text-primary border-primary/30'
+                  : 'bg-muted text-muted-foreground border-border'
+              }`}
             >
               {ext}
             </span>
@@ -157,7 +163,7 @@ export default function DropZone({ onFileSelected, selectedFile, onClear }: Drop
         <input
           ref={inputRef}
           type="file"
-          accept={ACCEPTED_EXTENSIONS.join(',')}
+          accept=".sqlite,.db,.xlsx,.xls,.csv,application/x-sqlite3,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,*/*"
           className="hidden"
           onChange={handleFileInput}
           aria-label="File input"

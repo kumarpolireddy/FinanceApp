@@ -168,11 +168,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div 
         onTouchStart={handleGlobalTouchStart}
         onTouchEnd={handleGlobalTouchEnd}
-        className="flex flex-col h-screen max-w-md mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none"
+        className="flex flex-col h-[100dvh] min-h-[100dvh] max-w-md mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none"
       >
         
         {/* Mobile Header */}
-        <header className="fixed top-0 left-0 right-0 h-14 bg-secondary border-b border-border flex items-center justify-between px-4 z-50 max-w-md mx-auto">
+        <header className="fixed top-0 left-0 right-0 w-full max-w-md mx-auto h-14 bg-secondary/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4 z-50">
           <div className="flex items-center gap-2">
             {!isMainTab && pathname !== '/' ? (
               <button 
@@ -190,7 +190,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             )}
           </div>
           
-          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground text-center">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground text-center truncate px-2">
             {pageTitle}
           </h2>
 
@@ -208,7 +208,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto pt-14 pb-16 select-text bg-background">
+        <main className="flex-1 overflow-y-auto pt-14 pb-20 select-text bg-background">
           <div className="animate-fade-in pb-4">
             {children}
           </div>
@@ -225,9 +225,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </button>
         )}
 
-        {/* Mobile Bottom Tab Bar (Hidden on Add Expense page to avoid clutter while entering transaction data) */}
+        {/* Mobile Bottom Tab Bar */}
         {!pathname.startsWith('/add-expense') && (
-          <nav className="fixed bottom-0 left-0 right-0 h-16 bg-secondary border-t border-border flex justify-around items-center z-50 max-w-md mx-auto pb-safe">
+          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-secondary/95 backdrop-blur-md border-t border-border flex justify-around items-center z-50 pb-safe">
             {TABS.map((tab) => {
               const IconComponent = tab.icon;
               const isActive = activeTab === tab.id;

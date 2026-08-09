@@ -1040,113 +1040,7 @@ export default function SettingsPage() {
       localStorage.setItem('wealthiq_budgets', JSON.stringify([]));
       localStorage.setItem('wealthiq_goals', JSON.stringify([]));
 
-      const defaultCats = [
-        {
-          id: 'cat-salary',
-          name: 'Salary',
-          type: 'income',
-          color: '#22c55e',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-business',
-          name: 'Business',
-          type: 'income',
-          color: '#a3e635',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-interest',
-          name: 'Interest',
-          type: 'income',
-          color: '#3b82f6',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-other-inc',
-          name: 'Other Income',
-          type: 'income',
-          color: '#6b7280',
-          icon: '',
-          subcategories: [],
-        },
-
-        {
-          id: 'cat-food',
-          name: 'Food',
-          type: 'expense',
-          color: '#f59e0b',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-transport',
-          name: 'Transport',
-          type: 'expense',
-          color: '#3b82f6',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-shopping',
-          name: 'Shopping',
-          type: 'expense',
-          color: '#06b6d4',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-bills',
-          name: 'Bills',
-          type: 'expense',
-          color: '#f97316',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-entertainment',
-          name: 'Entertainment',
-          type: 'expense',
-          color: '#8b5cf6',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-healthcare',
-          name: 'Healthcare',
-          type: 'expense',
-          color: '#ec4899',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-education',
-          name: 'Education',
-          type: 'expense',
-          color: '#14b8a6',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-travel',
-          name: 'Travel',
-          type: 'expense',
-          color: '#fb923c',
-          icon: '',
-          subcategories: [],
-        },
-        {
-          id: 'cat-other-exp',
-          name: 'Other Expenses',
-          type: 'expense',
-          color: '#6b7280',
-          icon: '',
-          subcategories: [],
-        },
-      ];
+      const defaultCats: any[] = [];
       localStorage.setItem('wealthiq_categories', JSON.stringify(defaultCats));
 
       localStorage.setItem('wealthiq_currency', 'INR');
@@ -1872,7 +1766,6 @@ export default function SettingsPage() {
                                       loanAccountNumber: e.target.value,
                                     })
                                   }
-                                  placeholder="e.g. 1234-5678-9012"
                                   className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 />
                               </div>
@@ -1889,7 +1782,6 @@ export default function SettingsPage() {
                                       processingFee: e.target.value,
                                     })
                                   }
-                                  placeholder="e.g. 2500"
                                   className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 />
                               </div>
@@ -1907,7 +1799,6 @@ export default function SettingsPage() {
                                       prepaymentCharges: e.target.value,
                                     })
                                   }
-                                  placeholder="e.g. 2.0"
                                   className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 />
                               </div>
@@ -1924,7 +1815,6 @@ export default function SettingsPage() {
                                       latePaymentCharges: e.target.value,
                                     })
                                   }
-                                  placeholder="e.g. 500"
                                   className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 />
                               </div>
@@ -4410,7 +4300,6 @@ export default function SettingsPage() {
                     value={prepayAmount}
                     onChange={(e) => setPrepayAmount(e.target.value)}
                     required
-                    placeholder="e.g. 50000"
                     className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary font-mono transition"
                   />
                 </div>
@@ -4450,7 +4339,6 @@ export default function SettingsPage() {
                   type="text"
                   value={prepayNotes}
                   onChange={(e) => setPrepayNotes(e.target.value)}
-                  placeholder="e.g. Prepayment from annual bonus"
                   className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                 />
               </div>

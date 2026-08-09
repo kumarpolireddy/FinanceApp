@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,7 +21,7 @@
   --input: #3F3F46;
   --ring: #06B6D4;
   --radius: 0.25rem;
-  --font-sans: var(--font-geist-sans), 'Geist', sans-serif;
+  --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
   --positive: #34D399;
   --negative: #F87171;
   --warning: #fbbf24;
@@ -114,18 +116,22 @@
   * {
     box-sizing: border-box;
     border-color: var(--border);
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-weight: 400 !important;
   }
 
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: var(--font-sans);
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-weight: 400 !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   html {
     scroll-behavior: smooth;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif !important;
   }
 
   h1,
@@ -134,8 +140,27 @@
   h4,
   h5,
   h6,
-  p {
+  p,
+  span,
+  div,
+  b,
+  strong,
+  th,
+  td,
+  button,
+  input,
+  select,
+  textarea {
     margin: 0;
+    font-weight: 400 !important;
+  }
+
+  .font-bold,
+  .font-extrabold,
+  .font-black,
+  .font-semibold,
+  .font-medium {
+    font-weight: 400 !important;
   }
 
   ::-webkit-scrollbar {

@@ -640,19 +640,17 @@ export default function MobileAppView() {
         {activeTab === 'daily' && (
           <div className="space-y-3">
             
-            {/* Header Title & Centered Trip Button */}
+            {/* Trip Quick Action & Trips Link */}
             <div className="px-4 pt-2.5 grid grid-cols-3 items-center">
-              <div className="flex items-center justify-start">
-                <h1 className="text-xs font-black text-foreground tracking-tight uppercase">Transactions</h1>
-              </div>
+              <div></div>
 
               <div className="flex justify-center">
                 <button
                   onClick={handleTripButtonClick}
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[130px] ${
+                  className={`px-3 py-1 rounded-md text-sm font-extrabold transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[140px] ${
                     activeTrip
-                      ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse ring-2 ring-amber-400/40'
-                      : 'bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20'
+                      ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse'
+                      : 'bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20'
                   }`}
                   title={activeTrip ? `Tap to complete ${activeTrip.name}` : 'Start Trip'}
                 >
@@ -969,10 +967,10 @@ export default function MobileAppView() {
                     <div
                       key={`day-${cell.day}`}
                       onClick={() => setSelectedCalendarDay(cell.day)}
-                      className={`h-11 rounded-lg flex flex-col justify-between p-1 cursor-pointer transition ${
+                      className={`h-11 rounded-lg flex flex-col justify-between p-1 cursor-pointer transition border-0 ${
                         isSelected 
-                          ? 'bg-primary/20 border border-primary' 
-                          : 'hover:bg-muted/10 border border-transparent'
+                          ? 'bg-primary/20 text-primary font-bold' 
+                          : 'hover:bg-muted/10'
                       }`}
                     >
                       <span className={`text-3xs font-extrabold ${

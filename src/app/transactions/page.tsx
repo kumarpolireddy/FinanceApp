@@ -1339,16 +1339,22 @@ function TransactionsPageContent() {
     let totalIncomeSum = 0;
 
     filtered.forEach((t) => {
+      const catKey = typeof t.category === 'string' && t.category.trim() ? t.category.trim() : 'Other';
+      const amt = typeof t.amount === 'number' && !isNaN(t.amount) ? t.amount : 0;
       if (t.type === 'expense') {
-        expenses[t.category] = expenses[t.category] || { amount: 0, count: 0 };
-        expenses[t.category].amount += t.amount;
-        expenses[t.category].count += 1;
-        totalExpenseSum += t.amount;
+        if (!expenses[catKey] || typeof expenses[catKey] !== 'object' || !('amount' in expenses[catKey])) {
+          expenses[catKey] = { amount: 0, count: 0 };
+        }
+        expenses[catKey].amount += amt;
+        expenses[catKey].count += 1;
+        totalExpenseSum += amt;
       } else if (t.type === 'income') {
-        incomes[t.category] = incomes[t.category] || { amount: 0, count: 0 };
-        incomes[t.category].amount += t.amount;
-        incomes[t.category].count += 1;
-        totalIncomeSum += t.amount;
+        if (!incomes[catKey] || typeof incomes[catKey] !== 'object' || !('amount' in incomes[catKey])) {
+          incomes[catKey] = { amount: 0, count: 0 };
+        }
+        incomes[catKey].amount += amt;
+        incomes[catKey].count += 1;
+        totalIncomeSum += amt;
       }
     });
 
@@ -1386,19 +1392,17 @@ function TransactionsPageContent() {
       className="max-w-2xl mx-auto px-0 md:px-3.5 py-2 space-y-2.5 bg-background min-h-[90vh]"
     >
       
-      {/* 0. Top Title Bar with Heading "Transactions" & Centered Trip Button */}
+      {/* 0. Top Bar with Centered Trip Button & Trips Link */}
       <div className="px-3.5 md:px-0 pt-1 pb-2 border-b border-border/40 grid grid-cols-3 items-center">
-        <div className="flex items-center justify-start">
-          <h1 className="text-lg md:text-xl font-black text-foreground tracking-tight uppercase">Transactions</h1>
-        </div>
-        
+        <div></div>
+
         <div className="flex justify-center">
           <button
             onClick={handleTripButtonClick}
-            className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[160px] ${
+            className={`px-3.5 py-1 rounded-md text-sm font-normal transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[170px] ${
               activeTrip
-                ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse ring-2 ring-amber-400/40'
-                : 'bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20'
+                ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse'
+                : 'bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20'
             }`}
             title={activeTrip ? `Tap to stop ${activeTrip.name}` : 'Start Trip'}
           >
@@ -1409,7 +1413,7 @@ function TransactionsPageContent() {
         <div className="flex justify-end">
           <button
             onClick={() => router.push('/trips')}
-            className="text-2xs font-bold text-muted-foreground hover:text-primary transition"
+            className="text-2xs font-normal text-muted-foreground hover:text-primary transition"
           >
             Trips &rarr;
           </button>
@@ -1433,39 +1437,31 @@ function TransactionsPageContent() {
               <select
                 value={selectedMonth}
                 onChange={(e) => updateDate(parseInt(e.target.value, 10), selectedYear)}
-                className="h-10 text-sm bg-secondary border border-border/80 rounded-xl pl-3 pr-7 font-bold uppercase appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150"
+                className="h-9 text-base bg-transparent border-0 px-1 font-normal uppercase appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
                 aria-label="Select Month"
               >
                 {MONTH_NAMES.map((m, i) => (
-                  <option key={m} value={i} className="bg-secondary text-foreground uppercase text-xs font-semibold">
+                  <option key={m} value={i} className="bg-popover text-popover-foreground uppercase text-xs font-normal">
                     {m.slice(0, 3)}
                   </option>
                 ))}
               </select>
-              <ChevronDown
-                size={12}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none opacity-80"
-              />
             </div>
 
             {/* Year select dropdown */}
-            <div className="relative inline-block border-l border-border/30 pl-2">
+            <div className="relative inline-block">
               <select
                 value={selectedYear}
                 onChange={(e) => updateDate(selectedMonth, parseInt(e.target.value, 10))}
-                className="h-10 text-sm bg-secondary border border-border/80 rounded-xl pl-3 pr-7 font-bold appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150"
+                className="h-9 text-base bg-transparent border-0 px-1 font-normal appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
                 aria-label="Select Year"
               >
                 {availableYears.map((y) => (
-                  <option key={y} value={y} className="bg-secondary text-foreground text-xs font-semibold">
+                  <option key={y} value={y} className="bg-popover text-popover-foreground text-xs font-normal">
                     {y}
                   </option>
                 ))}
               </select>
-              <ChevronDown
-                size={12}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none opacity-80"
-              />
             </div>
 
             <button 
@@ -1479,7 +1475,7 @@ function TransactionsPageContent() {
             <button
               onClick={goToToday}
               disabled={selectedMonth === now.getMonth() && selectedYear === now.getFullYear()}
-              className="h-8 px-2.5 bg-secondary/80 border border-border/60 text-foreground disabled:text-muted-foreground/50 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/40 font-bold rounded-lg text-2xs transition duration-150 flex items-center gap-1 active:scale-95 shrink-0"
+              className="h-8 px-2 bg-transparent text-primary hover:text-primary/80 disabled:text-muted-foreground/40 disabled:opacity-40 disabled:cursor-not-allowed font-extrabold text-xs transition duration-150 flex items-center gap-1 active:scale-95 shrink-0"
             >
               Today
             </button>
@@ -1891,10 +1887,10 @@ function TransactionsPageContent() {
                         <button
                           key={`day-${cell.day}`}
                           onClick={() => setSelectedCalendarDay(isSelected ? null : cell.day)}
-                          className={`h-full rounded flex flex-col justify-between p-1.5 transition text-left border relative ${
+                          className={`h-full rounded-lg flex flex-col justify-between p-1.5 transition text-left border-0 relative ${
                             isSelected 
-                              ? 'bg-primary/20 border-primary' 
-                              : 'bg-background hover:bg-muted/20 border-border/40'
+                              ? 'bg-primary/20 text-primary font-bold' 
+                              : 'bg-transparent hover:bg-muted/20'
                           }`}
                         >
                           <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-slate-300'}`}>

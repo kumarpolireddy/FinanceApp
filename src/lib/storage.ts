@@ -162,15 +162,9 @@ export function getCategories(): Category[] {
       localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
       return DEFAULT_CATEGORIES;
     }
-    let parsed = JSON.parse(raw);
+    const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return DEFAULT_CATEGORIES;
-
-    const filtered = parsed.filter((c: Category) => c && !LEGACY_DEFAULT_CATEGORY_IDS.includes(c.id));
-    if (filtered.length !== parsed.length) {
-      localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(filtered));
-      parsed = filtered;
-    }
-    return parsed;
+    return parsed.filter(Boolean);
   } catch {
     return DEFAULT_CATEGORIES;
   }
@@ -590,15 +584,8 @@ export function getAccounts(includeHidden = false): Account[] {
       localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(DEFAULT_ACCOUNTS));
       return DEFAULT_ACCOUNTS;
     }
-    let accounts = JSON.parse(raw);
+    const accounts = JSON.parse(raw);
     if (!Array.isArray(accounts)) return DEFAULT_ACCOUNTS;
-
-    // Filter out legacy default seed accounts
-    const filteredAccounts = accounts.filter((acc) => acc && !LEGACY_DEFAULT_ACCOUNT_IDS.includes(acc.id));
-    if (filteredAccounts.length !== accounts.length) {
-      localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(filteredAccounts));
-      accounts = filteredAccounts;
-    }
 
     const txns = getTransactions(true);
 
@@ -1202,44 +1189,7 @@ export interface Goal {
   icon: string;
 }
 
-const DEFAULT_GOALS: Goal[] = [
-  {
-    id: 'goal-emergency',
-    name: 'Emergency Fund',
-    targetAmount: 300000,
-    currentAmount: 85000,
-    targetDate: '2026-12-31',
-    color: '#22c55e',
-    icon: '🛡️',
-  },
-  {
-    id: 'goal-vacation',
-    name: 'Vacation',
-    targetAmount: 80000,
-    currentAmount: 32000,
-    targetDate: '2026-10-01',
-    color: '#3b82f6',
-    icon: '✈️',
-  },
-  {
-    id: 'goal-vehicle',
-    name: 'Vehicle',
-    targetAmount: 500000,
-    currentAmount: 120000,
-    targetDate: '2027-06-30',
-    color: '#8b5cf6',
-    icon: '🚗',
-  },
-  {
-    id: 'goal-retirement',
-    name: 'Retirement',
-    targetAmount: 5000000,
-    currentAmount: 450000,
-    targetDate: '2045-01-01',
-    color: '#f59e0b',
-    icon: '🏖️',
-  },
-];
+const DEFAULT_GOALS: Goal[] = [];
 
 export function getGoals(): Goal[] {
   if (typeof window === 'undefined') return DEFAULT_GOALS;

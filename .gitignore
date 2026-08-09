@@ -45,4 +45,9 @@ turbo/
 *.apk
 
 # Scratch and temp files
-scratch/
+scratch/
+*.log
+*.sqlite
+test_import.html
+ChatGPT Image*
+__pycache__/
