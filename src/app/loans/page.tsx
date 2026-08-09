@@ -1209,7 +1209,6 @@ export default function LoansPage() {
                 type="text"
                 value={loanSearch}
                 onChange={(e) => setLoanSearch(e.target.value)}
-                placeholder="Search loans..."
                 className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-secondary/30 text-xs text-foreground focus:outline-none focus:border-primary transition"
               />
               {loanSearch && (

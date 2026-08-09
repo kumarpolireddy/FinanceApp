@@ -114,7 +114,7 @@ export default function AnalyticsFilters({
     useMonthFilter;
 
   return (
-    <div className="bg-card border border-border rounded-xl px-4 py-3">
+    <div className="px-1 py-2">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <SlidersHorizontal size={13} />

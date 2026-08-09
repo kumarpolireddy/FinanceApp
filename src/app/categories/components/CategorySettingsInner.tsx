@@ -187,10 +187,9 @@ export function CategorySettingsInner() {
             </label>
             <input
               type="text"
-              placeholder="e.g. Pet Care, Subscriptions..."
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2.5 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-all"
+              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-all"
             />
           </div>
 
@@ -356,7 +355,6 @@ export function CategorySettingsInner() {
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 required
-                placeholder="e.g. Entertainment, Utilities"
                 className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium"
               />
             </div>

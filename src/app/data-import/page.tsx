@@ -35,8 +35,8 @@ const INITIAL_COLUMN_MAPPINGS: ColumnMapping[] = [
   { sourceColumn: 'Account', targetField: 'account', confidence: 98, status: 'mapped' },
   { sourceColumn: 'Category', targetField: 'category', confidence: 98, status: 'mapped' },
   { sourceColumn: 'Subcategory', targetField: 'subcategory', confidence: 98, status: 'mapped' },
-  { sourceColumn: 'Note', targetField: 'description', confidence: 98, status: 'mapped' },
-  { sourceColumn: 'Description', targetField: 'notes', confidence: 98, status: 'mapped' },
+  { sourceColumn: 'Description', targetField: 'description', confidence: 98, status: 'mapped' },
+  { sourceColumn: 'Note', targetField: 'notes', confidence: 98, status: 'mapped' },
   { sourceColumn: 'Amount', targetField: 'amount', confidence: 98, status: 'mapped' },
   { sourceColumn: 'Income/Expense', targetField: 'type', confidence: 98, status: 'mapped' },
   { sourceColumn: 'INR', targetField: 'ignore', confidence: 50, status: 'ignored' },
@@ -130,8 +130,8 @@ function parseRowsWithMappings(rows: any[], mappings: ColumnMapping[]): PreviewR
   const categoryCol = getSourceCol('category');
   const subcategoryCol = getSourceCol('subcategory');
   const accountCol = getSourceCol('account');
-  const notesCol = getSourceCol('notes'); // Target: transaction.notes (Excel Description)
-  const descriptionCol = getSourceCol('description'); // Target: transaction.description (Excel Note)
+  const notesCol = getSourceCol('notes'); // Target: transaction.notes (Excel Note/Memo)
+  const descriptionCol = getSourceCol('description'); // Target: transaction.description (Excel Description/Merchant)
   const typeCol = getSourceCol('type');
 
   return rows.map((row: any, index: number) => {
@@ -489,23 +489,26 @@ export default function DataImportPage() {
             targetField = 'account';
             confidence = 89;
           }
-        } else if (lower === 'note' || lower === 'notes' || lower === 'title' || lower === 'memo') {
-          targetField = 'description';
-          confidence = 95;
         } else if (
           lower === 'description' ||
           lower === 'desc' ||
-          lower === 'remarks' ||
+          lower === 'merchant' ||
+          lower === 'payee' ||
           lower === 'details' ||
-          lower === 'merchant'
+          lower === 'title'
         ) {
-          if (hasNote) {
-            targetField = 'notes';
-            confidence = 95;
-          } else {
-            targetField = 'description';
-            confidence = 90;
-          }
+          targetField = 'description';
+          confidence = 96;
+        } else if (
+          lower === 'note' ||
+          lower === 'notes' ||
+          lower === 'memo' ||
+          lower === 'remarks' ||
+          lower === 'comment' ||
+          lower === 'comments'
+        ) {
+          targetField = 'notes';
+          confidence = 96;
         } else if (lower === 'incomeexpense' || lower === 'type' || lower === 'txntype') {
           targetField = 'type';
           confidence = 95;

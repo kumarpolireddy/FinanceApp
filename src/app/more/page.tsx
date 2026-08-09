@@ -27,6 +27,7 @@ import {
   Plane,
   Trash2,
   RotateCcw,
+  Users,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -63,6 +64,7 @@ export default function MorePage() {
   };
 
   const MENU_ITEMS = [
+    { label: 'Split Expenses', icon: Users, color: 'text-primary', path: '/split-expenses' },
     { label: 'Recycle Bin', icon: Trash2, color: 'text-negative', action: () => { loadRecycled(); setSubView('recycle_bin'); } },
     { label: 'Trips', icon: Plane, color: 'text-primary', path: '/trips' },
     { label: 'Analytics', icon: PieChart, color: 'text-primary', path: '/analytics' },

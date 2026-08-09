@@ -23,6 +23,7 @@ import {
   Landmark,
   Wrench,
   Plane,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -84,6 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: 'group-planning',
     label: 'PLANNING',
     items: [
+      { id: 'nav-split-expenses', label: 'Split Expenses', href: '/split-expenses', icon: Users },
       { id: 'nav-trips', label: 'Trips Mode', href: '/trips', icon: Plane },
       { id: 'nav-budgets', label: 'Budgets', href: '/budgets', icon: Wallet },
       { id: 'nav-goals', label: 'Goals', href: '/goals', icon: Target },

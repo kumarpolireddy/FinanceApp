@@ -7,19 +7,19 @@
 :root {
   --background: #27272A;
   --foreground: #F4F4F5;
-  --primary: #06B6D4;
-  --primary-foreground: #27272A;
+  --primary: #60A5FA;
+  --primary-foreground: #18181B;
   --secondary: #3F3F46;
   --secondary-foreground: #D4D4D8;
-  --accent: #06B6D4;
-  --accent-foreground: #27272A;
+  --accent: #60A5FA;
+  --accent-foreground: #18181B;
   --muted: #3F3F46;
   --muted-foreground: #A1A1AA;
   --card: #3F3F46;
   --card-foreground: #F4F4F5;
   --border: #52525B;
   --input: #3F3F46;
-  --ring: #06B6D4;
+  --ring: #60A5FA;
   --radius: 0.25rem;
   --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
   --positive: #34D399;
@@ -31,11 +31,11 @@
 .light {
   --background: #D4D4D8;
   --foreground: #27272A;
-  --primary: #0891B2;
+  --primary: #3B82F6;
   --primary-foreground: #FFFFFF;
   --secondary: #C4C4C7;
   --secondary-foreground: #52525B;
-  --accent: #0891B2;
+  --accent: #3B82F6;
   --accent-foreground: #FFFFFF;
   --muted: #C4C4C7;
   --muted-foreground: #52525B;
@@ -43,7 +43,7 @@
   --card-foreground: #27272A;
   --border: #B4B4B8;
   --input: #F4F4F5;
-  --ring: #0891B2;
+  --ring: #3B82F6;
   --radius: 0.25rem;
   --positive: #059669;
   --negative: #DC2626;

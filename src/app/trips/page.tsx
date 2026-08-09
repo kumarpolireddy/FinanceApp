@@ -328,7 +328,6 @@ export default function TripsPage() {
                 <Search size={15} className="absolute left-3 top-3 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search trips..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-muted/40 border border-border rounded-lg text-sm focus:outline-none focus:border-primary text-foreground"
@@ -806,7 +805,6 @@ export default function TripsPage() {
               <label className="block text-xs text-muted-foreground mb-1">Amount (₹) *</label>
               <input
                 type="number"
-                placeholder="0.00"
                 value={expenseAmount}
                 onChange={(e) => setExpenseAmount(e.target.value)}
                 className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"

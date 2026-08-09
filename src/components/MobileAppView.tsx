@@ -789,6 +789,11 @@ export default function MobileAppView() {
                                 <div className="space-y-0.5 min-w-0 flex-1 pr-2">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="text-xs font-semibold text-foreground truncate">{tx.notes || tx.category}</span>
+                                    {tx.isSplit && (
+                                      <span className="text-4xs bg-primary/20 text-primary px-1.5 py-0.5 rounded font-normal uppercase shrink-0 max-w-[140px] truncate">
+                                        Split{tx.splitDetails?.members ? `: ${tx.splitDetails.members.map(m => m.name).filter(Boolean).join(', ')}` : ''}
+                                      </span>
+                                    )}
                                     {!isTransfer && (
                                       <span className="text-4xs bg-card border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
                                         {tx.category}

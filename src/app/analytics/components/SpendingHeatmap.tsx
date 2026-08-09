@@ -87,7 +87,7 @@ export default function SpendingHeatmap({ allTransactions }: { allTransactions: 
   const hasData = allValues.some((v) => v > 0);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className="px-1 py-2">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-base font-semibold text-foreground">Daily Spending Heatmap</h3>

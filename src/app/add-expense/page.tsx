@@ -15,6 +15,8 @@ import {
   type Transaction,
   type Account,
   type Category,
+  type SplitDetails,
+  type SplitMember,
 } from '@/lib/storage';
 import {
   ArrowLeftRight,
@@ -29,6 +31,8 @@ import {
   Camera,
   Check,
   Delete,
+  Users,
+  X,
 } from 'lucide-react';
 
 function cleanString(val: unknown): string {
@@ -555,7 +559,6 @@ export default function AddExpensePage() {
                 required
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="e.g. Subscriptions"
                 className="w-full rounded border border-border bg-background p-2 text-2xs focus:outline-none focus:border-primary"
               />
             </div>
@@ -614,7 +617,6 @@ export default function AddExpensePage() {
                 required
                 value={newSubcategoryName}
                 onChange={(e) => setNewSubcategoryName(e.target.value)}
-                placeholder="e.g. Netflix"
                 className="w-full rounded border border-border bg-background p-2 text-2xs focus:outline-none focus:border-primary"
               />
             </div>

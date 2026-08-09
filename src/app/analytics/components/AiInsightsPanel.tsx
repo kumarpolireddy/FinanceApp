@@ -246,7 +246,7 @@ export default function AiInsightsPanel({ transactions }: { transactions: Transa
   const txnCount = useMemo(() => transactions.length, [transactions]);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className="px-1 py-2">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">

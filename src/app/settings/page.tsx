@@ -1171,8 +1171,7 @@ export default function SettingsPage() {
                   type="text"
                   value={accountSearch}
                   onChange={(e) => setAccountSearch(e.target.value)}
-                  placeholder="Search accounts name, bank, number..."
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-primary transition"
+                  className="w-full rounded-xl border border-border bg-[#0b0f1a] px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary transition"
                 />
               </div>
 
@@ -1288,7 +1287,6 @@ export default function SettingsPage() {
                         required
                         value={accountForm.name}
                         onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
-                        placeholder="Name your account..."
                         className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                       />
                     </div>
@@ -1307,7 +1305,6 @@ export default function SettingsPage() {
                               onChange={(e) =>
                                 setAccountForm({ ...accountForm, balance: e.target.value })
                               }
-                              placeholder="0"
                               className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                             />
                           </div>
@@ -1321,7 +1318,6 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, notes: e.target.value })
                             }
-                            placeholder="Internal account descriptions..."
                             rows={2}
                             className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition resize-none"
                           />
@@ -1343,7 +1339,6 @@ export default function SettingsPage() {
                               onChange={(e) =>
                                 setAccountForm({ ...accountForm, balance: e.target.value })
                               }
-                              placeholder="0"
                               className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                             />
                           </div>
@@ -1357,7 +1352,6 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, notes: e.target.value })
                             }
-                            placeholder="Add cash wallet descriptions..."
                             rows={2}
                             className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition resize-none"
                           />
@@ -1379,7 +1373,6 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, creditLimit: e.target.value })
                             }
-                            placeholder="e.g. 150000"
                             className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
@@ -1394,7 +1387,6 @@ export default function SettingsPage() {
                               onChange={(e) =>
                                 setAccountForm({ ...accountForm, balance: e.target.value })
                               }
-                              placeholder="0"
                               className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                             />
                           </div>
@@ -1409,7 +1401,6 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, billingCycle: e.target.value })
                             }
-                            placeholder="e.g. 15th of month"
                             className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
@@ -1423,7 +1414,6 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, dueDate: e.target.value })
                             }
-                            placeholder="e.g. 2nd of month"
                             className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
@@ -3444,7 +3434,6 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setTemplateFormData({ ...templateFormData, defaultAmount: e.target.value })
                     }
-                    placeholder="e.g. 15000"
                     required
                     min="1"
                     className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-primary transition-all font-semibold"
@@ -3587,7 +3576,6 @@ export default function SettingsPage() {
                   type="number"
                   value={adjustActualBalance}
                   onChange={(e) => setAdjustActualBalance(e.target.value)}
-                  placeholder="Enter current actual balance..."
                   className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm font-semibold text-foreground focus:outline-none focus:border-primary transition"
                 />
               </div>
@@ -4171,7 +4159,7 @@ export default function SettingsPage() {
                     .filter((a) => a.type === 'accounts')
                     .map((acc) => (
                       <option key={acc.id} value={acc.id}>
-                        {acc.name} (Balance: ₹{acc.balance.toLocaleString('en-IN')})
+                        {acc.name}
                       </option>
                     ))}
                 </select>
@@ -4284,7 +4272,7 @@ export default function SettingsPage() {
                     .filter((a) => a.type === 'accounts')
                     .map((acc) => (
                       <option key={acc.id} value={acc.id}>
-                        {acc.name} (Balance: ₹{acc.balance.toLocaleString('en-IN')})
+                        {acc.name}
                       </option>
                     ))}
                 </select>

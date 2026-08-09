@@ -156,11 +156,10 @@ export default function LoginPage() {
                 <input
                   type="email"
                   required
-                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={submitting}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-[#0a0f1e]/80 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-cyan-500 transition-all font-medium"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-[#0a0f1e]/80 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-all font-medium"
                 />
               </div>
             </div>
@@ -181,11 +180,10 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder={isSignUp ? 'Create a secure password' : 'Enter your password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={submitting}
-                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-border bg-[#0a0f1e]/80 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-cyan-500 transition-all font-medium"
+                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-border bg-[#0a0f1e]/80 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-all font-medium"
                 />
                 <button
                   type="button"

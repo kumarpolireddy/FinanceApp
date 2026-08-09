@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState, useRef, Suspense, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { ChevronDown, Edit3, ChevronLeft, ChevronRight, Filter, BarChart3, Plus, ArrowLeft, Trash2, Copy, Star, Camera, Plane, Check } from 'lucide-react';
+import { ChevronDown, Edit3, ChevronLeft, ChevronRight, Filter, BarChart3, Plus, ArrowLeft, Trash2, Copy, Star, Camera, Plane, Check, Users, ReceiptText } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import Modal from '@/components/ui/Modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -1529,10 +1529,9 @@ function TransactionsPageContent() {
               <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Search description</label>
               <input
                 type="text"
-                placeholder="Type keywords..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full text-xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary"
+                className="w-full text-xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
@@ -1674,23 +1673,25 @@ function TransactionsPageContent() {
       )}
 
       {/* 2. Secondary View tabs: Daily, Calendar, Monthly, Total, Note */}
-      <div className="flex border-b border-border/30">
-        {(['daily', 'calendar', 'monthly', 'total', 'note'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab);
-              if (tab !== 'calendar') setSelectedCalendarDay(null);
-            }}
-            className={`flex-1 text-center py-2.5 text-xs font-bold uppercase tracking-wider transition border-b-2 ${
-              activeTab === tab 
-                ? 'border-primary text-primary font-black' 
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="border-b border-border/30 overflow-x-auto">
+        <div className="flex min-w-full">
+          {(['daily', 'calendar', 'monthly', 'total', 'note'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab);
+                if (tab !== 'calendar') setSelectedCalendarDay(null);
+              }}
+              className={`flex-1 min-w-[70px] text-center py-2 text-xs font-bold uppercase tracking-wider transition border-b-2 shrink-0 ${
+                activeTab === tab 
+                  ? 'border-white text-white font-black' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 3. Transaction Summary Banner */}
@@ -1737,12 +1738,12 @@ function TransactionsPageContent() {
                     const weekday = getDayName(group.date.toISOString().slice(0, 10));
                     
                     return (
-                      <div key={group.date.toISOString()} className="bg-secondary rounded-lg border border-border/60 overflow-hidden">
+                      <div key={group.date.toISOString()} className="bg-secondary border border-border/80 rounded-xl p-3.5 space-y-2 shadow-xs">
                         {/* Day Group Header */}
-                        <div className="flex items-center justify-between py-2 px-3.5 bg-secondary/50 border-b border-border/55">
+                        <div className="flex items-center justify-between pb-2 border-b border-border/40">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-lg font-bold text-primary leading-none">{day}</span>
-                            <span className="text-[10px] font-semibold uppercase text-primary/80">{weekday}</span>
+                            <span className="text-lg font-bold text-white leading-none">{day}</span>
+                            <span className="text-[10px] font-semibold uppercase text-white/80">{weekday}</span>
                             <span className="text-xs text-muted-foreground font-normal">
                               {group.date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                             </span>
@@ -1754,7 +1755,7 @@ function TransactionsPageContent() {
                         </div>
 
                         {/* Transaction Rows */}
-                        <div className="divide-y divide-border/30">
+                        <div>
                           {group.items.map((txn) => {
                             const isIncome = txn.type === 'income';
                             const isTransfer = txn.type === 'transfer';
@@ -1790,7 +1791,7 @@ function TransactionsPageContent() {
                                 onMouseUp={handleTouchEndOrCancel}
                                 onMouseLeave={handleTouchEndOrCancel}
                                 onClick={() => handleTxnClick(txn)}
-                                className={`flex items-center justify-between py-2 ${isSelectionMode ? 'pl-3' : 'pl-10'} pr-3.5 transition cursor-pointer group relative border-b border-border/10 last:border-b-0 ${
+                                className={`flex items-center justify-between py-2 ${isSelectionMode ? 'pl-5' : 'pl-10'} pr-2 transition cursor-pointer group relative ${
                                   isSelected
                                     ? 'bg-primary/20 border-l-4 border-l-primary'
                                     : isTrip
@@ -1813,10 +1814,17 @@ function TransactionsPageContent() {
 
                                 {/* Left: Notes / Category & Metadata */}
                                 <div className="flex-1 min-w-0 pr-2">
-                                  <div className="text-sm font-semibold text-foreground truncate">
-                                    {title}
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-sm font-normal text-foreground truncate">
+                                      {title}
+                                    </span>
+                                    {txn.isSplit && (
+                                      <span className="text-[10px] font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase shrink-0 max-w-[180px] truncate">
+                                        Split{txn.splitDetails?.members ? `: ${txn.splitDetails.members.map(m => m.name).filter(Boolean).join(', ')}` : ''}
+                                      </span>
+                                    )}
                                   </div>
-                                  <div className="text-[11px] font-medium text-muted-foreground truncate mt-0.5">
+                                  <div className="text-[11px] font-normal text-muted-foreground truncate mt-0.5">
                                     {metadata}
                                   </div>
                                 </div>
@@ -1834,7 +1842,7 @@ function TransactionsPageContent() {
                                 )}
 
                                 {/* Right: Amount */}
-                                <div className="text-right font-mono tabular-nums shrink-0 w-20">
+                                <div className="text-right font-mono tabular-nums shrink-0 ml-auto pl-1">
                                   <span className={`text-sm font-bold block ${
                                     isTransfer 
                                       ? 'text-info' 
@@ -1910,13 +1918,13 @@ function TransactionsPageContent() {
 
                 {/* Day-specific transactions */}
                 {selectedCalendarDay !== null && (
-                  <div className="bg-secondary border border-border/60 rounded-lg overflow-hidden">
-                    <div className="flex justify-between items-center bg-secondary/50 px-3.5 py-2 border-b border-border/55">
-                      <span className="text-xs font-bold uppercase tracking-wider text-primary">Transactions on Day {selectedCalendarDay}</span>
-                      <button onClick={() => setSelectedCalendarDay(null)} className="text-xs text-primary font-bold uppercase tracking-wider">Clear Selection</button>
+                  <div className="bg-secondary border border-border/80 rounded-xl p-3.5 space-y-2 shadow-xs">
+                    <div className="flex justify-between items-center pb-2 border-b border-border/40">
+                      <span className="text-xs font-bold uppercase tracking-wider text-white">Transactions on Day {selectedCalendarDay}</span>
+                      <button onClick={() => setSelectedCalendarDay(null)} className="text-xs text-white/90 hover:text-white font-bold uppercase tracking-wider">Clear Selection</button>
                     </div>
                     
-                    <div className="divide-y divide-border/30">
+                    <div>
                       {selectedDayTransactions.length === 0 ? (
                         <p className="text-center text-xs text-muted-foreground py-4 font-semibold">No transactions recorded on this day.</p>
                       ) : (
@@ -1945,7 +1953,7 @@ function TransactionsPageContent() {
                              <div 
                                key={txn.id}
                                onClick={() => startEditing(txn)}
-                               className={`flex items-center justify-between py-2 pl-10 pr-3.5 transition cursor-pointer border-b border-border/20 last:border-b-0 ${
+                               className={`flex items-center justify-between py-2 pl-10 pr-2 transition cursor-pointer ${
                                  isTrip
                                    ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
                                    : 'hover:bg-secondary/45 active:bg-secondary/65'
@@ -2070,7 +2078,6 @@ function TransactionsPageContent() {
                   <div className="flex-1 flex gap-2 bg-secondary p-2 rounded border border-border">
                     <input
                       type="text"
-                      placeholder="Search notes..."
                       value={noteSearch}
                       onChange={(e) => setNoteSearch(e.target.value)}
                       className="w-full text-2xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none"
@@ -2400,6 +2407,68 @@ function TransactionsPageContent() {
                   <Camera size={20} className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />
                 </div>
               </div>
+
+              {/* Split Details Section if transaction is a Split Expense */}
+              {editingTransaction?.isSplit && editingTransaction?.splitDetails && (
+                <div className="mx-5 my-3 bg-secondary/50 border border-border/60 rounded-xl p-3.5 space-y-3 text-xs">
+                  <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                    <div className="flex items-center gap-1.5 font-normal text-foreground">
+                      <Users size={16} className="text-primary" />
+                      <span>Split Expense Details</span>
+                    </div>
+                    <span className="text-2xs font-normal text-primary px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-md uppercase">
+                      {editingTransaction.splitDetails.splitMethod === 'equal' ? 'Equal Split' : 'Custom Split'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 text-center gap-2 font-mono">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase block font-sans">Total Paid</span>
+                      <span className="text-xs font-normal text-foreground">₹{editingTransaction.splitDetails.totalAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase block font-sans">Your Share</span>
+                      <span className="text-xs font-normal text-primary">₹{editingTransaction.splitDetails.myShare.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase block font-sans">To Receive</span>
+                      <span className="text-xs font-normal text-positive">₹{editingTransaction.splitDetails.toReceive.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2 border-t border-border/40">
+                    <span className="text-[10px] text-muted-foreground uppercase block">Split With</span>
+                    {editingTransaction.splitDetails.members.map((m, idx) => (
+                      <div key={`edit-split-m-${idx}`} className="flex justify-between items-center py-1.5 border-b border-border/20 text-xs">
+                        <span>{m.name}</span>
+                        <div className="font-mono text-right">
+                          <span className="text-foreground">₹{m.share.toLocaleString('en-IN')}</span>
+                          {m.pending > 0 ? (
+                            <span className="text-2xs text-negative block">Pending: ₹{m.pending.toLocaleString('en-IN')}</span>
+                          ) : (
+                            <span className="text-2xs text-positive block">Paid</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTransaction(null);
+                        setEditForm(null);
+                        router.push('/split-expenses');
+                      }}
+                      className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/30 rounded-lg text-xs font-normal hover:bg-primary hover:text-primary-foreground transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <ReceiptText size={14} />
+                      <span>View Split Dashboard</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Bottom Actions Grid */}
               <div className="px-5 mt-5 space-y-3">
@@ -2790,7 +2859,6 @@ function TransactionsPageContent() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. Budget Plan, Grocery List"
                 value={noteTitle}
                 onChange={(e) => setNoteTitle(e.target.value)}
                 className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-bold"
@@ -2801,7 +2869,6 @@ function TransactionsPageContent() {
                 Note Content
               </label>
               <textarea
-                placeholder="Write your note details here..."
                 value={noteContent}
                 onChange={(e) => setNoteContent(e.target.value)}
                 rows={6}

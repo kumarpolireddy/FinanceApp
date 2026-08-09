@@ -684,7 +684,7 @@ export default function SavingsTrendChartInner() {
           : 'Savings Trend';
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className="px-1 py-2">
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <h3 className="text-base font-semibold text-foreground">{cardTitle}</h3>
         {(granularity !== 'monthly' || drillMonth !== null || drillDate !== null) && (
@@ -749,27 +749,9 @@ export default function SavingsTrendChartInner() {
                 setDrillMonth(null);
                 setDrillDate(null);
               }}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                granularity === 'monthly' && drillMonth === null && drillDate === null
-                  ? 'bg-primary/20 text-primary shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all bg-primary/20 text-primary shadow-sm"
             >
               Monthly
-            </button>
-            <button
-              onClick={() => {
-                setGranularity('daily');
-                setDrillMonth(null);
-                setDrillDate(null);
-              }}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                granularity === 'daily' && drillMonth === null && drillDate === null
-                  ? 'bg-primary/20 text-primary shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Daily
             </button>
           </div>
         </div>
@@ -929,18 +911,6 @@ export default function SavingsTrendChartInner() {
               <LineChart
                 data={data}
                 margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                onClick={(state) => {
-                  if (state && state.activeTooltipIndex !== undefined) {
-                    const clickedPoint = data[state.activeTooltipIndex];
-                    if (!clickedPoint) return;
-
-                    if (clickedPoint.isMonthlyPoint && clickedPoint.monthIndex !== undefined) {
-                      setDrillMonth(clickedPoint.monthIndex);
-                    } else if (clickedPoint.isDailyPoint && clickedPoint.dateObj) {
-                      setDrillDate(clickedPoint.dateObj);
-                    }
-                  }
-                }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis

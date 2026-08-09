@@ -789,10 +789,9 @@ export default function BudgetsPage() {
               type="number"
               value={formData.allocated}
               onChange={(e) => setFormData({ ...formData, allocated: e.target.value })}
-              placeholder="e.g. 10000"
               required
               min="1"
-              className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-primary transition-all font-semibold"
+              className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
             />
           </div>
 

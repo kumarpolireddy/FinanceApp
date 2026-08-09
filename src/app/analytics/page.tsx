@@ -56,7 +56,7 @@ export default function AnalyticsPage() {
         <div className="relative overflow-hidden select-none mb-6">
           
           {/* Slider Controls & Sliding Progress Indicator Bar */}
-          <div className="flex items-center justify-between mb-3 px-3 bg-secondary/10 py-2 rounded-lg border border-border/30">
+          <div className="flex items-center justify-between mb-3 px-3 py-2">
             <button
               disabled={activeSlide === 0}
               onClick={() => setActiveSlide((p) => Math.max(p - 1, 0))}

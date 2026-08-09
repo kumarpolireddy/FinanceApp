@@ -149,7 +149,7 @@ export default function TopMerchantsTable({
   const totalSpend = useMemo(() => topMerchants.reduce((s, m) => s + m.totalSpent, 0), [topMerchants]);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className="px-1 py-2">
       <div className="flex items-center justify-between gap-4 mb-4">
         <h3 className="text-base font-semibold text-foreground">Top Merchants</h3>
         <span className="text-xs text-muted-foreground">

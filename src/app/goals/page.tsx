@@ -434,9 +434,8 @@ export default function GoalsPage() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Car Fund"
                 required
-                className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-primary transition-all font-semibold"
+                className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
               />
             </div>
 
@@ -448,7 +447,6 @@ export default function GoalsPage() {
                 type="number"
                 value={formData.targetAmount}
                 onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })}
-                placeholder="e.g. 500000"
                 required
                 min="1"
                 className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
@@ -463,7 +461,6 @@ export default function GoalsPage() {
                 type="number"
                 value={formData.currentAmount}
                 onChange={(e) => setFormData({ ...formData, currentAmount: e.target.value })}
-                placeholder="e.g. 10000"
                 required
                 min="0"
                 className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
@@ -591,10 +588,9 @@ export default function GoalsPage() {
               type="number"
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
-              placeholder="e.g. 5000"
               required
               min="1"
-              className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-primary transition-all font-semibold"
+              className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
             />
           </div>
 

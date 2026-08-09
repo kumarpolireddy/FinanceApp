@@ -2,6 +2,41 @@
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export interface SplitMember {
+  name: string;
+  share: number;
+  paid: number;
+  pending: number;
+}
+
+export interface SplitDetails {
+  id: string;
+  transactionId: string;
+  name?: string;
+  totalAmount: number;
+  myShare: number;
+  toReceive: number;
+  received: number;
+  pending: number;
+  splitMethod: 'equal' | 'custom';
+  members: SplitMember[];
+  status: 'pending' | 'partially_paid' | 'paid';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SplitPaymentRecord {
+  id: string;
+  splitId: string;
+  transactionId: string;
+  personName: string;
+  amount: number;
+  date: string;
+  paymentAccountId?: string;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface Transaction {
   id: string;
   date: string;
@@ -14,6 +49,8 @@ export interface Transaction {
   type: 'income' | 'expense' | 'transfer';
   notes?: string;
   tripId?: string;
+  isSplit?: boolean;
+  splitDetails?: SplitDetails;
   createdAt: string;
 }
 
@@ -125,6 +162,8 @@ const KEYS = {
   ACTIVE_TRIP_ID: 'wealthiq_active_trip_id',
   TRIP_BG_COLOR: 'wealthiq_trip_bg_color',
   RECYCLE_BIN: 'wealthiq_recycle_bin',
+  SPLIT_EXPENSES: 'wealthiq_split_expenses',
+  SPLIT_PAYMENTS: 'wealthiq_split_payments',
 };
 
 // ── Default Categories ────────────────────────────────────────────────────────
@@ -204,6 +243,143 @@ export function getIncomeCategories(): string[] {
     .sort();
 }
 
+// ── Split Expenses CRUD ───────────────────────────────────────────────────────
+
+export function getSplitExpenses(): SplitDetails[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(KEYS.SPLIT_EXPENSES);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSplitExpenses(splits: SplitDetails[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(KEYS.SPLIT_EXPENSES, JSON.stringify(splits));
+  }
+}
+
+export function saveSplitExpense(split: SplitDetails): void {
+  const all = getSplitExpenses();
+  const idx = all.findIndex((s) => s.id === split.id || s.transactionId === split.transactionId);
+  if (idx >= 0) {
+    all[idx] = split;
+  } else {
+    all.unshift(split);
+  }
+  saveSplitExpenses(all);
+}
+
+export function getSplitExpenseByTxnId(transactionId: string): SplitDetails | undefined {
+  return getSplitExpenses().find((s) => s.transactionId === transactionId);
+}
+
+export function deleteSplitExpense(transactionId: string): void {
+  const all = getSplitExpenses().filter((s) => s.transactionId !== transactionId);
+  saveSplitExpenses(all);
+}
+
+export function getSplitPayments(): SplitPaymentRecord[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(KEYS.SPLIT_PAYMENTS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSplitPayments(payments: SplitPaymentRecord[]): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(KEYS.SPLIT_PAYMENTS, JSON.stringify(payments));
+  }
+}
+
+export function recordSplitRepayment(params: {
+  splitId?: string;
+  transactionId?: string;
+  personName: string;
+  amount: number;
+  paymentAccountId?: string;
+  date?: string;
+  notes?: string;
+}): { updatedSplit: SplitDetails; paymentRecord: SplitPaymentRecord } {
+  const splits = getSplitExpenses();
+  const target = splits.find(
+    (s) => (params.splitId && s.id === params.splitId) || (params.transactionId && s.transactionId === params.transactionId)
+  );
+  if (!target) {
+    throw new Error('Split expense record not found');
+  }
+
+  const pmtAmount = Math.max(0, Number(params.amount) || 0);
+  if (pmtAmount <= 0) {
+    throw new Error('Invalid repayment amount');
+  }
+
+  const memberIdx = target.members.findIndex(
+    (m) => m.name.trim().toLowerCase() === params.personName.trim().toLowerCase()
+  );
+  if (memberIdx < 0) {
+    throw new Error(`Person "${params.personName}" not found in this split expense.`);
+  }
+
+  const member = target.members[memberIdx];
+  const newMemberPaid = Math.min(member.share, Number((member.paid + pmtAmount).toFixed(2)));
+  const newMemberPending = Math.max(0, Number((member.share - newMemberPaid).toFixed(2)));
+
+  target.members[memberIdx] = {
+    ...member,
+    paid: newMemberPaid,
+    pending: newMemberPending,
+  };
+
+  const totalReceived = Number(target.members.reduce((sum, m) => sum + m.paid, 0).toFixed(2));
+  const totalPending = Math.max(0, Number((target.toReceive - totalReceived).toFixed(2)));
+  let status: 'pending' | 'partially_paid' | 'paid' = 'pending';
+  if (totalPending <= 0 && totalReceived >= target.toReceive) {
+    status = 'paid';
+  } else if (totalReceived > 0) {
+    status = 'partially_paid';
+  }
+
+  target.received = totalReceived;
+  target.pending = totalPending;
+  target.status = status;
+  target.updatedAt = new Date().toISOString();
+
+  saveSplitExpense(target);
+
+  // Update linked transaction in storage
+  const allTxns = getTransactions(true);
+  const txnIdx = allTxns.findIndex((t) => t.id === target.transactionId);
+  if (txnIdx >= 0) {
+    allTxns[txnIdx].isSplit = true;
+    allTxns[txnIdx].splitDetails = target;
+    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(allTxns));
+  }
+
+  const newRecord: SplitPaymentRecord = {
+    id: `pmt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    splitId: target.id,
+    transactionId: target.transactionId,
+    personName: params.personName,
+    amount: pmtAmount,
+    date: params.date || new Date().toISOString(),
+    paymentAccountId: params.paymentAccountId,
+    notes: params.notes,
+    createdAt: new Date().toISOString(),
+  };
+
+  const payments = getSplitPayments();
+  payments.unshift(newRecord);
+  saveSplitPayments(payments);
+
+  return { updatedSplit: target, paymentRecord: newRecord };
+}
+
 // ── Transactions ──────────────────────────────────────────────────────────────
 
 export function getTransactions(includeHidden = false): Transaction[] {
@@ -211,6 +387,9 @@ export function getTransactions(includeHidden = false): Transaction[] {
   try {
     const raw = localStorage.getItem(KEYS.TRANSACTIONS);
     const txns: any[] = raw ? JSON.parse(raw) : [];
+    const splits = getSplitExpenses();
+    const splitMap = new Map(splits.map((s) => [s.transactionId, s]));
+
     let mapped = txns.filter(Boolean).map((t) => {
       let dateStr = '';
       if (t.date) {
@@ -226,9 +405,14 @@ export function getTransactions(includeHidden = false): Transaction[] {
       } else {
         dateStr = new Date().toISOString().slice(0, 10);
       }
+
+      const splitObj = t.splitDetails || splitMap.get(t.id);
+
       return {
         ...t,
         date: dateStr,
+        isSplit: Boolean(t.isSplit || splitObj),
+        splitDetails: splitObj,
         category:
           t.category === null || t.category === undefined
             ? t.type === 'transfer'
@@ -274,7 +458,6 @@ export function saveTransaction(txn: Omit<Transaction, 'id' | 'createdAt'>): Tra
     dateStr = new Date().toISOString();
   }
 
-  // If the date string has no time component (length 10, e.g. YYYY-MM-DD), append the current time
   if (dateStr.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     const currentISO = new Date().toISOString();
     dateStr = `${dateStr}T${currentISO.slice(11)}`;
@@ -282,12 +465,28 @@ export function saveTransaction(txn: Omit<Transaction, 'id' | 'createdAt'>): Tra
 
   const activeTrip = getActiveTrip();
   const description = (txn.description || '').trim() || (txn.type === 'transfer' ? 'Transfer' : (txn.category || 'Expense'));
+  const txnId = `txn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  
+  let splitObj = txn.splitDetails;
+  if (txn.isSplit && splitObj) {
+    splitObj = {
+      ...splitObj,
+      id: splitObj.id || `split-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      transactionId: txnId,
+      createdAt: splitObj.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    saveSplitExpense(splitObj);
+  }
+
   const newTxn: Transaction = {
     ...txn,
     description,
     tripId: txn.tripId || activeTrip?.id,
     date: dateStr,
-    id: `txn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: txnId,
+    isSplit: Boolean(txn.isSplit),
+    splitDetails: splitObj,
     createdAt: new Date().toISOString(),
   };
   all.unshift(newTxn);
@@ -354,6 +553,7 @@ export function deleteTransaction(id: string, option: 'reverse' | 'note' = 'reve
     }
     const remaining = all.filter((t) => t.id !== id);
     localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(remaining));
+    deleteSplitExpense(id);
   } else {
     updateTransaction(id, { category: 'Deleted Category', subcategory: undefined });
   }
@@ -364,7 +564,6 @@ export function updateTransaction(id: string, updates: Partial<Transaction>): vo
     if (t.id === id) {
       let dateStr = updates.date;
       if (dateStr) {
-        // If the updated date has no time component (length 10), try to preserve the original time component
         if (dateStr.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
           if (t.date && t.date.includes('T')) {
             const timePart = t.date.slice(t.date.indexOf('T'));
@@ -375,7 +574,22 @@ export function updateTransaction(id: string, updates: Partial<Transaction>): vo
           }
         }
       }
-      return { ...t, ...updates, ...(dateStr ? { date: dateStr } : {}) };
+
+      let splitObj = updates.splitDetails || t.splitDetails;
+      if (updates.isSplit !== undefined && !updates.isSplit) {
+        splitObj = undefined;
+        deleteSplitExpense(id);
+      } else if (updates.isSplit && splitObj) {
+        saveSplitExpense(splitObj);
+      }
+
+      return {
+        ...t,
+        ...updates,
+        ...(dateStr ? { date: dateStr } : {}),
+        isSplit: updates.isSplit !== undefined ? updates.isSplit : t.isSplit,
+        splitDetails: splitObj,
+      };
     }
     return t;
   });
@@ -428,8 +642,8 @@ export function setActiveTrip(id: string | null): void {
 }
 
 export function getTripBgColor(): string {
-  if (typeof window === 'undefined') return '#f59e0b';
-  return localStorage.getItem(KEYS.TRIP_BG_COLOR) || '#f59e0b';
+  if (typeof window === 'undefined') return '#FFFFFF';
+  return localStorage.getItem(KEYS.TRIP_BG_COLOR) || '#FFFFFF';
 }
 
 export function setTripBgColor(color: string): void {
@@ -598,6 +812,8 @@ export function getAccounts(includeHidden = false): Account[] {
       const opening = acc.openingBalance !== undefined ? acc.openingBalance : acc.balance || 0;
       let balance = opening;
 
+      const splitPayments = getSplitPayments();
+
       txns.forEach((txn) => {
         if (!txn) return;
         const amount = Number(txn.amount) || 0;
@@ -606,10 +822,23 @@ export function getAccounts(includeHidden = false): Account[] {
         if (type === 'income') {
           if (txn.account === acc.id) balance += amount;
         } else if (type === 'expense') {
-          if (txn.account === acc.id) balance -= amount;
+          if (txn.account === acc.id) {
+            const splitObj = txn.splitDetails || (txn.isSplit ? getSplitExpenseByTxnId(txn.id) : undefined);
+            if (txn.isSplit && splitObj?.totalAmount) {
+              balance -= Number(splitObj.totalAmount);
+            } else {
+              balance -= amount;
+            }
+          }
         } else if (type === 'transfer') {
           if (txn.account === acc.id) balance -= amount;
           if (txn.toAccount === acc.id) balance += amount;
+        }
+      });
+
+      splitPayments.forEach((pmt) => {
+        if (pmt.paymentAccountId === acc.id) {
+          balance += Number(pmt.amount) || 0;
         }
       });
 

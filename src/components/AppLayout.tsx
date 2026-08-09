@@ -156,6 +156,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     if (pathname.startsWith('/tools')) return 'Financial Tools';
     if (pathname.startsWith('/settings')) return 'Settings';
     if (pathname.startsWith('/data-import')) return 'Data Import';
+    if (pathname.startsWith('/split-expenses')) return 'Split Expenses';
     if (pathname.startsWith('/more')) return 'More Options';
     return 'WealthIQ';
   })();

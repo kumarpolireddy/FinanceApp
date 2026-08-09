@@ -340,7 +340,7 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           subcategory: subcategoryName,
           account: accountName,
           toAccount: type === 'transfer' ? toAccountName : undefined,
-          notes: content,
+          notes: '',
           status: 'valid',
         });
       });
