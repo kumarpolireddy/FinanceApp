@@ -599,18 +599,12 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
             }
           }
 
-          // Direct User Mapping Rule: ZCONTENT is Note, ZDATA is Description
+          // Direct User Mapping Rule: ZCONTENT is Note, ZDATA is Description (blank if not present)
           const zdataRaw = String(reader.get(row, ['ZDATA', 'NOTE_EXTRA', 'MEMO_EXTRA']) || '').trim();
           const cleanZdata = zdataRaw && zdataRaw !== '..' ? zdataRaw : '';
 
-          // 1. ZDATA is Description (fallback to Subcategory / Category / Transfer / Default Title if ZDATA is empty)
-          let description = cleanZdata;
-          if (!description) {
-            if (subcategoryName) description = subcategoryName;
-            else if (categoryName) description = categoryName;
-            else if (historicalCategoryName) description = historicalCategoryName;
-            else description = type === 'transfer' ? 'Transfer' : 'Imported Transaction';
-          }
+          // 1. ZDATA is Description (blank if not present)
+          const description = cleanZdata;
 
           // 2. ZCONTENT is Note
           const notes = content;
