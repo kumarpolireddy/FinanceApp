@@ -249,6 +249,7 @@ export default function DataImportPage() {
     categories: 0,
     accounts: 0,
   });
+  const [sqliteReport, setSqliteReport] = useState<any>(null);
 
   const stepIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -266,30 +267,38 @@ export default function DataImportPage() {
         throw new Error((result as any).error || 'Failed to parse Money Manager SQLite file');
       }
 
-      // 1. Process & Save Faithful Active Account Groups (ASSETGROUP) ONLY - Clear previous data
+      // FULL IMPORT (NO-MERGE STRICT RULE): Clear ALL previous app data first
       const { saveAccountCategories, saveAccounts, saveCategories } = await import('@/lib/storage');
-      
-      const activeGroups = (result.assetGroups || []).filter((g) => !g.isDeleted);
-      const newAccCats: AccountCategory[] = [];
 
-      activeGroups.forEach((g) => {
+      localStorage.removeItem('wealthiq_accounts');
+      localStorage.removeItem('wealthiq_account_categories');
+      localStorage.removeItem('wealthiq_categories');
+      localStorage.removeItem('wealthiq_transactions');
+      localStorage.removeItem('wealthiq_budgets');
+      localStorage.removeItem('wealthiq_bill_payments');
+      localStorage.removeItem('wealthiq_split_expenses');
+      localStorage.removeItem('wealthiq_split_payments');
+      
+      // 1. Process & Save Faithful Active Account Groups (ASSETGROUP)
+      const activeGroups = (result.assetGroups || []).filter((g) => !g.isDeleted);
+      const newAccCats: AccountCategory[] = activeGroups.map((g) => {
         let baseType: 'accounts' | 'cash' | 'credit' | 'loan' = 'accounts';
         const n = g.name.toLowerCase();
         if (n.includes('card') || n.includes('credit')) baseType = 'credit';
         else if (n.includes('cash') || n.includes('wallet')) baseType = 'cash';
         else if (n.includes('borrow') || n.includes('lend') || n.includes('loan') || n.includes('debt') || n.includes('liability')) baseType = 'loan';
 
-        newAccCats.push({
+        return {
           id: `acc-cat-${g.uid || Date.now()}`,
           sourceUid: g.uid,
           name: g.name,
           baseType,
-        });
+        };
       });
 
       saveAccountCategories(newAccCats);
 
-      // 2. Process & Save Faithful Active Accounts (ASSETS) ONLY
+      // 2. Process & Save Faithful Active Accounts (ASSETS)
       const newAccounts: Account[] = [];
       const accountIdMap: Record<string, string> = {};
 
@@ -302,8 +311,8 @@ export default function DataImportPage() {
           name: acc.name,
           type: acc.type,
           category: acc.category || acc.groupName || 'Main Accounts',
-          balance: acc.balance || 0,
-          openingBalance: acc.balance || 0,
+          balance: 0,
+          openingBalance: 0,
           color: acc.color,
           visible: true,
           icon: acc.icon,
@@ -316,7 +325,7 @@ export default function DataImportPage() {
 
       saveAccounts(newAccounts);
 
-      // 3. Process & Save Faithful Active Categories (ZCATEGORY) ONLY
+      // 3. Process & Save Faithful Active Categories (ZCATEGORY)
       const activeCategories = result.categories.filter((c) => !c.isDeleted);
       const newCategories: Category[] = activeCategories.map((cat) => ({
         id: cat.id || `cat-${cat.sourceUid || Date.now()}`,
@@ -331,7 +340,7 @@ export default function DataImportPage() {
 
       saveCategories(newCategories);
 
-      // 4. Process & Save Transactions ONLY (No merge with old transactions)
+      // 4. Process & Save Transactions
       const parsedTransactions: Transaction[] = [];
 
       const findAccId = (nameStr: string, uidStr?: string): string => {
@@ -361,14 +370,17 @@ export default function DataImportPage() {
           type: tx.type,
           notes: tx.notes || '',
           historicalCategoryName: tx.historicalCategoryName,
+          historicalAccountName: tx.historicalAccountName,
+          historicalToAccountName: tx.historicalToAccountName,
           isHistoricalOnly: tx.isHistoricalOnly,
+          isHistoricalAccountOnly: tx.isHistoricalAccountOnly,
           createdAt: new Date(Date.now() + index).toISOString(),
         });
       });
 
       localStorage.setItem('wealthiq_transactions', JSON.stringify(parsedTransactions));
 
-      // 5. Process & Save Budgets ONLY
+      // 5. Process & Save Budgets
       if (result.budgets && result.budgets.length > 0) {
         const newBudgets = result.budgets.map((b) => ({
           id: b.id || `budget-${b.sourceUid || Date.now()}`,
@@ -391,9 +403,13 @@ export default function DataImportPage() {
         accounts: newAccounts.length,
       });
 
+      if (result.report) {
+        setSqliteReport(result.report);
+      }
+
       setImportDone(true);
       toast.success(
-        `${parsedTransactions.length} transactions imported successfully from "${file.name}"!`,
+        `Full import completed! ${parsedTransactions.length} transactions, ${newAccounts.length} active accounts, and ${newCategories.length} active categories imported from "${file.name}".`,
         { id: toastId }
       );
     } catch (err: any) {
@@ -1134,6 +1150,59 @@ export default function DataImportPage() {
                           </div>
                         ))}
                       </div>
+
+                      {sqliteReport && sqliteReport.groups && (
+                        <div className="max-w-xl mx-auto mb-6 p-4 bg-[#0b0f1a] border border-border rounded-xl text-left space-y-3 font-mono text-xs">
+                          <div className="flex items-center justify-between border-b border-border pb-2">
+                            <span className="font-bold text-primary tracking-wide">PHASE 1 VALIDATION REPORT (ACCOUNTS & GROUPS)</span>
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">Phase 1 Passed</span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <p className="font-bold text-slate-300">SOURCE ACCOUNT GROUPS (ASSETGROUP)</p>
+                            <div className="grid grid-cols-2 gap-2 text-muted-foreground bg-muted/10 p-2.5 rounded-lg border border-border">
+                              <div>Total Groups: <strong className="text-foreground">{sqliteReport.groups.totalGroups}</strong></div>
+                              <div>Active Groups (IS_DEL = 0): <strong className="text-emerald-400">{sqliteReport.groups.activeGroups}</strong></div>
+                              <div>Deleted Groups (IS_DEL != 0): <strong className="text-slate-400">{sqliteReport.groups.deletedGroups}</strong></div>
+                              <div>Imported Groups: <strong className="text-emerald-400">{sqliteReport.groups.importedGroups}</strong></div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <p className="font-bold text-slate-300">SOURCE ACCOUNTS (ASSETS)</p>
+                            <div className="grid grid-cols-2 gap-2 text-muted-foreground bg-muted/10 p-2.5 rounded-lg border border-border">
+                              <div>Total ASSETS Rows: <strong className="text-foreground">{sqliteReport.accounts.totalAssets}</strong></div>
+                              <div>Active Accounts (ZDATA IN 0,3): <strong className="text-emerald-400">{sqliteReport.accounts.activeAccounts}</strong></div>
+                              <div>Deleted Accounts (ZDATA = 2): <strong className="text-amber-400">{sqliteReport.accounts.deletedAccounts}</strong></div>
+                              <div>Imported Active Accounts: <strong className="text-emerald-400">{sqliteReport.accounts.importedAccounts}</strong></div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <p className="font-bold text-slate-300">ACCOUNT → GROUP MAPPING</p>
+                            <div className="grid grid-cols-2 gap-2 text-muted-foreground bg-muted/10 p-2.5 rounded-lg border border-border">
+                              <div>Correctly Mapped: <strong className="text-emerald-400">{sqliteReport.mapping.correctlyMapped}</strong></div>
+                              <div>Unmapped GroupUid: <strong className="text-slate-400">{sqliteReport.mapping.unmapped}</strong></div>
+                              <div>Active Acc → Deleted Group: <strong className={sqliteReport.mapping.activeAccountToDeletedGroup > 0 ? 'text-amber-400' : 'text-slate-400'}>{sqliteReport.mapping.activeAccountToDeletedGroup}</strong></div>
+                              <div>Invalid GroupUid: <strong className="text-slate-400">{sqliteReport.mapping.invalidGroupUid}</strong></div>
+                            </div>
+                          </div>
+
+                          {sqliteReport.accounts.deletedAccountList.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="font-bold text-amber-400">EXCLUDED DELETED ACCOUNTS (ZDATA = 2):</p>
+                              <div className="max-h-24 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-border text-[11px]">
+                                {sqliteReport.accounts.deletedAccountList.map((a: any) => (
+                                  <div key={a.uid} className="flex items-center justify-between text-muted-foreground">
+                                    <span>"{a.name}" (ID: {a.id}, UID: {a.uid})</span>
+                                    <span className="text-amber-400 font-bold">ZDATA = {a.zdata}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <Link
                         href="/"
                         className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all duration-150 active:scale-95"

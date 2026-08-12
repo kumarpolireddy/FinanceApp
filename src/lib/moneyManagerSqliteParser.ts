@@ -51,7 +51,10 @@ export interface SqliteImportResult {
     notes: string;
     status: 'valid' | 'duplicate' | 'error';
     historicalCategoryName?: string;
+    historicalAccountName?: string;
+    historicalToAccountName?: string;
     isHistoricalOnly?: boolean;
+    isHistoricalAccountOnly?: boolean;
   }[];
   budgets?: {
     id: string;
@@ -61,6 +64,28 @@ export interface SqliteImportResult {
     amount: number;
     month?: string;
   }[];
+  orphanedAccounts?: {
+    uid: string;
+    historicalName: string;
+    transactionCount: number;
+    lastTransactionDate?: string;
+    status: 'POSSIBLY DELETED' | 'UNRESOLVED';
+  }[];
+  report?: {
+    totalSourceAssets: number;
+    activeAccountsImported: number;
+    deletedAccountsExcluded: number;
+    totalSourceGroups: number;
+    activeAccountGroups: number;
+    deletedAccountGroups: number;
+    totalSourceCategories: number;
+    activeCategoriesImported: number;
+    deletedCategoriesExcluded: number;
+    totalTransactionsImported: number;
+    transactionsReferencingActiveAccounts: number;
+    transactionsReferencingMissingAccounts: number;
+    transfersInvolvingMissingAccounts: number;
+  };
   error?: string;
 }
 
@@ -256,13 +281,16 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       };
     }
 
-    // 1. Extract Asset Groups (ASSETGROUP) - EXCLUDE INACTIVE / DELETED GROUPS (IS_DEL != 0)
+    // 1. Extract Asset Groups (ASSETGROUP) - WHERE IS_DEL = 0
     const extractedAssetGroups: SqliteImportResult['assetGroups'] = [];
-    const assetGroupMap: Record<string, { uid: string; name: string; attrib: number | null; isDeleted: boolean }> = {};
+    const deletedAssetGroups: SqliteImportResult['assetGroups'] = [];
+    const assetGroupMap: Record<string, { uid: string; aid: string; name: string; attrib: number | null; isDeleted: boolean }> = {};
+    let totalGroupCount = 0;
 
     try {
       const groupRes = db.exec('SELECT * FROM ASSETGROUP');
       if (groupRes.length && groupRes[0].values) {
+        totalGroupCount = groupRes[0].values.length;
         const reader = createRowReader(groupRes[0].columns);
         groupRes[0].values.forEach((row) => {
           const aid = String(reader.get(row, ['AID', 'ID', 'UID', 'uid']) || '');
@@ -275,6 +303,7 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           if (name) {
             const groupObj = {
               uid,
+              aid,
               name,
               attrib: attribVal !== null ? Number(attribVal) : null,
               isDeleted,
@@ -282,8 +311,9 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
             assetGroupMap[uid] = groupObj;
             assetGroupMap[aid] = groupObj;
 
-            // STRICT: Do NOT include deleted/inactive groups in extractedAssetGroups!
-            if (!isDeleted) {
+            if (isDeleted) {
+              deletedAssetGroups.push(groupObj);
+            } else {
               extractedAssetGroups.push(groupObj);
             }
           }
@@ -293,37 +323,44 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       console.warn('Error reading ASSETGROUP table:', e);
     }
 
-    // 2. Extract Accounts (ASSETS) - EXCLUDE INACTIVE / DELETED ACCOUNTS (IS_DEL != 0 or belonging to deleted group)
-    const accountMap: Record<string, { uid: string; name: string; isDeleted: boolean }> = {};
+    // 2. Extract Accounts (ASSETS) - WHERE ZDATA IN (0, 3) (Active), ZDATA = 2 (Deleted)
+    const accountMap: Record<string, { uid: string; aid: string; name: string; zdata: number; isDeleted: boolean }> = {};
     const extractedAccounts: SqliteImportResult['accounts'] = [];
+    const deletedAccountsList: { id: string; uid: string; name: string; zdata: number }[] = [];
+    let totalSourceAssetsCount = 0;
 
     try {
       const assetRes = db.exec('SELECT * FROM ASSETS');
       if (assetRes.length && assetRes[0].values) {
+        totalSourceAssetsCount = assetRes[0].values.length;
         const reader = createRowReader(assetRes[0].columns);
         assetRes[0].values.forEach((row) => {
           const id = String(reader.get(row, ['ID', 'AID', 'UID', 'uid']) || '');
           const name = String(reader.get(row, ['NIC_NAME', 'NAME', 'TITLE']) || `Account-${id}`).trim();
           const uid = String(reader.get(row, ['uid', 'UID', 'ID', 'AID']) || id);
           const groupUid = String(reader.get(row, ['groupUid', 'GROUP_UID', 'GROUPUID', 'AID']) || '');
-          
+          const zdata = reader.get(row, ['ZDATA', 'DATA', 'STATUS']);
+          const zdataNum = zdata !== null ? Number(zdata) : 0;
+
           const groupObj = assetGroupMap[groupUid] || assetGroupMap[id];
           const groupName = groupObj ? groupObj.name : '';
 
           const rawBalance = reader.get(row, ['MONEY', 'START_MONEY', 'SURPLUS', 'BALANCE', 'AMOUNT']);
           const balanceNum = rawBalance !== null ? Number(rawBalance) || 0 : 0;
           const attribVal = reader.get(row, ['ATTRIB', 'TYPE', 'ASSET_TYPE', 'CARD_TYPE']);
-          const isDelVal = reader.get(row, ['IS_DEL', 'C_IS_DEL', 'DELETED']);
-          
-          // Account is deleted if asset row is deleted OR its parent group is deleted
-          const isDeleted = (isDelVal !== null && Number(isDelVal) !== 0) || (groupObj ? groupObj.isDeleted : false);
 
-          const accInfo = { uid, name, isDeleted };
+          // STRICT DELETION RULE FOR ASSETS:
+          // ZDATA = 2 -> DELETED ACCOUNT
+          // ZDATA = 0 or 3 -> ACTIVE ACCOUNT
+          const isDeletedAccount = zdataNum === 2 || (groupObj ? groupObj.isDeleted : false);
+
+          const accInfo = { uid, aid: id, name, zdata: zdataNum, isDeleted: isDeletedAccount };
           accountMap[uid] = accInfo;
           accountMap[id] = accInfo;
 
-          // STRICT: Do NOT include deleted/inactive accounts in extractedAccounts!
-          if (!isDeleted) {
+          if (isDeletedAccount) {
+            deletedAccountsList.push({ id, uid, name, zdata: zdataNum });
+          } else {
             const classification = classifyAccountFromGroup(groupName, attribVal !== null ? Number(attribVal) : (groupObj ? groupObj.attrib : null));
 
             extractedAccounts.push({
@@ -349,7 +386,7 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       console.warn('Error reading ASSETS table:', e);
     }
 
-    // 3. Extract Categories and Subcategories (ZCATEGORY) - EXCLUDE DELETED CATEGORIES
+    // 3. Extract Categories and Subcategories (ZCATEGORY) - EXCLUDE DELETED CATEGORIES (C_IS_DEL != 0)
     const allCategoriesList: {
       id: string;
       uid: string;
@@ -359,10 +396,12 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       isDeleted: boolean;
     }[] = [];
     const categoryByUid: Record<string, (typeof allCategoriesList)[0]> = {};
+    let totalSourceCategoryCount = 0;
 
     try {
       const catRes = db.exec('SELECT * FROM ZCATEGORY');
       if (catRes.length && catRes[0].values) {
+        totalSourceCategoryCount = catRes[0].values.length;
         const reader = createRowReader(catRes[0].columns);
         catRes[0].values.forEach((row) => {
           const id = String(reader.get(row, ['ID', 'UID', 'uid']) || '');
@@ -391,18 +430,23 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       { id: string; sourceUid: string; parentUid?: string; name: string; type: 'income' | 'expense'; color: string; subcategories: string[]; isDeleted: boolean }
     > = {};
 
+    let deletedCategoriesCount = 0;
+
     allCategoriesList.forEach((cat) => {
-      // STRICT: Skip deleted categories
-      if (cat.isDeleted) return;
+      if (cat.isDeleted) {
+        deletedCategoriesCount++;
+        return;
+      }
 
       const parent = categoryByUid[cat.pUid];
-      // Skip if parent exists and is deleted
-      if (parent && parent.isDeleted) return;
+      if (parent && parent.isDeleted) {
+        deletedCategoriesCount++;
+        return;
+      }
 
       const isSub = cat.pUid && cat.pUid !== '0' && parent && parent.name !== cat.name;
 
       if (isSub) {
-        // Subcategory: attach to active parent category
         const parentKey = parent.uid;
         if (!extractedCategoryMap[parentKey]) {
           extractedCategoryMap[parentKey] = {
@@ -419,7 +463,6 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           extractedCategoryMap[parentKey].subcategories.push(cat.name);
         }
       } else {
-        // Parent category
         const catKey = cat.uid;
         if (!extractedCategoryMap[catKey]) {
           extractedCategoryMap[catKey] = {
@@ -438,8 +481,14 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
 
     const extractedCategories = Object.values(extractedCategoryMap);
 
-    // 4. Extract Transactions (INOUTCOME) Preserving Historical Relationships
+    // 4. Extract Transactions (INOUTCOME) & Detect Orphaned Account References
     const extractedTransactions: SqliteImportResult['transactions'] = [];
+    const orphanedAccountMap: Record<string, { uid: string; historicalName: string; count: number; lastDate: string }> = {};
+
+    let txReferencingActive = 0;
+    let txReferencingMissing = 0;
+    let transfersInvolvingMissing = 0;
+
     try {
       const txRes = db.exec('SELECT * FROM INOUTCOME');
 
@@ -455,6 +504,7 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           const ctgUid = String(reader.get(row, ['ctgUid', 'CTG_UID', 'CTGUID', 'C_UID']) || '');
           const toAssetUid = String(reader.get(row, ['toAssetUid', 'TO_ASSET_UID', 'TOASSETUID']) || '');
           const content = String(reader.get(row, ['ZCONTENT', 'CONTENT', 'MEMO', 'DESCRIPTION', 'NOTE']) || '').trim();
+          const rawAssetNic = String(reader.get(row, ['ASSET_NIC', 'ACCOUNT_NAME', 'NIC_NAME']) || '').trim();
           const rawWdate = reader.get(row, ['WDATE', 'DATE', 'ZDATE']);
           const doType = String(reader.get(row, ['DO_TYPE', 'TYPE', 'TYPE_DO']) || '1');
           const zmoney = Number(reader.get(row, ['ZMONEY', 'MONEY', 'AMOUNT', 'IN_ZMONEY'])) || 0;
@@ -469,8 +519,57 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           const accObj = accountMap[assetUid] || accountMap[aid];
           const toAccObj = accountMap[toAssetUid];
           
-          const accountName = accObj ? accObj.name : 'Cash';
-          const toAccountName = toAccObj ? toAccObj.name : '';
+          let accountName = accObj ? accObj.name : '';
+          let toAccountName = toAccObj ? toAccObj.name : '';
+
+          let historicalAccountName: string | undefined = undefined;
+          let historicalToAccountName: string | undefined = undefined;
+          let isHistoricalAccountOnly = false;
+
+          const dateStr = parseSqliteDate(rawWdate);
+
+          // Detect Orphaned assetUid
+          if (!accObj && assetUid) {
+            txReferencingMissing++;
+            isHistoricalAccountOnly = true;
+            historicalAccountName = rawAssetNic || `Deleted Account (UID: ${assetUid})`;
+            accountName = historicalAccountName;
+
+            if (!orphanedAccountMap[assetUid]) {
+              orphanedAccountMap[assetUid] = {
+                uid: assetUid,
+                historicalName: historicalAccountName,
+                count: 1,
+                lastDate: dateStr,
+              };
+            } else {
+              orphanedAccountMap[assetUid].count++;
+              if (dateStr > orphanedAccountMap[assetUid].lastDate) {
+                orphanedAccountMap[assetUid].lastDate = dateStr;
+              }
+            }
+          } else {
+            txReferencingActive++;
+          }
+
+          // Detect Orphaned toAssetUid for transfers
+          if (type === 'transfer' && !toAccObj && toAssetUid) {
+            transfersInvolvingMissing++;
+            isHistoricalAccountOnly = true;
+            historicalToAccountName = `Deleted Destination Account (UID: ${toAssetUid})`;
+            toAccountName = historicalToAccountName;
+
+            if (!orphanedAccountMap[toAssetUid]) {
+              orphanedAccountMap[toAssetUid] = {
+                uid: toAssetUid,
+                historicalName: historicalToAccountName,
+                count: 1,
+                lastDate: dateStr,
+              };
+            } else {
+              orphanedAccountMap[toAssetUid].count++;
+            }
+          }
 
           // Resolve Category & Subcategory from ctgUid faithfully
           let categoryName: string | null = null;
@@ -486,7 +585,6 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
               const resolvedSubName = parentCat && rawCat.pUid !== '0' && parentCat.name !== rawCat.name ? rawCat.name : undefined;
 
               if (rawCat.isDeleted || (parentCat && parentCat.isDeleted)) {
-                // Category was deleted in source: preserve transaction & original name without making category active
                 categoryName = null;
                 historicalCategoryName = resolvedSubName ? `${resolvedName} → ${resolvedSubName}` : resolvedName;
                 isHistoricalOnly = true;
@@ -501,13 +599,27 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
             }
           }
 
-          const dateStr = parseSqliteDate(rawWdate);
+          // Direct User Mapping Rule: ZCONTENT is Note, ZDATA is Description
+          const zdataRaw = String(reader.get(row, ['ZDATA', 'NOTE_EXTRA', 'MEMO_EXTRA']) || '').trim();
+          const cleanZdata = zdataRaw && zdataRaw !== '..' ? zdataRaw : '';
+
+          // 1. ZDATA is Description (fallback to Subcategory / Category / Transfer / Default Title if ZDATA is empty)
+          let description = cleanZdata;
+          if (!description) {
+            if (subcategoryName) description = subcategoryName;
+            else if (categoryName) description = categoryName;
+            else if (historicalCategoryName) description = historicalCategoryName;
+            else description = type === 'transfer' ? 'Transfer' : 'Imported Transaction';
+          }
+
+          // 2. ZCONTENT is Note
+          const notes = content;
 
           extractedTransactions.push({
             id: `mm-tx-${uid}-${idx}`,
             sourceUid: uid,
             date: dateStr,
-            description: content || subcategoryName || historicalCategoryName || categoryName || 'Imported Transaction',
+            description,
             amount: Math.abs(zmoney),
             type,
             category: categoryName,
@@ -517,10 +629,13 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
             accountUid: assetUid || aid,
             toAccount: type === 'transfer' ? toAccountName : undefined,
             toAccountUid: type === 'transfer' ? toAssetUid : undefined,
-            notes: '',
+            notes: notes || '',
             status: 'valid',
             historicalCategoryName,
+            historicalAccountName,
+            historicalToAccountName,
             isHistoricalOnly,
+            isHistoricalAccountOnly,
           });
         });
       }
@@ -563,6 +678,30 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
 
     db.close();
 
+    const orphanedAccounts = Object.values(orphanedAccountMap).map((o) => ({
+      uid: o.uid,
+      historicalName: o.historicalName,
+      transactionCount: o.count,
+      lastTransactionDate: o.lastDate,
+      status: 'POSSIBLY DELETED' as const,
+    }));
+
+    const report = {
+      totalSourceAssets: totalSourceAssetsCount,
+      activeAccountsImported: extractedAccounts.length,
+      deletedAccountsExcluded: deletedAccountsList.length,
+      totalSourceGroups: totalGroupCount,
+      activeAccountGroups: extractedAssetGroups.length,
+      deletedAccountGroups: deletedAssetGroups.length,
+      totalSourceCategories: totalSourceCategoryCount,
+      activeCategoriesImported: extractedCategories.length,
+      deletedCategoriesExcluded: deletedCategoriesCount,
+      totalTransactionsImported: extractedTransactions.length,
+      transactionsReferencingActiveAccounts: txReferencingActive,
+      transactionsReferencingMissingAccounts: txReferencingMissing,
+      transfersInvolvingMissingAccounts: transfersInvolvingMissing,
+    };
+
     return {
       success: true,
       assetGroups: extractedAssetGroups,
@@ -570,6 +709,8 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       accounts: extractedAccounts,
       categories: extractedCategories,
       budgets: extractedBudgets,
+      orphanedAccounts,
+      report,
     };
   } catch (err: any) {
     console.error('Error parsing Money Manager SQLite file:', err);

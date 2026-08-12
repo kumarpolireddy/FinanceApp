@@ -57,7 +57,10 @@ export interface Transaction {
   isSplit?: boolean;
   splitDetails?: SplitDetails;
   historicalCategoryName?: string;
+  historicalAccountName?: string;
+  historicalToAccountName?: string;
   isHistoricalOnly?: boolean;
+  isHistoricalAccountOnly?: boolean;
   createdAt: string;
 }
 
