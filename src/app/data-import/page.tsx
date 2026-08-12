@@ -18,6 +18,8 @@ import {
   saveCategories,
   type Transaction,
   type Category,
+  type AccountCategory,
+  type Account,
 } from '@/lib/storage';
 
 type WizardStep = 'upload' | 'map-columns' | 'map-categories' | 'preview' | 'importing' | 'done';
@@ -264,118 +266,129 @@ export default function DataImportPage() {
         throw new Error((result as any).error || 'Failed to parse Money Manager SQLite file');
       }
 
-      // 1. Process & Save Accounts
-      const existingAccounts = getAccounts();
-      const newAccounts = [...existingAccounts];
-      let newAccountsCreated = 0;
+      // 1. Process & Save Faithful Active Account Groups (ASSETGROUP) ONLY - Clear previous data
+      const { saveAccountCategories, saveAccounts, saveCategories } = await import('@/lib/storage');
+      
+      const activeGroups = (result.assetGroups || []).filter((g) => !g.isDeleted);
+      const newAccCats: AccountCategory[] = [];
+
+      activeGroups.forEach((g) => {
+        let baseType: 'accounts' | 'cash' | 'credit' | 'loan' = 'accounts';
+        const n = g.name.toLowerCase();
+        if (n.includes('card') || n.includes('credit')) baseType = 'credit';
+        else if (n.includes('cash') || n.includes('wallet')) baseType = 'cash';
+        else if (n.includes('borrow') || n.includes('lend') || n.includes('loan') || n.includes('debt') || n.includes('liability')) baseType = 'loan';
+
+        newAccCats.push({
+          id: `acc-cat-${g.uid || Date.now()}`,
+          sourceUid: g.uid,
+          name: g.name,
+          baseType,
+        });
+      });
+
+      saveAccountCategories(newAccCats);
+
+      // 2. Process & Save Faithful Active Accounts (ASSETS) ONLY
+      const newAccounts: Account[] = [];
       const accountIdMap: Record<string, string> = {};
 
-      result.accounts.forEach((acc) => {
-        let existingAcc = newAccounts.find(
-          (a) => a.name.toLowerCase().trim() === acc.name.toLowerCase().trim()
-        );
-        if (!existingAcc) {
-          existingAcc = {
-            id: acc.id || `acc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            name: acc.name,
-            type: acc.type,
-            balance: 0,
-            color: acc.color,
-            visible: true,
-            icon: acc.icon,
-          };
-          newAccounts.push(existingAcc);
-          newAccountsCreated++;
-        }
-        accountIdMap[acc.name] = existingAcc.id;
+      const activeAccounts = result.accounts.filter((a) => !a.isDeleted);
+      activeAccounts.forEach((acc) => {
+        const newAcc: Account = {
+          id: acc.id || `acc-${acc.sourceUid || Date.now()}`,
+          sourceUid: acc.sourceUid,
+          groupUid: acc.groupUid,
+          name: acc.name,
+          type: acc.type,
+          category: acc.category || acc.groupName || 'Main Accounts',
+          balance: acc.balance || 0,
+          openingBalance: acc.balance || 0,
+          color: acc.color,
+          visible: true,
+          icon: acc.icon,
+          isInformal: acc.isBorrowing || acc.isLending,
+        };
+        newAccounts.push(newAcc);
+        accountIdMap[acc.sourceUid] = newAcc.id;
+        accountIdMap[acc.name] = newAcc.id;
       });
 
       saveAccounts(newAccounts);
 
-      // 2. Process & Save Categories
-      const existingCategories = getCategories();
-      const newCategories = [...existingCategories];
-      let newCategoriesCreated = 0;
-
-      result.categories.forEach((cat) => {
-        let existingCat = newCategories.find(
-          (c) => c.name.toLowerCase().trim() === cat.name.toLowerCase().trim()
-        );
-        if (!existingCat) {
-          existingCat = {
-            id: cat.id || `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            name: cat.name,
-            type: cat.type,
-            color: cat.color,
-            icon: '📦',
-            subcategories: cat.subcategories || [],
-          };
-          newCategories.push(existingCat);
-          newCategoriesCreated++;
-        } else {
-          // Merge missing subcategories into existing category
-          const subs = new Set(existingCat.subcategories || []);
-          (cat.subcategories || []).forEach((s) => subs.add(s));
-          existingCat.subcategories = Array.from(subs);
-        }
-      });
+      // 3. Process & Save Faithful Active Categories (ZCATEGORY) ONLY
+      const activeCategories = result.categories.filter((c) => !c.isDeleted);
+      const newCategories: Category[] = activeCategories.map((cat) => ({
+        id: cat.id || `cat-${cat.sourceUid || Date.now()}`,
+        sourceUid: cat.sourceUid,
+        parentUid: cat.parentUid,
+        name: cat.name,
+        type: cat.type,
+        color: cat.color || (cat.type === 'income' ? '#10b981' : '#ef4444'),
+        icon: '📦',
+        subcategories: cat.subcategories || [],
+      }));
 
       saveCategories(newCategories);
 
-      // 3. Process & Save Transactions
-      const existingTransactions = getTransactions();
+      // 4. Process & Save Transactions ONLY (No merge with old transactions)
       const parsedTransactions: Transaction[] = [];
-      let duplicatesCount = 0;
 
-      const findAccId = (nameStr: string): string => {
-        if (!nameStr) return newAccounts[0]?.id || 'acc-cash';
-        const clean = nameStr.toLowerCase().trim();
-        const found = newAccounts.find((a) => a.name.toLowerCase().trim() === clean);
+      const findAccId = (nameStr: string, uidStr?: string): string => {
+        if (uidStr && accountIdMap[uidStr]) return accountIdMap[uidStr];
+        if (nameStr && accountIdMap[nameStr]) return accountIdMap[nameStr];
+        const found = newAccounts.find((a) => a.sourceUid === uidStr || a.name.toLowerCase().trim() === (nameStr || '').toLowerCase().trim());
         return found ? found.id : (newAccounts[0]?.id || 'acc-cash');
       };
 
       result.transactions.forEach((tx, index) => {
-        const accountId = findAccId(tx.account);
-        const toAccountId = tx.toAccount ? findAccId(tx.toAccount) : undefined;
-
-        // Duplicate check
-        const isDuplicate = existingTransactions.some(
-          (t) =>
-            t.date === tx.date &&
-            t.amount === tx.amount &&
-            t.type === tx.type &&
-            t.description &&
-            t.description.toLowerCase() === tx.description.toLowerCase()
-        );
-
-        if (isDuplicate) {
-          duplicatesCount++;
-          return;
-        }
+        const accountId = findAccId(tx.account, tx.accountUid);
+        const toAccountId = tx.toAccount ? findAccId(tx.toAccount, tx.toAccountUid) : undefined;
 
         parsedTransactions.push({
-          id: tx.id || `txn-${Date.now()}-${index}`,
+          id: tx.id || `txn-${tx.sourceUid || Date.now()}-${index}`,
+          sourceUid: tx.sourceUid,
           date: tx.date,
           description: tx.description,
-          category: (tx.category as any) || 'Other',
+          category: (tx.category as any) || (tx.type === 'transfer' ? 'Transfer' : 'Other'),
+          categoryUid: tx.categoryUid,
           subcategory: tx.subcategory,
           account: accountId,
+          accountUid: tx.accountUid,
           toAccount: toAccountId,
+          toAccountUid: tx.toAccountUid,
           amount: tx.amount,
           type: tx.type,
           notes: tx.notes || '',
+          historicalCategoryName: tx.historicalCategoryName,
+          isHistoricalOnly: tx.isHistoricalOnly,
           createdAt: new Date(Date.now() + index).toISOString(),
         });
       });
 
-      const mergedTransactions = [...existingTransactions, ...parsedTransactions];
-      localStorage.setItem('wealthiq_transactions', JSON.stringify(mergedTransactions));
+      localStorage.setItem('wealthiq_transactions', JSON.stringify(parsedTransactions));
+
+      // 5. Process & Save Budgets ONLY
+      if (result.budgets && result.budgets.length > 0) {
+        const newBudgets = result.budgets.map((b) => ({
+          id: b.id || `budget-${b.sourceUid || Date.now()}`,
+          sourceUid: b.sourceUid,
+          name: `${b.categoryName} Budget`,
+          category: b.categoryName,
+          categoryUid: b.categoryUid,
+          allocated: b.amount,
+          month: b.month || new Date().toISOString().slice(0, 7),
+        }));
+        localStorage.setItem('wealthiq_budgets', JSON.stringify(newBudgets));
+      } else {
+        localStorage.setItem('wealthiq_budgets', JSON.stringify([]));
+      }
 
       setImportStats({
         transactions: parsedTransactions.length,
-        duplicates: duplicatesCount,
-        categories: newCategoriesCreated,
-        accounts: newAccountsCreated,
+        duplicates: 0,
+        categories: newCategories.length,
+        accounts: newAccounts.length,
       });
 
       setImportDone(true);

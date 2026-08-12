@@ -2,34 +2,64 @@ import initSqlJs, { Database } from 'sql.js';
 
 export interface SqliteImportResult {
   success: boolean;
+  assetGroups: {
+    uid: string;
+    name: string;
+    attrib: number | null;
+    isDeleted: boolean;
+  }[];
+  accounts: {
+    id: string;
+    sourceUid: string;
+    groupUid?: string;
+    groupName?: string;
+    name: string;
+    type: 'accounts' | 'cash' | 'credit' | 'loan';
+    category: string;
+    balance: number;
+    color: string;
+    visible: boolean;
+    icon: string;
+    isDeleted: boolean;
+    isBorrowing?: boolean;
+    isLending?: boolean;
+  }[];
+  categories: {
+    id: string;
+    sourceUid: string;
+    parentUid?: string;
+    name: string;
+    type: 'income' | 'expense';
+    color: string;
+    subcategories: string[];
+    isDeleted: boolean;
+  }[];
   transactions: {
     id: string;
+    sourceUid: string;
     date: string;
     description: string;
     amount: number;
     type: 'income' | 'expense' | 'transfer';
     category: string | null;
+    categoryUid?: string;
     subcategory?: string;
     account: string;
+    accountUid: string;
     toAccount?: string;
+    toAccountUid?: string;
     notes: string;
     status: 'valid' | 'duplicate' | 'error';
+    historicalCategoryName?: string;
+    isHistoricalOnly?: boolean;
   }[];
-  accounts: {
+  budgets?: {
     id: string;
-    name: string;
-    type: 'accounts' | 'cash' | 'credit' | 'loan';
-    balance: number;
-    color: string;
-    visible: boolean;
-    icon: string;
-  }[];
-  categories: {
-    id: string;
-    name: string;
-    type: 'income' | 'expense';
-    color: string;
-    subcategories: string[];
+    sourceUid: string;
+    categoryName: string;
+    categoryUid?: string;
+    amount: number;
+    month?: string;
   }[];
   error?: string;
 }
@@ -74,6 +104,23 @@ function parseSqliteDate(val: any): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Dynamic column reader helper to avoid hardcoded positional index errors across Money Manager versions
+function createRowReader(columns: string[]) {
+  const normalizedCols = columns.map((c) => c.toLowerCase());
+
+  return {
+    get: (row: any[], candidates: string[]): any => {
+      for (const cand of candidates) {
+        const idx = normalizedCols.indexOf(cand.toLowerCase());
+        if (idx !== -1 && row[idx] !== undefined && row[idx] !== null) {
+          return row[idx];
+        }
+      }
+      return null;
+    },
+  };
+}
+
 let cachedWasmBinary: ArrayBuffer | undefined = undefined;
 
 async function fetchWasmBinary(): Promise<ArrayBuffer | undefined> {
@@ -101,6 +148,82 @@ async function fetchWasmBinary(): Promise<ArrayBuffer | undefined> {
   return undefined;
 }
 
+// Classify base account type and category ONLY from group name and attribute (NEVER from account name)
+export function classifyAccountFromGroup(
+  groupName: string,
+  attribVal: number | null
+): {
+  type: 'accounts' | 'cash' | 'credit' | 'loan';
+  category: string;
+  icon: string;
+  color: string;
+  isBorrowing?: boolean;
+  isLending?: boolean;
+} {
+  const groupLower = (groupName || '').toLowerCase().trim();
+  const categoryName = groupName ? groupName.trim() : 'Main Accounts';
+
+  // Attribute 3 = Borrowings / Liabilities / Debt
+  if (attribVal === 3 || groupLower.includes('borrow') || groupLower.includes('liability') || groupLower.includes('liabilities') || groupLower.includes('debt')) {
+    return {
+      type: 'loan',
+      category: categoryName,
+      icon: '🤝',
+      color: '#ef4444',
+      isBorrowing: true,
+    };
+  }
+
+  // Attribute 4 = Lendings / Receivables / Money Lent
+  if (attribVal === 4 || groupLower.includes('lend') || groupLower.includes('receivable') || groupLower.includes('assets')) {
+    return {
+      type: 'loan',
+      category: categoryName,
+      icon: '💵',
+      color: '#10b981',
+      isLending: true,
+    };
+  }
+
+  // Attribute 1 = Credit Cards
+  if (attribVal === 1 || groupLower.includes('card') || groupLower.includes('credit')) {
+    return {
+      type: 'credit',
+      category: categoryName,
+      icon: '💳',
+      color: '#f97316',
+    };
+  }
+
+  // Cash
+  if (groupLower.includes('cash') || groupLower.includes('wallet')) {
+    return {
+      type: 'cash',
+      category: categoryName,
+      icon: '💵',
+      color: '#22c55e',
+    };
+  }
+
+  // Loans / EMIs
+  if (groupLower.includes('loan') || groupLower.includes('emi')) {
+    return {
+      type: 'loan',
+      category: categoryName,
+      icon: '📉',
+      color: '#f87171',
+    };
+  }
+
+  // Default: Main Accounts (Bank Accounts)
+  return {
+    type: 'accounts',
+    category: categoryName,
+    icon: '🏦',
+    color: '#3b82f6',
+  };
+}
+
 export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<SqliteImportResult> {
   try {
     const wasmBinary = await fetchWasmBinary();
@@ -124,6 +247,7 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
     if (!tableCheck.length || !tableCheck[0].values.length) {
       return {
         success: false,
+        assetGroups: [],
         transactions: [],
         accounts: [],
         categories: [],
@@ -132,109 +256,127 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       };
     }
 
-    // 1. Extract Asset Groups (ASSETGROUP)
-    const assetGroupMap: Record<string, string> = {};
+    // 1. Extract Asset Groups (ASSETGROUP) - EXCLUDE INACTIVE / DELETED GROUPS (IS_DEL != 0)
+    const extractedAssetGroups: SqliteImportResult['assetGroups'] = [];
+    const assetGroupMap: Record<string, { uid: string; name: string; attrib: number | null; isDeleted: boolean }> = {};
+
     try {
-      const groupRes = db.exec('SELECT AID, NIC_NAME, uid FROM ASSETGROUP');
+      const groupRes = db.exec('SELECT * FROM ASSETGROUP');
       if (groupRes.length && groupRes[0].values) {
+        const reader = createRowReader(groupRes[0].columns);
         groupRes[0].values.forEach((row) => {
-          const aid = String(row[0]);
-          const name = String(row[1] || '').trim();
-          const uid = String(row[2] || aid);
-          assetGroupMap[uid] = name;
-          assetGroupMap[aid] = name;
+          const aid = String(reader.get(row, ['AID', 'ID', 'UID', 'uid']) || '');
+          const name = String(reader.get(row, ['ACC_GROUP_NAME', 'GROUP_NAME', 'NIC_NAME', 'NAME', 'TITLE']) || '').trim();
+          const uid = String(reader.get(row, ['uid', 'UID', 'AID', 'ID']) || aid);
+          const attribVal = reader.get(row, ['ATTRIB', 'TYPE', 'GROUP_TYPE']);
+          const isDelVal = reader.get(row, ['IS_DEL', 'C_IS_DEL', 'DELETED']);
+          const isDeleted = isDelVal !== null && Number(isDelVal) !== 0;
+
+          if (name) {
+            const groupObj = {
+              uid,
+              name,
+              attrib: attribVal !== null ? Number(attribVal) : null,
+              isDeleted,
+            };
+            assetGroupMap[uid] = groupObj;
+            assetGroupMap[aid] = groupObj;
+
+            // STRICT: Do NOT include deleted/inactive groups in extractedAssetGroups!
+            if (!isDeleted) {
+              extractedAssetGroups.push(groupObj);
+            }
+          }
         });
       }
     } catch (e) {
       console.warn('Error reading ASSETGROUP table:', e);
     }
 
-    // 2. Extract Accounts (ASSETS)
-    const accountMap: Record<string, string> = {};
+    // 2. Extract Accounts (ASSETS) - EXCLUDE INACTIVE / DELETED ACCOUNTS (IS_DEL != 0 or belonging to deleted group)
+    const accountMap: Record<string, { uid: string; name: string; isDeleted: boolean }> = {};
     const extractedAccounts: SqliteImportResult['accounts'] = [];
 
     try {
-      const assetRes = db.exec('SELECT ID, NIC_NAME, uid, groupUid FROM ASSETS');
+      const assetRes = db.exec('SELECT * FROM ASSETS');
       if (assetRes.length && assetRes[0].values) {
+        const reader = createRowReader(assetRes[0].columns);
         assetRes[0].values.forEach((row) => {
-          const id = String(row[0]);
-          const name = String(row[1] || `Account-${id}`).trim();
-          const uid = String(row[2] || id);
-          const groupUid = String(row[3] || '');
-          const groupName = (assetGroupMap[groupUid] || '').toLowerCase();
+          const id = String(reader.get(row, ['ID', 'AID', 'UID', 'uid']) || '');
+          const name = String(reader.get(row, ['NIC_NAME', 'NAME', 'TITLE']) || `Account-${id}`).trim();
+          const uid = String(reader.get(row, ['uid', 'UID', 'ID', 'AID']) || id);
+          const groupUid = String(reader.get(row, ['groupUid', 'GROUP_UID', 'GROUPUID', 'AID']) || '');
+          
+          const groupObj = assetGroupMap[groupUid] || assetGroupMap[id];
+          const groupName = groupObj ? groupObj.name : '';
 
-          accountMap[uid] = name;
-          accountMap[id] = name;
+          const rawBalance = reader.get(row, ['MONEY', 'START_MONEY', 'SURPLUS', 'BALANCE', 'AMOUNT']);
+          const balanceNum = rawBalance !== null ? Number(rawBalance) || 0 : 0;
+          const attribVal = reader.get(row, ['ATTRIB', 'TYPE', 'ASSET_TYPE', 'CARD_TYPE']);
+          const isDelVal = reader.get(row, ['IS_DEL', 'C_IS_DEL', 'DELETED']);
+          
+          // Account is deleted if asset row is deleted OR its parent group is deleted
+          const isDeleted = (isDelVal !== null && Number(isDelVal) !== 0) || (groupObj ? groupObj.isDeleted : false);
 
-          const lower = name.toLowerCase();
-          let accType: 'accounts' | 'cash' | 'credit' | 'loan' = 'accounts';
-          let icon = '🏦';
-          let color = '#3b82f6';
+          const accInfo = { uid, name, isDeleted };
+          accountMap[uid] = accInfo;
+          accountMap[id] = accInfo;
 
-          if (
-            groupName.includes('debt') ||
-            groupName.includes('loan') ||
-            lower.includes('loan') ||
-            lower.includes('friend') ||
-            lower.includes('taken')
-          ) {
-            accType = 'loan';
-            icon = '📉';
-            color = '#ef4444';
-          } else if (groupName.includes('card') || lower.includes('credit') || lower.includes('card')) {
-            accType = 'credit';
-            icon = '💳';
-            color = '#f97316';
-          } else if (
-            groupName.includes('cash') ||
-            lower.includes('cash') ||
-            lower.includes('wallet') ||
-            lower.includes('hand')
-          ) {
-            accType = 'cash';
-            icon = '💵';
-            color = '#10b981';
+          // STRICT: Do NOT include deleted/inactive accounts in extractedAccounts!
+          if (!isDeleted) {
+            const classification = classifyAccountFromGroup(groupName, attribVal !== null ? Number(attribVal) : (groupObj ? groupObj.attrib : null));
+
+            extractedAccounts.push({
+              id: `mm-acc-${uid}`,
+              sourceUid: uid,
+              groupUid,
+              groupName: groupName || classification.category,
+              name,
+              type: classification.type,
+              category: groupName || classification.category,
+              balance: balanceNum,
+              color: classification.color,
+              visible: true,
+              icon: classification.icon,
+              isDeleted: false,
+              isBorrowing: classification.isBorrowing,
+              isLending: classification.isLending,
+            });
           }
-
-          extractedAccounts.push({
-            id: `mm-acc-${uid}`,
-            name,
-            type: accType,
-            balance: 0,
-            color,
-            visible: true,
-            icon,
-          });
         });
       }
     } catch (e) {
       console.warn('Error reading ASSETS table:', e);
     }
 
-    // 3. Extract Categories and Subcategories (ZCATEGORY)
-    const uniqueCategoriesList: {
+    // 3. Extract Categories and Subcategories (ZCATEGORY) - EXCLUDE DELETED CATEGORIES
+    const allCategoriesList: {
       id: string;
       uid: string;
       name: string;
       type: 'income' | 'expense';
       pUid: string;
+      isDeleted: boolean;
     }[] = [];
-    const categoryByUid: Record<string, (typeof uniqueCategoriesList)[0]> = {};
+    const categoryByUid: Record<string, (typeof allCategoriesList)[0]> = {};
 
     try {
-      const catRes = db.exec(
-        'SELECT ID, NAME, TYPE, uid, pUid FROM ZCATEGORY WHERE C_IS_DEL IS NULL OR C_IS_DEL=0'
-      );
+      const catRes = db.exec('SELECT * FROM ZCATEGORY');
       if (catRes.length && catRes[0].values) {
+        const reader = createRowReader(catRes[0].columns);
         catRes[0].values.forEach((row) => {
-          const id = String(row[0]);
-          const name = String(row[1] || 'Other').trim();
-          const type: 'income' | 'expense' = Number(row[2]) === 0 ? 'income' : 'expense';
-          const uid = String(row[3] || id);
-          const pUid = String(row[4] || '0').trim();
+          const id = String(reader.get(row, ['ID', 'UID', 'uid']) || '');
+          const name = String(reader.get(row, ['NAME', 'NIC_NAME', 'TITLE']) || 'Other').trim();
+          const rawType = reader.get(row, ['TYPE', 'C_TYPE', 'DO_TYPE']);
+          const type: 'income' | 'expense' = Number(rawType) === 0 ? 'income' : 'expense';
+          const uid = String(reader.get(row, ['uid', 'UID', 'ID']) || id);
+          const pUid = String(reader.get(row, ['pUid', 'PUID', 'PARENT_UID', 'PARENT_ID']) || '0').trim();
 
-          const catObj = { id, uid, name, type, pUid };
-          uniqueCategoriesList.push(catObj);
+          const isDelVal = reader.get(row, ['C_IS_DEL', 'IS_DEL', 'DELETED']);
+          const isDeleted = isDelVal !== null && Number(isDelVal) !== 0;
+
+          const catObj = { id, uid, name, type, pUid, isDeleted };
+          allCategoriesList.push(catObj);
           categoryByUid[uid] = catObj;
           categoryByUid[id] = catObj;
         });
@@ -243,37 +385,52 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       console.warn('Error reading ZCATEGORY table:', e);
     }
 
-    // Build parent categories with subcategories array
+    // Build parent categories with subcategories array (STRICT: ONLY active categories)
     const extractedCategoryMap: Record<
       string,
-      { id: string; name: string; type: 'income' | 'expense'; color: string; subcategories: string[] }
+      { id: string; sourceUid: string; parentUid?: string; name: string; type: 'income' | 'expense'; color: string; subcategories: string[]; isDeleted: boolean }
     > = {};
 
-    uniqueCategoriesList.forEach((cat) => {
+    allCategoriesList.forEach((cat) => {
+      // STRICT: Skip deleted categories
+      if (cat.isDeleted) return;
+
       const parent = categoryByUid[cat.pUid];
-      if (cat.pUid && cat.pUid !== '0' && parent && parent.name !== cat.name) {
-        // Subcategory: Add to parent category's subcategories list
-        if (!extractedCategoryMap[parent.name]) {
-          extractedCategoryMap[parent.name] = {
+      // Skip if parent exists and is deleted
+      if (parent && parent.isDeleted) return;
+
+      const isSub = cat.pUid && cat.pUid !== '0' && parent && parent.name !== cat.name;
+
+      if (isSub) {
+        // Subcategory: attach to active parent category
+        const parentKey = parent.uid;
+        if (!extractedCategoryMap[parentKey]) {
+          extractedCategoryMap[parentKey] = {
             id: `mm-cat-${parent.uid}`,
+            sourceUid: parent.uid,
             name: parent.name,
             type: parent.type,
             color: parent.type === 'income' ? '#10b981' : '#ef4444',
             subcategories: [],
+            isDeleted: false,
           };
         }
-        if (!extractedCategoryMap[parent.name].subcategories.includes(cat.name)) {
-          extractedCategoryMap[parent.name].subcategories.push(cat.name);
+        if (!extractedCategoryMap[parentKey].subcategories.includes(cat.name)) {
+          extractedCategoryMap[parentKey].subcategories.push(cat.name);
         }
       } else {
         // Parent category
-        if (!extractedCategoryMap[cat.name]) {
-          extractedCategoryMap[cat.name] = {
+        const catKey = cat.uid;
+        if (!extractedCategoryMap[catKey]) {
+          extractedCategoryMap[catKey] = {
             id: `mm-cat-${cat.uid}`,
+            sourceUid: cat.uid,
+            parentUid: cat.pUid && cat.pUid !== '0' ? cat.pUid : undefined,
             name: cat.name,
             type: cat.type,
             color: cat.type === 'income' ? '#10b981' : '#ef4444',
             subcategories: [],
+            isDeleted: false,
           };
         }
       }
@@ -281,83 +438,144 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
 
     const extractedCategories = Object.values(extractedCategoryMap);
 
-    // 4. Extract Transactions (INOUTCOME)
+    // 4. Extract Transactions (INOUTCOME) Preserving Historical Relationships
     const extractedTransactions: SqliteImportResult['transactions'] = [];
-    const txRes = db.exec(
-      'SELECT AID, uid, assetUid, ctgUid, toAssetUid, ZCONTENT, WDATE, DO_TYPE, ZMONEY, IN_ZMONEY FROM INOUTCOME WHERE IS_DEL=0 OR IS_DEL IS NULL ORDER BY WDATE DESC'
-    );
+    try {
+      const txRes = db.exec('SELECT * FROM INOUTCOME');
 
-    if (txRes.length && txRes[0].values) {
-      txRes[0].values.forEach((row, idx) => {
-        const aid = String(row[0]);
-        const uid = String(row[1] || aid);
-        const assetUid = String(row[2] || '');
-        const ctgUid = String(row[3] || '');
-        const toAssetUid = String(row[4] || '');
-        const content = String(row[5] || '').trim();
-        const rawWdate = row[6];
-        const doType = String(row[7]);
-        const zmoney = Number(row[8]) || Number(row[9]) || 0;
+      if (txRes.length && txRes[0].values) {
+        const reader = createRowReader(txRes[0].columns);
+        txRes[0].values.forEach((row, idx) => {
+          const isDel = reader.get(row, ['IS_DEL', 'C_IS_DEL']);
+          if (isDel && Number(isDel) !== 0) return;
 
-        let type: 'income' | 'expense' | 'transfer' = 'expense';
-        if (doType === '0') {
-          type = 'income';
-        } else if (['2', '3', '4'].includes(doType)) {
-          type = 'transfer';
-        }
+          const aid = String(reader.get(row, ['AID', 'ID', 'UID', 'uid']) || '');
+          const uid = String(reader.get(row, ['uid', 'UID', 'ID', 'AID']) || aid);
+          const assetUid = String(reader.get(row, ['assetUid', 'ASSET_UID', 'ASSETUID', 'AID']) || '');
+          const ctgUid = String(reader.get(row, ['ctgUid', 'CTG_UID', 'CTGUID', 'C_UID']) || '');
+          const toAssetUid = String(reader.get(row, ['toAssetUid', 'TO_ASSET_UID', 'TOASSETUID']) || '');
+          const content = String(reader.get(row, ['ZCONTENT', 'CONTENT', 'MEMO', 'DESCRIPTION', 'NOTE']) || '').trim();
+          const rawWdate = reader.get(row, ['WDATE', 'DATE', 'ZDATE']);
+          const doType = String(reader.get(row, ['DO_TYPE', 'TYPE', 'TYPE_DO']) || '1');
+          const zmoney = Number(reader.get(row, ['ZMONEY', 'MONEY', 'AMOUNT', 'IN_ZMONEY'])) || 0;
 
-        const accountName = accountMap[assetUid] || 'Cash';
-        const toAccountName = accountMap[toAssetUid] || '';
-
-        // Resolve Category and Subcategory from ctgUid
-        let categoryName: string | null = null;
-        let subcategoryName: string | undefined = undefined;
-
-        if (type !== 'transfer') {
-          const rawCat = categoryByUid[ctgUid];
-          if (rawCat) {
-            const parentCat = categoryByUid[rawCat.pUid];
-            if (rawCat.pUid && rawCat.pUid !== '0' && parentCat && parentCat.name !== rawCat.name) {
-              categoryName = parentCat.name;
-              subcategoryName = rawCat.name;
-            } else {
-              categoryName = rawCat.name;
-            }
-          } else {
-            categoryName = 'Other';
+          let type: 'income' | 'expense' | 'transfer' = 'expense';
+          if (doType === '0') {
+            type = 'income';
+          } else if (['2', '3', '4'].includes(doType)) {
+            type = 'transfer';
           }
-        }
 
-        const dateStr = parseSqliteDate(rawWdate);
+          const accObj = accountMap[assetUid] || accountMap[aid];
+          const toAccObj = accountMap[toAssetUid];
+          
+          const accountName = accObj ? accObj.name : 'Cash';
+          const toAccountName = toAccObj ? toAccObj.name : '';
 
-        extractedTransactions.push({
-          id: `mm-tx-${uid}-${idx}`,
-          date: dateStr,
-          description: content || subcategoryName || categoryName || 'Imported Transaction',
-          amount: Math.abs(zmoney),
-          type,
-          category: categoryName,
-          subcategory: subcategoryName,
-          account: accountName,
-          toAccount: type === 'transfer' ? toAccountName : undefined,
-          notes: '',
-          status: 'valid',
+          // Resolve Category & Subcategory from ctgUid faithfully
+          let categoryName: string | null = null;
+          let subcategoryName: string | undefined = undefined;
+          let historicalCategoryName: string | undefined = undefined;
+          let isHistoricalOnly = false;
+
+          if (type !== 'transfer') {
+            const rawCat = categoryByUid[ctgUid];
+            if (rawCat) {
+              const parentCat = categoryByUid[rawCat.pUid];
+              const resolvedName = parentCat && rawCat.pUid !== '0' && parentCat.name !== rawCat.name ? parentCat.name : rawCat.name;
+              const resolvedSubName = parentCat && rawCat.pUid !== '0' && parentCat.name !== rawCat.name ? rawCat.name : undefined;
+
+              if (rawCat.isDeleted || (parentCat && parentCat.isDeleted)) {
+                // Category was deleted in source: preserve transaction & original name without making category active
+                categoryName = null;
+                historicalCategoryName = resolvedSubName ? `${resolvedName} → ${resolvedSubName}` : resolvedName;
+                isHistoricalOnly = true;
+              } else {
+                categoryName = resolvedName;
+                subcategoryName = resolvedSubName;
+              }
+            } else {
+              categoryName = null;
+              historicalCategoryName = 'Historical Unmapped';
+              isHistoricalOnly = true;
+            }
+          }
+
+          const dateStr = parseSqliteDate(rawWdate);
+
+          extractedTransactions.push({
+            id: `mm-tx-${uid}-${idx}`,
+            sourceUid: uid,
+            date: dateStr,
+            description: content || subcategoryName || historicalCategoryName || categoryName || 'Imported Transaction',
+            amount: Math.abs(zmoney),
+            type,
+            category: categoryName,
+            categoryUid: ctgUid,
+            subcategory: subcategoryName,
+            account: accountName,
+            accountUid: assetUid || aid,
+            toAccount: type === 'transfer' ? toAccountName : undefined,
+            toAccountUid: type === 'transfer' ? toAssetUid : undefined,
+            notes: '',
+            status: 'valid',
+            historicalCategoryName,
+            isHistoricalOnly,
+          });
         });
-      });
+      }
+    } catch (e) {
+      console.warn('Error reading INOUTCOME table:', e);
+    }
+
+    // 5. Extract Budgets (BUDGET / ASSETBUDGET / ZBUDGET) if Table Exists
+    const extractedBudgets: SqliteImportResult['budgets'] = [];
+    try {
+      const budgetTableCheck = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('BUDGET', 'ASSETBUDGET', 'ZBUDGET')");
+      if (budgetTableCheck.length && budgetTableCheck[0].values.length) {
+        const budgetTableName = String(budgetTableCheck[0].values[0][0]);
+        const budgetRes = db.exec(`SELECT * FROM ${budgetTableName}`);
+        if (budgetRes.length && budgetRes[0].values) {
+          const reader = createRowReader(budgetRes[0].columns);
+          budgetRes[0].values.forEach((row, idx) => {
+            const uid = String(reader.get(row, ['uid', 'UID', 'ID']) || `budget-${idx}`);
+            const ctgUid = String(reader.get(row, ['ctgUid', 'CTG_UID', 'C_UID', 'CATEGORY_ID']) || '');
+            const amountVal = Number(reader.get(row, ['MONEY', 'AMOUNT', 'BUDGET_MONEY'])) || 0;
+            const monthVal = String(reader.get(row, ['MONTH', 'WDATE', 'DATE']) || '');
+
+            const catObj = categoryByUid[ctgUid];
+            if (catObj && !catObj.isDeleted && amountVal > 0) {
+              extractedBudgets.push({
+                id: `mm-budget-${uid}`,
+                sourceUid: uid,
+                categoryName: catObj.name,
+                categoryUid: ctgUid,
+                amount: amountVal,
+                month: monthVal,
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading budget tables:', e);
     }
 
     db.close();
 
     return {
       success: true,
+      assetGroups: extractedAssetGroups,
       transactions: extractedTransactions,
       accounts: extractedAccounts,
       categories: extractedCategories,
+      budgets: extractedBudgets,
     };
   } catch (err: any) {
     console.error('Error parsing Money Manager SQLite file:', err);
     return {
       success: false,
+      assetGroups: [],
       transactions: [],
       accounts: [],
       categories: [],

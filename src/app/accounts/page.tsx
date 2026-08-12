@@ -111,35 +111,50 @@ export default function AccountsPage() {
   }, []);
 
   const groupedAccounts = useMemo(() => {
-    const groups = {
-      bank: { name: 'Bank Accounts', items: [] as Account[], total: 0, icon: Landmark, color: 'text-primary' },
-      cash: { name: 'Cash Accounts', items: [] as Account[], total: 0, icon: Wallet, color: 'text-positive' },
-      credit: { name: 'Credit Cards', items: [] as Account[], total: 0, icon: CreditCard, color: 'text-warning' },
-      loan: { name: 'Loan Accounts', items: [] as Account[], total: 0, icon: ShieldAlert, color: 'text-negative' }
-    };
+    const groups: Record<string, { name: string; items: Account[]; total: number; icon: any; color: string }> = {};
 
     let totalAssets = 0;
     let totalLiabilities = 0;
 
     accounts.forEach(acc => {
-      if (!acc.visible && acc.visible !== undefined) return;
+      if ((!acc.visible && acc.visible !== undefined) || acc.isDeletedSource) return;
+
       const type = acc.type || 'accounts';
-      if (type === 'accounts') {
-        groups.bank.items.push(acc);
-        groups.bank.total += acc.balance;
-        totalAssets += acc.balance;
-      } else if (type === 'cash') {
-        groups.cash.items.push(acc);
-        groups.cash.total += acc.balance;
-        totalAssets += acc.balance;
-      } else if (type === 'credit') {
-        groups.credit.items.push(acc);
-        groups.credit.total += acc.balance;
+      const catName = acc.category || (type === 'credit' ? 'Credit Cards' : type === 'cash' ? 'Cash Accounts' : type === 'loan' ? 'Loan Accounts' : 'Bank Accounts');
+      const key = catName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+
+      if (!groups[key]) {
+        let icon = Landmark;
+        let color = 'text-primary';
+
+        if (type === 'cash' || catName.toLowerCase().includes('cash')) {
+          icon = Wallet;
+          color = 'text-positive';
+        } else if (type === 'credit' || catName.toLowerCase().includes('card') || catName.toLowerCase().includes('credit')) {
+          icon = CreditCard;
+          color = 'text-warning';
+        } else if (catName.toLowerCase().includes('borrow') || catName.toLowerCase().includes('debt') || catName.toLowerCase().includes('loan') || type === 'loan') {
+          icon = ShieldAlert;
+          color = 'text-negative';
+        }
+
+        groups[key] = {
+          name: catName,
+          items: [],
+          total: 0,
+          icon,
+          color,
+        };
+      }
+
+      groups[key].items.push(acc);
+      groups[key].total += acc.balance;
+
+      const isLiab = type === 'credit' || type === 'loan' || catName.toLowerCase().includes('borrow') || catName.toLowerCase().includes('debt') || catName.toLowerCase().includes('card');
+      if (isLiab) {
         totalLiabilities += Math.abs(acc.balance);
-      } else if (type === 'loan') {
-        groups.loan.items.push(acc);
-        groups.loan.total += acc.balance;
-        totalLiabilities += Math.abs(acc.balance);
+      } else {
+        totalAssets += acc.balance;
       }
     });
 

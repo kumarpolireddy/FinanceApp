@@ -39,18 +39,25 @@ export interface SplitPaymentRecord {
 
 export interface Transaction {
   id: string;
+  sourceUid?: string;
   date: string;
   description: string;
   category: string;
+  categoryUid?: string;
   subcategory?: string;
+  subcategoryUid?: string;
   account: string;
+  accountUid?: string;
   toAccount?: string;
+  toAccountUid?: string;
   amount: number;
   type: 'income' | 'expense' | 'transfer';
   notes?: string;
   tripId?: string;
   isSplit?: boolean;
   splitDetails?: SplitDetails;
+  historicalCategoryName?: string;
+  isHistoricalOnly?: boolean;
   createdAt: string;
 }
 
@@ -71,13 +78,17 @@ export interface Trip {
 
 export interface AccountCategory {
   id: string;
+  sourceUid?: string;
   name: string;
   baseType: 'accounts' | 'cash' | 'credit' | 'loan';
   icon?: string;
+  isDeletedSource?: boolean;
 }
 
 export interface Account {
   id: string;
+  sourceUid?: string;
+  groupUid?: string;
   name: string;
   type: 'accounts' | 'cash' | 'credit' | 'loan';
   category?: string;
@@ -86,6 +97,7 @@ export interface Account {
   visible?: boolean;
   openingBalance?: number;
   icon?: string;
+  isDeletedSource?: boolean;
 
   // Credit Card fields
   creditLimit?: number;
@@ -134,8 +146,10 @@ export interface Account {
 
 export interface Budget {
   id: string;
+  sourceUid?: string;
   name: string;
   category: string;
+  categoryUid?: string;
   allocated: number;
   month: string;
   isModified?: boolean;
@@ -144,11 +158,14 @@ export interface Budget {
 
 export interface Category {
   id: string;
+  sourceUid?: string;
+  parentUid?: string;
   name: string;
   type: 'expense' | 'income';
   color: string;
   icon: string;
   subcategories?: string[];
+  isDeletedSource?: boolean;
 }
 
 // ── Storage Keys ──────────────────────────────────────────────────────────────
@@ -193,7 +210,7 @@ const DEFAULT_CATEGORIES: Category[] = [];
 
 // ── Category CRUD ─────────────────────────────────────────────────────────────
 
-export function getCategories(): Category[] {
+export function getCategories(includeDeleted = false): Category[] {
   if (typeof window === 'undefined') return DEFAULT_CATEGORIES;
   try {
     const raw = localStorage.getItem(KEYS.CATEGORIES);
@@ -203,7 +220,9 @@ export function getCategories(): Category[] {
     }
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return DEFAULT_CATEGORIES;
-    return parsed.filter(Boolean);
+    const valid = parsed.filter(Boolean);
+    if (includeDeleted) return valid;
+    return valid.filter((c: Category) => !c.isDeletedSource);
   } catch {
     return DEFAULT_CATEGORIES;
   }
