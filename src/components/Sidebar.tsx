@@ -24,6 +24,8 @@ import {
   Wrench,
   Plane,
   Users,
+  Clock,
+  Receipt,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -90,6 +92,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'nav-budgets', label: 'Budgets', href: '/budgets', icon: Wallet },
       { id: 'nav-goals', label: 'Goals', href: '/goals', icon: Target },
       { id: 'nav-loans', label: 'Loans', href: '/loans', icon: Landmark },
+      { id: 'nav-bills', label: 'Bills & Reminders', href: '/bills', icon: Receipt },
       { id: 'nav-reports', label: 'Reports', href: '/reports', icon: FileText },
     ],
   },
@@ -112,6 +115,14 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'TOOLS',
     items: [
       {
+        id: 'nav-alarms',
+        label: 'Reminders',
+        href: '/alarms',
+        icon: Clock,
+        badge: 'New',
+        badgeVariant: 'primary' as const,
+      },
+      {
         id: 'nav-tools',
         label: 'Tools',
         href: '/tools',
@@ -125,9 +136,9 @@ const BOTTOM_ITEMS: NavItem[] = [
   {
     id: 'nav-notifications',
     label: 'Notifications',
-    href: '/notifications',
+    href: '/alarms',
     icon: Bell,
-    badge: '5',
+    badge: '4',
     badgeVariant: 'negative',
   },
   { id: 'nav-help', label: 'Help & Support', href: '/help', icon: HelpCircle },

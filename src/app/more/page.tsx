@@ -28,6 +28,9 @@ import {
   Trash2,
   RotateCcw,
   Users,
+  Clock,
+  Bell,
+  Receipt,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -64,6 +67,9 @@ export default function MorePage() {
   };
 
   const MENU_ITEMS = [
+    { label: 'Bills & Reminders', icon: Receipt, color: 'text-emerald-400', path: '/bills' },
+    { label: 'Reminders', icon: Clock, color: 'text-emerald-400', path: '/alarms' },
+    { label: 'Notifications', icon: Bell, color: 'text-amber-400', path: '/alarms' },
     { label: 'Split Expenses', icon: Users, color: 'text-primary', path: '/split-expenses' },
     { label: 'Recycle Bin', icon: Trash2, color: 'text-negative', action: () => { loadRecycled(); setSubView('recycle_bin'); } },
     { label: 'Trips', icon: Plane, color: 'text-primary', path: '/trips' },

@@ -9,6 +9,7 @@ import AccountBalances from '../components/AccountBalances';
 import BudgetUtilization from '../components/BudgetUtilization';
 import DashboardHeader from '../components/DashboardHeader';
 import GoalProgressRings from '../components/GoalProgressRings';
+import UpcomingPaymentsWidget from '../components/UpcomingPaymentsWidget';
 
 export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -37,6 +38,9 @@ export default function DashboardPage() {
           selectedYear={selectedYear}
           selectedAccountId={selectedAccountId}
         />
+        {/* Upcoming Payments Widget */}
+        <UpcomingPaymentsWidget />
+
         {/* Charts row */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2">

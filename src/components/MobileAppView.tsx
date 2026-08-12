@@ -9,6 +9,7 @@ import {
   Menu, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown, 
   Plus, 
   Trash2, 
   Edit3, 
@@ -110,6 +111,7 @@ export default function MobileAppView() {
   // Multi-Select & Bulk Delete State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedTxnIds, setSelectedTxnIds] = useState<string[]>([]);
+  const [mobileQuickPickerMode, setMobileQuickPickerMode] = useState<'category' | 'account'>('category');
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressActiveRef = useRef(false);
 
@@ -241,6 +243,8 @@ export default function MobileAppView() {
   const [formCategory, setFormCategory] = useState('');
   const [formSubcategory, setFormSubcategory] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
+  const [isNoteFocused, setIsNoteFocused] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   // Configuration settings (saved to localStorage)
@@ -1629,8 +1633,21 @@ export default function MobileAppView() {
                       inputMode="decimal"
                       value={formAmount}
                       onChange={(e) => setFormAmount(e.target.value)}
-                      onFocus={() => setIsInputFocused(true)}
-                      onBlur={() => setIsInputFocused(false)}
+                      onFocus={() => {
+                        setIsInputFocused(true);
+                        setIsAmountFocused(true);
+                      }}
+                      onBlur={() => {
+                        setIsInputFocused(false);
+                        setIsAmountFocused(false);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          setMobileQuickPickerMode('category');
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
                       required
                       min="0.01"
                       step="any"
@@ -1645,7 +1662,7 @@ export default function MobileAppView() {
                     <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
                       <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{accounts.find(a => a.id === formAccount)?.name || 'Select account'}</span>
+                        <span>{accounts.find(a => a.id === formAccount)?.name || ''}</span>
                       </div>
                       <select
                         value={formAccount}
@@ -1664,7 +1681,7 @@ export default function MobileAppView() {
                     <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
                       <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">To Account</span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{accounts.find(a => a.id === formToAccount)?.name || 'Select destination...'}</span>
+                        <span>{accounts.find(a => a.id === formToAccount)?.name || ''}</span>
                       </div>
                       <select
                         value={formToAccount}
@@ -1683,46 +1700,30 @@ export default function MobileAppView() {
                   </>
                 ) : (
                   <>
-                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                    {/* Category Row - Tap to select category from bottom grid */}
+                    <div
+                      onClick={() => setMobileQuickPickerMode('category')}
+                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                    >
                       <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Category</span>
-                      <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{formCategory || 'Select category'}</span>
+                      <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
+                        <span className={formCategory ? 'text-white font-semibold' : 'text-slate-500'}>
+                          {formCategory || ''}
+                        </span>
                       </div>
-                      <select
-                        value={formCategory}
-                        onChange={(e) => {
-                          setFormCategory(e.target.value);
-                          setFormSubcategory('');
-                        }}
-                        required
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      >
-                        <option value="" disabled className="text-muted-foreground">Select category</option>
-                        {activeCategories.map((cat) => (
-                          <option key={cat.id} value={cat.name} className="bg-[#1F2027] text-[#F2F2F4]">
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
                     </div>
 
-                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                    {/* Account Row - Tap to select account from bottom grid */}
+                    <div
+                      onClick={() => setMobileQuickPickerMode('account')}
+                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                    >
                       <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
-                      <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{accounts.find(a => a.id === formAccount)?.name || 'Select account'}</span>
+                      <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
+                        <span className={formAccount ? 'text-white font-semibold' : 'text-slate-500'}>
+                          {accounts.find((a) => a.id === formAccount)?.name || ''}
+                        </span>
                       </div>
-                      <select
-                        value={formAccount}
-                        onChange={(e) => setFormAccount(e.target.value)}
-                        required
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      >
-                        {accounts.map((acc) => (
-                          <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
-                            {acc.name}
-                          </option>
-                        ))}
-                      </select>
                     </div>
                   </>
                 )}
@@ -1733,8 +1734,14 @@ export default function MobileAppView() {
                   <textarea
                     value={formNotes}
                     onChange={(e) => setFormNotes(e.target.value)}
-                    onFocus={() => setIsInputFocused(true)}
-                    onBlur={() => setIsInputFocused(false)}
+                    onFocus={() => {
+                      setIsInputFocused(true);
+                      setIsNoteFocused(true);
+                    }}
+                    onBlur={() => {
+                      setIsInputFocused(false);
+                      setIsNoteFocused(false);
+                    }}
                     rows={1}
                     className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 resize-none h-auto min-h-[26px]"
                     onInput={(e) => {
@@ -1756,21 +1763,100 @@ export default function MobileAppView() {
                     onChange={(e) => setFormDescription(e.target.value)}
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setIsInputFocused(false)}
+                    placeholder="Description"
                     className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 pr-8"
                   />
                   <Camera size={20} className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />
                 </div>
               </div>
 
-              {/* Bottom Save Action */}
+              {/* Bottom Action Grid */}
               <div className="px-5 mt-5">
-                <button
-                  type="submit"
-                  className="w-full h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
-                >
-                  <Check size={18} />
-                  <span>Save Transaction</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormAmount('');
+                      setFormDescription('');
+                      setFormNotes('');
+                      setFormCategory('');
+                    }}
+                    className="h-12 px-5 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                  >
+                    <X size={18} />
+                    <span>Cancel</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="flex-1 h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Check size={18} />
+                    <span>Save Transaction</span>
+                  </button>
+                </div>
+
+                {/* Space Under Save Transaction Button Used For Category & Account Selection */}
+                {!isAmountFocused && !isNoteFocused && (
+                  <div className="pt-4 border-t border-white/[0.08] space-y-3 pb-8">
+                    {/* 1. CLEAN SUBTLE FLOATING CHIPS GRID (CATEGORIES - NO SCROLLBAR) */}
+                    {mobileQuickPickerMode === 'category' && (
+                      <div className="grid grid-cols-4 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        {activeCategories.map((cat) => {
+                          const isSelected = formCategory === cat.name;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                setFormCategory(cat.name);
+                                setFormSubcategory('');
+                              }}
+                              className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
+                                isSelected
+                                  ? 'bg-primary border border-primary text-slate-950 font-bold'
+                                  : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
+                              }`}
+                            >
+                              <span className="truncate block">{cat.name}</span>
+                            </button>
+                          );
+                        })}
+
+                        {/* Add Category Pill Chip */}
+                        <Link
+                          href="/categories"
+                          className="px-2.5 py-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.04] text-slate-300 font-medium hover:bg-white/[0.08] transition-all cursor-pointer text-xs truncate flex items-center justify-center"
+                        >
+                          <span className="truncate">Add Category</span>
+                        </Link>
+                      </div>
+                    )}
+
+                    {/* 2. CLEAN SUBTLE FLOATING CHIPS GRID (ACCOUNTS - 3 IN A ROW, NO MONEY DISPLAY, NO SCROLLBAR) */}
+                    {mobileQuickPickerMode === 'account' && (
+                      <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        {accounts.map((acc) => {
+                          const isSelected = formAccount === acc.id;
+                          return (
+                            <button
+                              key={acc.id}
+                              type="button"
+                              onClick={() => setFormAccount(acc.id)}
+                              className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
+                                isSelected
+                                  ? 'bg-white/10 border border-white/30 text-white font-bold'
+                                  : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
+                              }`}
+                            >
+                              <span className="truncate block font-bold">{acc.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
             </form>

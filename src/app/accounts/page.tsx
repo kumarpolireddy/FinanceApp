@@ -315,20 +315,18 @@ export default function AccountsPage() {
                               (() => {
                                 const cc = calculateCreditCardBalances(acc, allTransactions);
                                 return (
-                                  <>
-                                    <div className="min-w-[80px] mr-3">
-                                      <span className="block text-[10px] font-bold text-muted-foreground uppercase leading-tight">Payable</span>
-                                      <span className="text-sm font-bold text-negative mt-0.5 block">
+                                  <div className="flex gap-5 text-right items-center">
+                                    <div className="min-w-[70px]">
+                                      <span className="text-sm font-bold text-negative block">
                                         {formatVal(cc.payable)}
                                       </span>
                                     </div>
-                                    <div className="min-w-[80px]">
-                                      <span className="block text-[10px] font-bold text-muted-foreground uppercase leading-none">Outstanding</span>
-                                      <span className="text-sm font-bold text-warning mt-0.5 block">
+                                    <div className="min-w-[70px]">
+                                      <span className="text-sm font-bold text-warning block">
                                         {formatVal(cc.outstanding)}
                                       </span>
                                     </div>
-                                  </>
+                                  </div>
                                 );
                               })()
                             ) : (

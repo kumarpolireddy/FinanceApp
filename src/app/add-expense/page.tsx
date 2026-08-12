@@ -71,6 +71,7 @@ export default function AddExpensePage() {
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
   const [account, setAccount] = useState('');
+  const [accountInputText, setAccountInputText] = useState('');
   const [toAccount, setToAccount] = useState('');
   const [date, setDate] = useState(todayDateTimeISO());
   const [notes, setNotes] = useState('');
@@ -90,8 +91,27 @@ export default function AddExpensePage() {
   const [isAddSubcategoryOpen, setIsAddSubcategoryOpen] = useState(false);
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [deletingTxn, setDeletingTxn] = useState<Transaction | null>(null);
+  const [isAmountFocused, setIsAmountFocused] = useState(false);
+  const [isNoteFocused, setIsNoteFocused] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [bottomPickerMode, setBottomPickerMode] = useState<'category' | 'account'>('category');
   const amountInputRef = useRef<HTMLInputElement>(null);
+
+  function getCategoryEmoji(name: string): string {
+    const lower = name.toLowerCase();
+    if (lower.includes('food') || lower.includes('dining') || lower.includes('restaurant')) return '🍕';
+    if (lower.includes('grocer')) return '🛒';
+    if (lower.includes('shop') || lower.includes('cloth')) return '🛍️';
+    if (lower.includes('bill') || lower.includes('util')) return '⚡';
+    if (lower.includes('rent') || lower.includes('house') || lower.includes('home')) return '🏠';
+    if (lower.includes('transport') || lower.includes('fuel') || lower.includes('travel')) return '🚗';
+    if (lower.includes('entertain') || lower.includes('movie')) return '🎬';
+    if (lower.includes('health') || lower.includes('medical') || lower.includes('doctor')) return '🏥';
+    if (lower.includes('salary') || lower.includes('income')) return '💰';
+    if (lower.includes('invest') || lower.includes('stock')) return '📈';
+    if (lower.includes('gift') || lower.includes('donat')) return '🎁';
+    return '🏷️';
+  }
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
@@ -104,8 +124,8 @@ export default function AddExpensePage() {
     const accs = getAccounts();
     setAccounts(accs);
     setCategoriesMeta(getCategories());
+    setAccount('');
     if (accs.length > 0) {
-      setAccount(accs[0].id);
       if (accs.length > 1) {
         setToAccount(accs[1].id);
       } else {
@@ -393,8 +413,21 @@ export default function AddExpensePage() {
                   inputMode="decimal"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  onFocus={() => setIsInputFocused(true)}
-                  onBlur={() => setIsInputFocused(false)}
+                  onFocus={() => {
+                    setIsInputFocused(true);
+                    setIsAmountFocused(true);
+                  }}
+                  onBlur={() => {
+                    setIsInputFocused(false);
+                    setIsAmountFocused(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setBottomPickerMode('category');
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
                   required
                   min="0.01"
                   step="any"
@@ -410,7 +443,7 @@ export default function AddExpensePage() {
                 <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
                   <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                    <span>{accounts.find(a => a.id === account)?.name || 'Select account'}</span>
+                    <span>{accounts.find(a => a.id === account)?.name || ''}</span>
                   </div>
                   <select
                     value={account}
@@ -430,7 +463,7 @@ export default function AddExpensePage() {
                 <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
                   <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">To Account</span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                    <span>{accounts.find(a => a.id === toAccount)?.name || 'Select destination...'}</span>
+                    <span>{accounts.find(a => a.id === toAccount)?.name || ''}</span>
                   </div>
                   <select
                     value={toAccount}
@@ -449,48 +482,30 @@ export default function AddExpensePage() {
               </>
             ) : (
               <>
-                {/* Category Row */}
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                {/* Category Row - Tap to select category from bottom grid */}
+                <div
+                  onClick={() => setBottomPickerMode('category')}
+                  className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                >
                   <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Category</span>
-                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                    <span>{category || 'Select category'}</span>
+                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
+                    <span className={category ? 'text-white font-semibold' : 'text-slate-500'}>
+                      {category || ''}
+                    </span>
                   </div>
-                  <select
-                    value={category}
-                    onChange={(e) => {
-                      setCategory(e.target.value);
-                      setSubcategory('');
-                    }}
-                    required
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  >
-                    <option value="" disabled className="text-muted-foreground">Select category</option>
-                    {categories.map((catName) => (
-                      <option key={catName} value={catName} className="bg-[#1F2027] text-[#F2F2F4]">
-                        {catName}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
-                {/* Account Row */}
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                {/* Account Row - Tap to select account from bottom grid */}
+                <div
+                  onClick={() => setBottomPickerMode('account')}
+                  className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                >
                   <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
-                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                    <span>{accounts.find(a => a.id === account)?.name || 'Select account'}</span>
+                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
+                    <span className={account ? 'text-white font-semibold' : 'text-slate-500'}>
+                      {accounts.find((a) => a.id === account)?.name || ''}
+                    </span>
                   </div>
-                  <select
-                    value={account}
-                    onChange={(e) => setAccount(e.target.value)}
-                    required
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  >
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
-                        {acc.name}
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </>
             )}
@@ -501,8 +516,14 @@ export default function AddExpensePage() {
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                onFocus={() => setIsInputFocused(true)}
-                onBlur={() => setIsInputFocused(false)}
+                onFocus={() => {
+                  setIsInputFocused(true);
+                  setIsNoteFocused(true);
+                }}
+                onBlur={() => {
+                  setIsInputFocused(false);
+                  setIsNoteFocused(false);
+                }}
                 rows={1}
                 className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 resize-none h-auto min-h-[26px]"
                 onInput={(e) => {
@@ -515,7 +536,7 @@ export default function AddExpensePage() {
 
           </div>
 
-          {/* Description & Camera Section (Gap of 20dp between form and description) */}
+          {/* Description & Camera Section */}
           <div className="flex flex-col mt-5">
             <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
               <input
@@ -524,6 +545,7 @@ export default function AddExpensePage() {
                 onChange={(e) => setDescription(e.target.value)}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
+                placeholder="Description"
                 className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 pr-8"
               />
               <Camera size={20} className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />
@@ -532,14 +554,91 @@ export default function AddExpensePage() {
 
           {/* Bottom Action Grid */}
           <div className="px-5 mt-5">
-            <button
-              type="button"
-              onClick={() => handleSubmit()}
-              className="w-full h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
-            >
-              <Check size={18} />
-              <span>Save Transaction</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="h-12 px-5 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <X size={18} />
+                <span>Cancel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSubmit()}
+                className="flex-1 h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Check size={18} />
+                <span>Save Transaction</span>
+              </button>
+            </div>
+
+            {/* Space Under Save Transaction Button Used For Category & Account Selection */}
+            {!isAmountFocused && !isNoteFocused && (
+              <div className="pt-4 border-t border-white/[0.08] space-y-3 pb-8">
+                {/* 1. CLEAN SUBTLE FLOATING CHIPS GRID (CATEGORIES - NO SCROLLBAR) */}
+                {bottomPickerMode === 'category' && (
+                  <div className="grid grid-cols-4 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    {categories.map((catName) => {
+                      const isSelected = category === catName;
+                      return (
+                        <button
+                          key={catName}
+                          type="button"
+                          onClick={() => {
+                            setCategory(catName);
+                            setSubcategory('');
+                          }}
+                          className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
+                            isSelected
+                              ? 'bg-primary border border-primary text-slate-950 font-bold'
+                              : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
+                          }`}
+                        >
+                          <span className="truncate block">{catName}</span>
+                        </button>
+                      );
+                    })}
+
+                    {/* Add Category Pill Chip */}
+                    <button
+                      type="button"
+                      onClick={() => setIsAddCategoryOpen(true)}
+                      className="px-2.5 py-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.04] text-slate-300 font-medium hover:bg-white/[0.08] transition-all cursor-pointer text-xs truncate flex items-center justify-center"
+                    >
+                      <span className="truncate">Add Category</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* 2. CLEAN SUBTLE FLOATING CHIPS GRID (ACCOUNTS - 3 IN A ROW, NO MONEY DISPLAY, NO SCROLLBAR) */}
+                {bottomPickerMode === 'account' && (
+                  <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    {accounts.map((acc) => {
+                      const isSelected = account === acc.id;
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => {
+                            setAccount(acc.id);
+                            setAccountInputText(acc.name);
+                          }}
+                          className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
+                            isSelected
+                              ? 'bg-white/10 border border-white/30 text-white font-bold'
+                              : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
+                          }`}
+                        >
+                          <span className="truncate block font-bold">{acc.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
         </form>

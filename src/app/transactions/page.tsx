@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState, useRef, Suspense, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { ChevronDown, Edit3, ChevronLeft, ChevronRight, Filter, BarChart3, Plus, ArrowLeft, Trash2, Copy, Star, Camera, Plane, Check, Users, ReceiptText } from 'lucide-react';
+import { ChevronDown, Edit3, ChevronLeft, ChevronRight, Filter, BarChart3, Plus, ArrowLeft, Trash2, Copy, Star, Camera, Plane, Check, Users, ReceiptText, X } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import Modal from '@/components/ui/Modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -236,9 +236,11 @@ function TransactionsPageContent() {
     return map;
   }, [transactions]);
 
-  // Multi-Select & Bulk Delete State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedTxnIds, setSelectedTxnIds] = useState<string[]>([]);
+  const [editPickerMode, setEditPickerMode] = useState<'category' | 'account'>('category');
+  const [isEditAmountFocused, setIsEditAmountFocused] = useState(false);
+  const [isEditNoteFocused, setIsEditNoteFocused] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressActiveRef = useRef(false);
 
@@ -1392,33 +1394,7 @@ function TransactionsPageContent() {
       className="max-w-2xl mx-auto px-0 md:px-3.5 py-2 space-y-2.5 bg-background min-h-[90vh]"
     >
       
-      {/* 0. Top Bar with Centered Trip Button & Trips Link */}
-      <div className="px-3.5 md:px-0 pt-1 pb-2 border-b border-border/40 grid grid-cols-3 items-center">
-        <div></div>
 
-        <div className="flex justify-center">
-          <button
-            onClick={handleTripButtonClick}
-            className={`px-3.5 py-1 rounded-md text-sm font-normal transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[170px] ${
-              activeTrip
-                ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse'
-                : 'bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20'
-            }`}
-            title={activeTrip ? `Tap to stop ${activeTrip.name}` : 'Start Trip'}
-          >
-            {activeTrip ? activeTrip.name : 'Trip'}
-          </button>
-        </div>
-
-        <div className="flex justify-end">
-          <button
-            onClick={() => router.push('/trips')}
-            className="text-2xs font-normal text-muted-foreground hover:text-primary transition"
-          >
-            Trips &rarr;
-          </button>
-        </div>
-      </div>
 
       {/* 1. Header Navigation: Month Selector, Search/Filter buttons */}
       <div className="px-3.5 md:px-0">
@@ -2278,6 +2254,15 @@ function TransactionsPageContent() {
                       type="number"
                       value={editForm.amount}
                       onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                      onFocus={() => setIsEditAmountFocused(true)}
+                      onBlur={() => setIsEditAmountFocused(false)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          setEditPickerMode('category');
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
                       required
                       min="0.01"
                       step="any"
@@ -2293,7 +2278,7 @@ function TransactionsPageContent() {
                     <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
                       <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{accounts.find(a => a.id === editForm.account)?.name || 'Select account'}</span>
+                        <span>{accounts.find(a => a.id === editForm.account)?.name || ''}</span>
                       </div>
                       <select
                         value={editForm.account}
@@ -2313,7 +2298,7 @@ function TransactionsPageContent() {
                     <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
                       <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">To Account</span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{accounts.find(a => a.id === editForm.toAccount)?.name || 'Select destination...'}</span>
+                        <span>{accounts.find(a => a.id === editForm.toAccount)?.name || ''}</span>
                       </div>
                       <select
                         value={editForm.toAccount || ''}
@@ -2332,47 +2317,30 @@ function TransactionsPageContent() {
                   </>
                 ) : (
                   <>
-                    {/* Category Row (Clean, No Icons, No Subcategories) */}
-                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                    {/* Category Row - Tap to select category from bottom grid */}
+                    <div
+                      onClick={() => setEditPickerMode('category')}
+                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                    >
                       <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Category</span>
-                      <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{editForm.category || 'Select category'}</span>
+                      <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
+                        <span className={editForm.category ? 'text-white font-semibold' : 'text-slate-500'}>
+                          {editForm.category || ''}
+                        </span>
                       </div>
-                      <select
-                        value={editForm.category}
-                        onChange={(e) => {
-                          setEditForm({ ...editForm, category: e.target.value, subcategory: '' });
-                        }}
-                        required
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      >
-                        {editForm.category === 'Deleted Category' && <option value="Deleted Category">Deleted Category</option>}
-                        {editCategories.map((cat) => (
-                          <option key={cat.id} value={cat.name} className="bg-[#1F2027] text-[#F2F2F4]">
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
                     </div>
 
-                    {/* Account Row */}
-                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                    {/* Account Row - Tap to select account from bottom grid */}
+                    <div
+                      onClick={() => setEditPickerMode('account')}
+                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                    >
                       <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
-                      <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{accounts.find(a => a.id === editForm.account)?.name || 'Select account'}</span>
+                      <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
+                        <span className={editForm.account ? 'text-white font-semibold' : 'text-slate-500'}>
+                          {accounts.find((a) => a.id === editForm.account)?.name || ''}
+                        </span>
                       </div>
-                      <select
-                        value={editForm.account}
-                        onChange={(e) => setEditForm({ ...editForm, account: e.target.value })}
-                        required
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      >
-                        {accounts.map((acc) => (
-                          <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
-                            {acc.name}
-                          </option>
-                        ))}
-                      </select>
                     </div>
                   </>
                 )}
@@ -2383,6 +2351,8 @@ function TransactionsPageContent() {
                   <textarea
                     value={editForm.notes}
                     onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                    onFocus={() => setIsEditNoteFocused(true)}
+                    onBlur={() => setIsEditNoteFocused(false)}
                     rows={1}
                     className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 resize-none h-auto min-h-[26px]"
                     onInput={(e) => {
@@ -2413,25 +2383,8 @@ function TransactionsPageContent() {
                 <div className="mx-5 my-3 bg-secondary/50 border border-border/60 rounded-xl p-3.5 space-y-3 text-xs">
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
                     <div className="flex items-center gap-1.5 font-normal text-foreground">
-                      <Users size={16} className="text-primary" />
-                      <span>Split Expense Details</span>
-                    </div>
-                    <span className="text-2xs font-normal text-primary px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-md uppercase">
-                      {editingTransaction.splitDetails.splitMethod === 'equal' ? 'Equal Split' : 'Custom Split'}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 text-center gap-2 font-mono">
-                    <div>
-                      <span className="text-[10px] text-muted-foreground uppercase block font-sans">Total Paid</span>
-                      <span className="text-xs font-normal text-foreground">₹{editingTransaction.splitDetails.totalAmount.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-muted-foreground uppercase block font-sans">Your Share</span>
-                      <span className="text-xs font-normal text-primary">₹{editingTransaction.splitDetails.myShare.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-muted-foreground uppercase block font-sans">To Receive</span>
+                      <span className="text-xs font-normal text-muted-foreground">Total: ₹{editingTransaction.splitDetails.totalAmount.toLocaleString('en-IN')}</span>
+                      <span>•</span>
                       <span className="text-xs font-normal text-positive">₹{editingTransaction.splitDetails.toReceive.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
@@ -2472,14 +2425,28 @@ function TransactionsPageContent() {
 
               {/* Bottom Actions Grid */}
               <div className="px-5 mt-5 space-y-3">
-                <button
-                  type="button"
-                  onClick={handleSaveClick}
-                  className="w-full h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
-                >
-                  <Check size={18} />
-                  <span>Save Transaction</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingTransaction(null);
+                      setEditForm(null);
+                    }}
+                    className="h-12 px-5 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                  >
+                    <X size={18} />
+                    <span>Cancel</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveClick}
+                    className="flex-1 h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+                  >
+                    <Check size={18} />
+                    <span>Save Transaction</span>
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-3 gap-3">
                   <button
@@ -2511,6 +2478,72 @@ function TransactionsPageContent() {
                     <span>Bookmark</span>
                   </button>
                 </div>
+
+                {/* Space Under Save Transaction Button Used For Category & Account Selection */}
+                {editForm && !isEditAmountFocused && !isEditNoteFocused && (
+                  <div className="pt-4 border-t border-white/[0.08] space-y-3 pb-8">
+                    {/* 1. CLEAN SUBTLE FLOATING CHIPS GRID (CATEGORIES - NO SCROLLBAR) */}
+                    {editPickerMode === 'category' && (
+                      <div className="grid grid-cols-4 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        {editCategories.map((cat) => {
+                          const isSelected = editForm.category === cat.name;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() =>
+                                setEditForm({
+                                  ...editForm,
+                                  category: cat.name,
+                                  subcategory: '',
+                                })
+                              }
+                              className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
+                                isSelected
+                                  ? 'bg-primary border border-primary text-slate-950 font-bold'
+                                  : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
+                              }`}
+                            >
+                              <span className="truncate block">{cat.name}</span>
+                            </button>
+                          );
+                        })}
+
+                        {/* Add Category Pill Chip */}
+                        <button
+                          type="button"
+                          onClick={() => router.push('/categories')}
+                          className="px-2.5 py-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.04] text-slate-300 font-medium hover:bg-white/[0.08] transition-all cursor-pointer text-xs truncate flex items-center justify-center"
+                        >
+                          <span className="truncate">Add Category</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 2. CLEAN SUBTLE FLOATING CHIPS GRID (ACCOUNTS - 3 IN A ROW, NO MONEY DISPLAY, NO SCROLLBAR) */}
+                    {editPickerMode === 'account' && (
+                      <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        {accounts.map((acc) => {
+                          const isSelected = editForm.account === acc.id;
+                          return (
+                            <button
+                              key={acc.id}
+                              type="button"
+                              onClick={() => setEditForm({ ...editForm, account: acc.id })}
+                              className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
+                                isSelected
+                                  ? 'bg-white/10 border border-white/30 text-white font-bold'
+                                  : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
+                              }`}
+                            >
+                              <span className="truncate block font-bold">{acc.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
             </form>

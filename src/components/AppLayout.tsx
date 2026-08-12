@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
+import AlarmListener from './AlarmListener';
+import Modal from '@/components/ui/Modal';
+import { toast } from 'sonner';
+import { getActiveTrip, setActiveTrip, updateTrip, addTrip, type Trip } from '@/lib/storage';
 import { 
   BarChart3, 
   List, 
@@ -10,7 +14,8 @@ import {
   Menu, 
   ChevronLeft,
   LayoutDashboard,
-  Plus
+  Plus,
+  Plane
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -30,6 +35,63 @@ export default function AppLayout({ children }: AppLayoutProps) {
   
   const [isMobile, setIsMobile] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+
+  // Trip Mode States & Handlers for Header
+  const [activeTrip, setActiveTripState] = useState<Trip | null>(null);
+  const [isStartTripModalOpen, setIsStartTripModalOpen] = useState(false);
+  const [newTripName, setNewTripName] = useState('');
+  const [newTripDestination, setNewTripDestination] = useState('');
+  const [newTripBudget, setNewTripBudget] = useState('');
+
+  const refreshActiveTrip = useCallback(() => {
+    setActiveTripState(getActiveTrip());
+  }, []);
+
+  useEffect(() => {
+    refreshActiveTrip();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', refreshActiveTrip);
+      window.addEventListener('storage', refreshActiveTrip);
+      return () => {
+        window.removeEventListener('focus', refreshActiveTrip);
+        window.removeEventListener('storage', refreshActiveTrip);
+      };
+    }
+  }, [refreshActiveTrip, pathname]);
+
+  const handleTripButtonClick = () => {
+    const current = getActiveTrip();
+    if (current) {
+      updateTrip(current.id, { status: 'completed' });
+      setActiveTrip(null);
+      refreshActiveTrip();
+      toast.success(`Trip "${current.name}" completed!`);
+    } else {
+      setNewTripName('');
+      setNewTripDestination('');
+      setNewTripBudget('');
+      setIsStartTripModalOpen(true);
+    }
+  };
+
+  const handleStartTripSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTripName.trim()) {
+      toast.error('Trip Name is required');
+      return;
+    }
+    const created = addTrip({
+      name: newTripName.trim(),
+      destination: newTripDestination.trim() || undefined,
+      budget: parseFloat(newTripBudget) || undefined,
+      startDate: new Date().toISOString().slice(0, 10),
+      status: 'active',
+      icon: '✈️',
+    });
+    refreshActiveTrip();
+    setIsStartTripModalOpen(false);
+    toast.success(`Trip "${created.name}" started`);
+  };
 
   const handleSwipeBack = () => {
     const params = new URLSearchParams(window.location.search);
@@ -171,10 +233,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
         onTouchEnd={handleGlobalTouchEnd}
         className="flex flex-col h-[100dvh] min-h-[100dvh] max-w-md mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none"
       >
+        <AlarmListener />
         
         {/* Mobile Header */}
-        <header className="fixed top-0 left-0 right-0 w-full max-w-md mx-auto h-14 bg-secondary/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4 z-50">
-          <div className="flex items-center gap-2">
+        <header className="fixed top-0 left-0 right-0 w-full max-w-md mx-auto h-14 bg-secondary/95 backdrop-blur-md border-b border-border flex items-center justify-between px-3 z-50">
+          <div className="flex items-center gap-1.5 shrink-0">
             {!isMainTab && pathname !== '/' ? (
               <button 
                 onClick={() => router.back()}
@@ -184,18 +247,43 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <span>Back</span>
               </button>
             ) : (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <span className="text-sm">📊</span>
                 <span className="font-extrabold tracking-tighter text-foreground text-xs uppercase">WealthIQ</span>
               </div>
             )}
           </div>
           
-          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground text-center truncate px-2">
+          <h2 className="text-sm font-extrabold uppercase tracking-wider text-foreground text-center truncate px-1 shrink">
             {pageTitle}
           </h2>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {pathname.startsWith('/transactions') && (
+              <>
+                <button
+                  onClick={handleTripButtonClick}
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[85px] ${
+                    activeTrip
+                      ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse'
+                      : 'bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20'
+                  }`}
+                  title={activeTrip ? `Tap to stop ${activeTrip.name}` : 'Start Trip'}
+                >
+                  <span className="truncate">{activeTrip ? activeTrip.name : 'Trip'}</span>
+                </button>
+
+                <button
+                  onClick={() => router.push('/trips')}
+                  className="px-1.5 py-1 rounded text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5 hover:bg-muted/40"
+                  title="View all trips"
+                >
+                  <span>Trips</span>
+                  <span>&rarr;</span>
+                </button>
+              </>
+            )}
+
             {pathname !== '/dashboard' && (
               <button 
                 onClick={() => router.push('/dashboard')}
@@ -224,6 +312,71 @@ export default function AppLayout({ children }: AppLayoutProps) {
           >
             <Plus size={24} />
           </button>
+        )}
+
+        {/* Start Trip Modal */}
+        {isStartTripModalOpen && (
+          <Modal
+            isOpen={isStartTripModalOpen}
+            onClose={() => setIsStartTripModalOpen(false)}
+            title="Start New Live Trip"
+          >
+            <form onSubmit={handleStartTripSubmit} className="space-y-4 pt-2">
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                  Trip Name *
+                </label>
+                <input
+                  type="text"
+                  value={newTripName}
+                  onChange={(e) => setNewTripName(e.target.value)}
+                  placeholder="e.g. Goa Trip, Ladakh 2026"
+                  className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                  Destination (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={newTripDestination}
+                  onChange={(e) => setNewTripDestination(e.target.value)}
+                  placeholder="e.g. Goa, India"
+                  className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                  Budget ₹ (Optional)
+                </label>
+                <input
+                  type="number"
+                  value={newTripBudget}
+                  onChange={(e) => setNewTripBudget(e.target.value)}
+                  placeholder="e.g. 25000"
+                  className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsStartTripModalOpen(false)}
+                  className="flex-1 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/40 hover:bg-muted/70 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition shadow-sm"
+                >
+                  Start Trip
+                </button>
+              </div>
+            </form>
+          </Modal>
         )}
 
         {/* Mobile Bottom Tab Bar */}
@@ -256,6 +409,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Desktop / Tablet layout (Standard SideBar)
   return (
     <div className="flex min-h-screen bg-background">
+      <AlarmListener />
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-auto relative">
         {children}

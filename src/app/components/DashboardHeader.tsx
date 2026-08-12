@@ -119,6 +119,17 @@ export default function DashboardHeader({
         }
       } else if (acc.type === 'credit') {
         const cc = calculateCreditCardBalances(acc, txns);
+
+        // Billing Cycle / Statement Date check
+        const cycleDayStr = acc.billingCycle;
+        if (cycleDayStr && !isNaN(parseInt(cycleDayStr, 10))) {
+          const cycleDay = parseInt(cycleDayStr, 10);
+          if (now.getDate() === cycleDay) {
+            list.push(`Statement generated today for credit card "${acc.name}" (Billing date: ${cycleDay}th).`);
+          }
+        }
+
+        // Due Date check
         if (cc.payable > 0) {
           const dueDayStr = acc.dueDate;
           if (dueDayStr && !isNaN(parseInt(dueDayStr, 10))) {
@@ -314,6 +325,13 @@ export default function DashboardHeader({
                         </div>
                       ))}
                     </div>
+                    <a
+                      href="/alarms"
+                      onClick={() => setShowNotifications(false)}
+                      className="block text-center text-xs font-bold text-primary hover:underline pt-2 border-t border-border mt-2"
+                    >
+                      Manage Reminders →
+                    </a>
                   </div>
                 </>
               )}
