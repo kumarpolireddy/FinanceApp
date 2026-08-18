@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import AlarmListener from './AlarmListener';
+import FloatingAiAssistant from './FloatingAiAssistant';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
 import { getActiveTrip, setActiveTrip, updateTrip, addTrip, type Trip } from '@/lib/storage';
@@ -207,6 +208,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   // Page title calculation based on route
   const pageTitle = (() => {
+    if (pathname.startsWith('/ai-advisor')) return 'WealthIQ Gemini AI Advisor';
     if (pathname === '/' || pathname.startsWith('/dashboard')) return 'Dashboard';
     if (pathname.startsWith('/transactions')) return 'Transactions';
     if (pathname.startsWith('/analytics')) return 'Statistics';
@@ -224,7 +226,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   })();
 
   const isMainTab = pathname === '/dashboard' || pathname === '/transactions' || pathname === '/analytics' || pathname === '/accounts' || pathname === '/more';
-  const showFAB = pathname === '/dashboard' || pathname === '/transactions';
+  const showFAB = !pathname.startsWith('/add-expense') && !pathname.startsWith('/ai-advisor') && !pathname.startsWith('/login');
 
   if (isMobile) {
     return (
@@ -236,7 +238,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <AlarmListener />
         
         {/* Mobile Header */}
-        <header className="fixed top-0 left-0 right-0 w-full max-w-md mx-auto h-14 bg-secondary/95 backdrop-blur-md border-b border-border flex items-center justify-between px-3 z-50">
+        <header className="fixed top-0 left-0 right-0 w-full max-w-md mx-auto h-14 bg-card border-b border-border flex items-center justify-between px-3 z-50 shadow-sm">
           <div className="flex items-center gap-1.5 shrink-0">
             {!isMainTab && pathname !== '/' ? (
               <button 
@@ -297,8 +299,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto pt-14 pb-20 select-text bg-background">
-          <div className="animate-fade-in pb-4">
+        <main className={`flex-1 select-text bg-background ${pathname.startsWith('/ai-advisor') ? 'overflow-hidden pt-14 pb-0 h-[calc(100dvh-3.5rem)]' : 'overflow-y-auto pt-14 pb-28'}`}>
+          <div className={`animate-fade-in ${pathname.startsWith('/ai-advisor') ? 'h-full flex flex-col' : 'pb-4'}`}>
             {children}
           </div>
         </main>
@@ -380,8 +382,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         )}
 
         {/* Mobile Bottom Tab Bar */}
-        {!pathname.startsWith('/add-expense') && (
-          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-secondary/95 backdrop-blur-md border-t border-border flex justify-around items-center z-50 pb-safe">
+        {!pathname.startsWith('/add-expense') && !pathname.startsWith('/ai-advisor') && (
+          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card border-t border-border flex justify-around items-center z-50 pb-safe shadow-2xl">
             {TABS.map((tab) => {
               const IconComponent = tab.icon;
               const isActive = activeTab === tab.id;
@@ -402,6 +404,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </nav>
         )}
 
+        <FloatingAiAssistant />
       </div>
     );
   }
@@ -422,6 +425,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <Plus size={28} />
           </button>
         )}
+        <FloatingAiAssistant />
       </main>
     </div>
   );

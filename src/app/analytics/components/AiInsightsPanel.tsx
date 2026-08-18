@@ -260,9 +260,18 @@ export default function AiInsightsPanel({ transactions }: { transactions: Transa
             </p>
           </div>
         </div>
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-          {insights.length} insight{insights.length === 1 ? '' : 's'}
-        </span>
+        <div className="flex items-center gap-2">
+          <a
+            href="/ai-advisor"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-sm"
+          >
+            <Sparkles size={13} />
+            <span>Ask Gemini AI</span>
+          </a>
+          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+            {insights.length} insight{insights.length === 1 ? '' : 's'}
+          </span>
+        </div>
       </div>
 
       {insights.length === 0 ? (

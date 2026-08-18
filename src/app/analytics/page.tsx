@@ -47,7 +47,7 @@ export default function AnalyticsPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto px-0 md:px-4 py-3 space-y-4 bg-background">
+      <div className="max-w-2xl mx-auto px-0 md:px-4 pt-3 pb-32 space-y-4 bg-background">
         <div className="px-4 md:px-0">
           <AnalyticsHeader />
         </div>

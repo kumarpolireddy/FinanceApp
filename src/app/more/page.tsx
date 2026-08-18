@@ -31,6 +31,7 @@ import {
   Clock,
   Bell,
   Receipt,
+  Sparkles,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -67,6 +68,7 @@ export default function MorePage() {
   };
 
   const MENU_ITEMS = [
+    { label: 'AI Advisor', icon: Sparkles, color: 'text-purple-400', path: '/ai-advisor' },
     { label: 'Bills & Reminders', icon: Receipt, color: 'text-emerald-400', path: '/bills' },
     { label: 'Reminders', icon: Clock, color: 'text-emerald-400', path: '/alarms' },
     { label: 'Notifications', icon: Bell, color: 'text-amber-400', path: '/alarms' },
@@ -88,7 +90,7 @@ export default function MorePage() {
 
   return (
     <AppLayout>
-      <div className="max-w-md mx-auto px-0 md:px-4 py-3 space-y-4 bg-background">
+      <div className="max-w-md mx-auto px-0 md:px-4 pt-3 pb-32 space-y-4 bg-background">
         
         {subView !== 'menu' && (
           <div className="px-4 md:px-0">

@@ -1391,7 +1391,7 @@ function TransactionsPageContent() {
 
   return (
     <div 
-      className="max-w-2xl mx-auto px-0 md:px-3.5 py-2 space-y-2.5 bg-background min-h-[90vh]"
+      className="max-w-2xl mx-auto px-0 md:px-3.5 pt-2 pb-32 space-y-2.5 bg-background min-h-[90vh]"
     >
       
 
