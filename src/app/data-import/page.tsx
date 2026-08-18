@@ -346,8 +346,49 @@ export default function DataImportPage() {
       const findAccId = (nameStr: string, uidStr?: string): string => {
         if (uidStr && accountIdMap[uidStr]) return accountIdMap[uidStr];
         if (nameStr && accountIdMap[nameStr]) return accountIdMap[nameStr];
-        const found = newAccounts.find((a) => a.sourceUid === uidStr || a.name.toLowerCase().trim() === (nameStr || '').toLowerCase().trim());
-        return found ? found.id : (newAccounts[0]?.id || 'acc-cash');
+        if (nameStr && accountIdMap[nameStr.toLowerCase().trim()]) return accountIdMap[nameStr.toLowerCase().trim()];
+
+        const cleanName = (nameStr || '').trim();
+        const found = newAccounts.find(
+          (a) => (uidStr && a.sourceUid === uidStr) || (cleanName && a.name.toLowerCase().trim() === cleanName.toLowerCase())
+        );
+        if (found) return found.id;
+
+        // Search in all result accounts (including historical/deleted accounts in SQLite)
+        const sourceAcc = result.accounts.find(
+          (a) => (uidStr && a.sourceUid === uidStr) || (cleanName && a.name.toLowerCase().trim() === cleanName.toLowerCase())
+        );
+
+        const targetName = cleanName || sourceAcc?.name || (uidStr ? `Account (UID: ${uidStr})` : 'Imported Account');
+        const lowerName = targetName.toLowerCase();
+
+        let accType: 'accounts' | 'cash' | 'credit' | 'loan' = sourceAcc?.type || 'accounts';
+        if (!sourceAcc) {
+          if (lowerName.includes('card') || lowerName.includes('credit')) accType = 'credit';
+          else if (lowerName.includes('loan') || lowerName.includes('borrow') || lowerName.includes('lend') || lowerName.includes('emi')) accType = 'loan';
+          else if (lowerName.includes('cash') || lowerName.includes('wallet')) accType = 'cash';
+        }
+
+        const colors = { accounts: '#3b82f6', cash: '#10b981', credit: '#f97316', loan: '#ef4444' };
+        const restoredAcc: Account = {
+          id: `acc-restored-${uidStr || Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          sourceUid: uidStr || sourceAcc?.sourceUid,
+          groupUid: sourceAcc?.groupUid,
+          name: targetName,
+          type: accType,
+          category: sourceAcc?.category || sourceAcc?.groupName || 'Imported Accounts',
+          balance: sourceAcc?.balance || 0,
+          openingBalance: 0,
+          color: sourceAcc?.color || colors[accType],
+          visible: true,
+          icon: sourceAcc?.icon || (accType === 'cash' ? '💵' : accType === 'credit' ? '💳' : accType === 'loan' ? '📉' : '🏦'),
+        };
+
+        newAccounts.push(restoredAcc);
+        if (uidStr) accountIdMap[uidStr] = restoredAcc.id;
+        accountIdMap[targetName] = restoredAcc.id;
+        accountIdMap[targetName.toLowerCase()] = restoredAcc.id;
+        return restoredAcc.id;
       };
 
       result.transactions.forEach((tx, index) => {
@@ -378,6 +419,8 @@ export default function DataImportPage() {
         });
       });
 
+      // Save updated accounts array including any restored missing accounts
+      saveAccounts(newAccounts);
       localStorage.setItem('wealthiq_transactions', JSON.stringify(parsedTransactions));
 
       // 5. Process & Save Budgets

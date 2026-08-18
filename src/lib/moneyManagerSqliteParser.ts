@@ -498,21 +498,21 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           const isDel = reader.get(row, ['IS_DEL', 'C_IS_DEL']);
           if (isDel && Number(isDel) !== 0) return;
 
-          const aid = String(reader.get(row, ['AID', 'ID', 'UID', 'uid']) || '');
+          const aid = String(reader.get(row, ['AID', 'ID', 'UID', 'uid', 'ACC_ID', 'ACCOUNT_ID', 'A_ID']) || '');
           const uid = String(reader.get(row, ['uid', 'UID', 'ID', 'AID']) || aid);
-          const assetUid = String(reader.get(row, ['assetUid', 'ASSET_UID', 'ASSETUID', 'AID']) || '');
-          const ctgUid = String(reader.get(row, ['ctgUid', 'CTG_UID', 'CTGUID', 'C_UID']) || '');
-          const toAssetUid = String(reader.get(row, ['toAssetUid', 'TO_ASSET_UID', 'TOASSETUID']) || '');
+          const assetUid = String(reader.get(row, ['assetUid', 'ASSET_UID', 'ASSETUID', 'ASSET_ID', 'AID', 'ACC_ID', 'A_ID', 'ACCOUNT_ID']) || aid);
+          const ctgUid = String(reader.get(row, ['ctgUid', 'CTG_UID', 'CTGUID', 'C_UID', 'CATEGORY_ID', 'CAT_ID']) || '');
+          const toAssetUid = String(reader.get(row, ['toAssetUid', 'TO_ASSET_UID', 'TOASSETUID', 'TO_ASSET_ID', 'TO_AID', 'TO_ACC_ID']) || '');
           const content = String(reader.get(row, ['ZCONTENT', 'CONTENT', 'MEMO', 'DESCRIPTION', 'NOTE']) || '').trim();
-          const rawAssetNic = String(reader.get(row, ['ASSET_NIC', 'ACCOUNT_NAME', 'NIC_NAME']) || '').trim();
+          const rawAssetNic = String(reader.get(row, ['ASSET_NIC', 'ACCOUNT_NAME', 'NIC_NAME', 'ACC_NAME', 'ASSET_NAME']) || '').trim();
           const rawWdate = reader.get(row, ['WDATE', 'DATE', 'ZDATE']);
-          const doType = String(reader.get(row, ['DO_TYPE', 'TYPE', 'TYPE_DO']) || '1');
-          const zmoney = Number(reader.get(row, ['ZMONEY', 'MONEY', 'AMOUNT', 'IN_ZMONEY'])) || 0;
+          const doType = String(reader.get(row, ['DO_TYPE', 'TYPE', 'TYPE_DO', 'ZTYPE', 'ZDO_TYPE']) || '1').toLowerCase().trim();
+          const zmoney = Number(reader.get(row, ['ZMONEY', 'MONEY', 'AMOUNT', 'IN_ZMONEY', 'ZAMOUNT', 'OUT_ZMONEY'])) || 0;
 
           let type: 'income' | 'expense' | 'transfer' = 'expense';
-          if (doType === '0') {
+          if (doType === '0' || doType.includes('income')) {
             type = 'income';
-          } else if (['2', '3', '4'].includes(doType)) {
+          } else if (['2', '3', '4', '5'].includes(doType) || doType.includes('transfer')) {
             type = 'transfer';
           }
 
