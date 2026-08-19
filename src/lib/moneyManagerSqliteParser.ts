@@ -1,5 +1,35 @@
 import initSqlJs, { Database } from 'sql.js';
 
+export interface Phase1ValidationReport {
+  groups: {
+    totalSourceGroups: number;
+    activeGroupsCount: number;
+    deletedGroupsCount: number;
+    importedGroupsCount: number;
+    activeGroupsList: { uid: string; name: string; type?: number | null }[];
+    deletedGroupsList: { uid: string; name: string; type?: number | null }[];
+  };
+  accounts: {
+    totalSourceAccounts: number;
+    deletedAccountsCount: number;
+    activeVisibleAccountsCount: number;
+    activeHiddenAccountsCount: number;
+    importedActiveAccountsCount: number;
+    skippedDeletedAccountsCount: number;
+    deletedAccountsList: { id: string; uid: string; name: string; zdata: number }[];
+    activeVisibleAccountsList: { id: string; uid: string; name: string; zdata: number; groupUid: string; groupName: string; wealthiqAccountId: string; wealthiqCategoryId: string }[];
+    activeHiddenAccountsList: { id: string; uid: string; name: string; zdata: number; groupUid: string; groupName: string; wealthiqAccountId: string; wealthiqCategoryId: string }[];
+  };
+  mappings: {
+    validCount: number;
+    invalidCount: number;
+    unresolvedCount: number;
+    accountsInDeletedGroups: { accountId: string; accountUid: string; accountName: string; groupUid: string; groupName: string }[];
+    unresolvedGroupMappings: { accountId: string; accountUid: string; accountName: string; groupUid: string }[];
+    duplicateAccountNames: { name: string; count: number; instances: { id: string; uid: string; zdata: number; isDeleted: boolean }[] }[];
+  };
+}
+
 export interface SqliteImportResult {
   success: boolean;
   assetGroups: {
@@ -86,6 +116,7 @@ export interface SqliteImportResult {
     transactionsReferencingMissingAccounts: number;
     transfersInvolvingMissingAccounts: number;
   };
+  phase1Report?: Phase1ValidationReport;
   error?: string;
 }
 
@@ -186,7 +217,7 @@ export function classifyAccountFromGroup(
   isLending?: boolean;
 } {
   const groupLower = (groupName || '').toLowerCase().trim();
-  const categoryName = groupName ? groupName.trim() : 'Main Accounts';
+  const categoryName = groupName ? groupName.trim() : 'Unassigned';
 
   // Attribute 3 = Borrowings / Liabilities / Debt
   if (attribVal === 3 || groupLower.includes('borrow') || groupLower.includes('liability') || groupLower.includes('liabilities') || groupLower.includes('debt')) {
@@ -284,7 +315,9 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
     // 1. Extract Asset Groups (ASSETGROUP) - WHERE IS_DEL = 0
     const extractedAssetGroups: SqliteImportResult['assetGroups'] = [];
     const deletedAssetGroups: SqliteImportResult['assetGroups'] = [];
-    const assetGroupMap: Record<string, { uid: string; aid: string; name: string; attrib: number | null; isDeleted: boolean }> = {};
+    const activeAssetGroupMap: Record<string, { uid: string; aid: string; name: string; attrib: number | null; isDeleted: boolean }> = {};
+    const deletedAssetGroupMap: Record<string, { uid: string; aid: string; name: string; attrib: number | null; isDeleted: boolean }> = {};
+    const allAssetGroupMap: Record<string, { uid: string; aid: string; name: string; attrib: number | null; isDeleted: boolean }> = {};
     let totalGroupCount = 0;
 
     try {
@@ -308,12 +341,16 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
               attrib: attribVal !== null ? Number(attribVal) : null,
               isDeleted,
             };
-            assetGroupMap[uid] = groupObj;
-            assetGroupMap[aid] = groupObj;
+            allAssetGroupMap[uid] = groupObj;
+            allAssetGroupMap[aid] = groupObj;
 
             if (isDeleted) {
+              deletedAssetGroupMap[uid] = groupObj;
+              deletedAssetGroupMap[aid] = groupObj;
               deletedAssetGroups.push(groupObj);
             } else {
+              activeAssetGroupMap[uid] = groupObj;
+              activeAssetGroupMap[aid] = groupObj;
               extractedAssetGroups.push(groupObj);
             }
           }
@@ -323,10 +360,22 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       console.warn('Error reading ASSETGROUP table:', e);
     }
 
-    // 2. Extract Accounts (ASSETS) - WHERE ZDATA IN (0, 3) (Active), ZDATA = 2 (Deleted)
+    // 2. Extract Accounts (ASSETS) - Classification: ZDATA = 0 (Active Visible), ZDATA = 3 (Active Hidden), ZDATA = 2 (Deleted)
     const accountMap: Record<string, { uid: string; aid: string; name: string; zdata: number; isDeleted: boolean }> = {};
     const extractedAccounts: SqliteImportResult['accounts'] = [];
+
     const deletedAccountsList: { id: string; uid: string; name: string; zdata: number }[] = [];
+    const activeVisibleAccountsList: { id: string; uid: string; name: string; zdata: number; groupUid: string; groupName: string; wealthiqAccountId: string; wealthiqCategoryId: string }[] = [];
+    const activeHiddenAccountsList: { id: string; uid: string; name: string; zdata: number; groupUid: string; groupName: string; wealthiqAccountId: string; wealthiqCategoryId: string }[] = [];
+
+    let validMappingCount = 0;
+    let invalidMappingCount = 0;
+    let unresolvedMappingCount = 0;
+    const accountsInDeletedGroups: { accountId: string; accountUid: string; accountName: string; groupUid: string; groupName: string }[] = [];
+    const unresolvedGroupMappings: { accountId: string; accountUid: string; accountName: string; groupUid: string }[] = [];
+
+    const accountNameTracker: Record<string, { id: string; uid: string; zdata: number; isDeleted: boolean }[]> = {};
+
     let totalSourceAssetsCount = 0;
 
     try {
@@ -342,17 +391,18 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           const zdata = reader.get(row, ['ZDATA', 'DATA', 'STATUS']);
           const zdataNum = zdata !== null ? Number(zdata) : 0;
 
-          const groupObj = assetGroupMap[groupUid] || assetGroupMap[id];
-          const groupName = groupObj ? groupObj.name : '';
+          // Track duplicate names
+          const normName = name.toLowerCase();
+          if (!accountNameTracker[normName]) accountNameTracker[normName] = [];
 
-          const rawBalance = reader.get(row, ['MONEY', 'START_MONEY', 'SURPLUS', 'BALANCE', 'AMOUNT']);
-          const balanceNum = rawBalance !== null ? Number(rawBalance) || 0 : 0;
-          const attribVal = reader.get(row, ['ATTRIB', 'TYPE', 'ASSET_TYPE', 'CARD_TYPE']);
+          // STRICT ZDATA ACCORDANCE:
+          // ZDATA = 0 -> Active + Visible
+          // ZDATA = 3 -> Active + Hidden
+          // ZDATA = 2 (or non-0/3) -> Deleted
+          const isDeletedAccount = zdataNum === 2 || (zdataNum !== 0 && zdataNum !== 3);
+          const isVisible = zdataNum === 0;
 
-          // STRICT DELETION RULE FOR ASSETS:
-          // ZDATA = 2 -> DELETED ACCOUNT
-          // ZDATA = 0 or 3 -> ACTIVE ACCOUNT
-          const isDeletedAccount = zdataNum === 2 || (groupObj ? groupObj.isDeleted : false);
+          accountNameTracker[normName].push({ id, uid, zdata: zdataNum, isDeleted: isDeletedAccount });
 
           const accInfo = { uid, aid: id, name, zdata: zdataNum, isDeleted: isDeletedAccount };
           accountMap[uid] = accInfo;
@@ -361,19 +411,65 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           if (isDeletedAccount) {
             deletedAccountsList.push({ id, uid, name, zdata: zdataNum });
           } else {
-            const classification = classifyAccountFromGroup(groupName, attribVal !== null ? Number(attribVal) : (groupObj ? groupObj.attrib : null));
+            // Group Resolution Validation
+            let resolvedGroupName = '';
+            const activeGroupObj = activeAssetGroupMap[groupUid];
+            const deletedGroupObj = deletedAssetGroupMap[groupUid];
+            const anyGroupObj = allAssetGroupMap[groupUid];
+
+            if (activeGroupObj) {
+              validMappingCount++;
+              resolvedGroupName = activeGroupObj.name;
+            } else if (deletedGroupObj) {
+              invalidMappingCount++;
+              resolvedGroupName = deletedGroupObj.name;
+              accountsInDeletedGroups.push({
+                accountId: id,
+                accountUid: uid,
+                accountName: name,
+                groupUid,
+                groupName: deletedGroupObj.name,
+              });
+            } else {
+              unresolvedMappingCount++;
+              resolvedGroupName = 'Unresolved Group';
+              unresolvedGroupMappings.push({
+                accountId: id,
+                accountUid: uid,
+                accountName: name,
+                groupUid,
+              });
+            }
+
+            const wealthiqAccountId = `mm-acc-${uid}`;
+            const wealthiqCategoryId = `acc-cat-${groupUid}`;
+
+            if (isVisible) {
+              activeVisibleAccountsList.push({ id, uid, name, zdata: zdataNum, groupUid, groupName: resolvedGroupName, wealthiqAccountId, wealthiqCategoryId });
+            } else {
+              activeHiddenAccountsList.push({ id, uid, name, zdata: zdataNum, groupUid, groupName: resolvedGroupName, wealthiqAccountId, wealthiqCategoryId });
+            }
+
+            const rawBalance = reader.get(row, ['MONEY', 'START_MONEY', 'SURPLUS', 'BALANCE', 'AMOUNT']);
+            const balanceNum = rawBalance !== null ? Number(rawBalance) || 0 : 0;
+            const attribVal = reader.get(row, ['ATTRIB', 'TYPE', 'ASSET_TYPE', 'CARD_TYPE']);
+
+            const classification = classifyAccountFromGroup(
+              resolvedGroupName,
+              attribVal !== null ? Number(attribVal) : (anyGroupObj ? anyGroupObj.attrib : null)
+            );
 
             extractedAccounts.push({
               id: `mm-acc-${uid}`,
               sourceUid: uid,
               groupUid,
-              groupName: groupName || classification.category,
+              groupName: resolvedGroupName || classification.category,
               name,
               type: classification.type,
-              category: groupName || classification.category,
+              category: resolvedGroupName || classification.category,
               balance: balanceNum,
               color: classification.color,
-              visible: true,
+              visible: isVisible,
               icon: classification.icon,
               isDeleted: false,
               isBorrowing: classification.isBorrowing,
@@ -385,6 +481,15 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
     } catch (e) {
       console.warn('Error reading ASSETS table:', e);
     }
+
+    // Build Duplicate Account Names Report
+    const duplicateAccountNames = Object.entries(accountNameTracker)
+      .filter(([_, list]) => list.length > 1)
+      .map(([normName, list]) => ({
+        name: list[0] ? list[0].id : normName,
+        count: list.length,
+        instances: list,
+      }));
 
     // 3. Extract Categories and Subcategories (ZCATEGORY) - EXCLUDE DELETED CATEGORIES (C_IS_DEL != 0)
     const allCategoriesList: {
@@ -509,18 +614,24 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
           const doType = String(reader.get(row, ['DO_TYPE', 'TYPE', 'TYPE_DO', 'ZTYPE', 'ZDO_TYPE']) || '1').toLowerCase().trim();
           const zmoney = Number(reader.get(row, ['ZMONEY', 'MONEY', 'AMOUNT', 'IN_ZMONEY', 'ZAMOUNT', 'OUT_ZMONEY'])) || 0;
 
+          // Skip Money Manager's mirror twin transfer entries (DO_TYPE = 4) to prevent duplicate transfers and balance zeroing
+          if (doType === '4') return;
+
           let type: 'income' | 'expense' | 'transfer' = 'expense';
           if (doType === '0' || doType.includes('income')) {
             type = 'income';
-          } else if (['2', '3', '4', '5'].includes(doType) || doType.includes('transfer')) {
+          } else if (['2', '3', '5'].includes(doType) || doType.includes('transfer')) {
             type = 'transfer';
           }
 
           const accObj = accountMap[assetUid] || accountMap[aid];
           const toAccObj = accountMap[toAssetUid];
+
+          const isAccActive = accObj && !accObj.isDeleted;
+          const isToAccActive = toAccObj && !toAccObj.isDeleted;
           
-          let accountName = accObj ? accObj.name : '';
-          let toAccountName = toAccObj ? toAccObj.name : '';
+          let accountName = isAccActive ? accObj.name : '';
+          let toAccountName = isToAccActive ? toAccObj.name : '';
 
           let historicalAccountName: string | undefined = undefined;
           let historicalToAccountName: string | undefined = undefined;
@@ -528,46 +639,53 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
 
           const dateStr = parseSqliteDate(rawWdate);
 
-          // Detect Orphaned assetUid
-          if (!accObj && assetUid) {
+          // Detect Deleted / Missing assetUid
+          if (!isAccActive) {
             txReferencingMissing++;
             isHistoricalAccountOnly = true;
-            historicalAccountName = rawAssetNic || `Deleted Account (UID: ${assetUid})`;
+            historicalAccountName = accObj ? `${accObj.name} (Deleted)` : (rawAssetNic || `Deleted Account (UID: ${assetUid})`);
             accountName = historicalAccountName;
 
-            if (!orphanedAccountMap[assetUid]) {
-              orphanedAccountMap[assetUid] = {
-                uid: assetUid,
-                historicalName: historicalAccountName,
-                count: 1,
-                lastDate: dateStr,
-              };
-            } else {
-              orphanedAccountMap[assetUid].count++;
-              if (dateStr > orphanedAccountMap[assetUid].lastDate) {
-                orphanedAccountMap[assetUid].lastDate = dateStr;
+            if (assetUid) {
+              if (!orphanedAccountMap[assetUid]) {
+                orphanedAccountMap[assetUid] = {
+                  uid: assetUid,
+                  historicalName: historicalAccountName,
+                  count: 1,
+                  lastDate: dateStr,
+                };
+              } else {
+                orphanedAccountMap[assetUid].count++;
+                if (dateStr > orphanedAccountMap[assetUid].lastDate) {
+                  orphanedAccountMap[assetUid].lastDate = dateStr;
+                }
               }
             }
           } else {
             txReferencingActive++;
           }
 
-          // Detect Orphaned toAssetUid for transfers
-          if (type === 'transfer' && !toAccObj && toAssetUid) {
+          // Detect Deleted / Missing toAssetUid for transfers
+          if (type === 'transfer' && !isToAccActive) {
             transfersInvolvingMissing++;
-            isHistoricalAccountOnly = true;
-            historicalToAccountName = `Deleted Destination Account (UID: ${toAssetUid})`;
+            if (!isAccActive) {
+              isHistoricalAccountOnly = true;
+            }
+            const cleanToName = toAccObj ? toAccObj.name.trim() : '';
+            historicalToAccountName = cleanToName ? `${cleanToName} (Deleted)` : `Deleted Destination Account (UID: ${toAssetUid})`;
             toAccountName = historicalToAccountName;
 
-            if (!orphanedAccountMap[toAssetUid]) {
-              orphanedAccountMap[toAssetUid] = {
-                uid: toAssetUid,
-                historicalName: historicalToAccountName,
-                count: 1,
-                lastDate: dateStr,
-              };
-            } else {
-              orphanedAccountMap[toAssetUid].count++;
+            if (toAssetUid) {
+              if (!orphanedAccountMap[toAssetUid]) {
+                orphanedAccountMap[toAssetUid] = {
+                  uid: toAssetUid,
+                  historicalName: historicalToAccountName,
+                  count: 1,
+                  lastDate: dateStr,
+                };
+              } else {
+                orphanedAccountMap[toAssetUid].count++;
+              }
             }
           }
 
@@ -680,6 +798,36 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       status: 'POSSIBLY DELETED' as const,
     }));
 
+    const phase1Report: Phase1ValidationReport = {
+      groups: {
+        totalSourceGroups: totalGroupCount,
+        activeGroupsCount: extractedAssetGroups.length,
+        deletedGroupsCount: deletedAssetGroups.length,
+        importedGroupsCount: extractedAssetGroups.length,
+        activeGroupsList: extractedAssetGroups.map((g) => ({ uid: g.uid, name: g.name, type: g.attrib })),
+        deletedGroupsList: deletedAssetGroups.map((g) => ({ uid: g.uid, name: g.name, type: g.attrib })),
+      },
+      accounts: {
+        totalSourceAccounts: totalSourceAssetsCount,
+        deletedAccountsCount: deletedAccountsList.length,
+        activeVisibleAccountsCount: activeVisibleAccountsList.length,
+        activeHiddenAccountsCount: activeHiddenAccountsList.length,
+        importedActiveAccountsCount: extractedAccounts.length,
+        skippedDeletedAccountsCount: deletedAccountsList.length,
+        deletedAccountsList,
+        activeVisibleAccountsList,
+        activeHiddenAccountsList,
+      },
+      mappings: {
+        validCount: validMappingCount,
+        invalidCount: invalidMappingCount,
+        unresolvedCount: unresolvedMappingCount,
+        accountsInDeletedGroups,
+        unresolvedGroupMappings,
+        duplicateAccountNames,
+      },
+    };
+
     const report = {
       totalSourceAssets: totalSourceAssetsCount,
       activeAccountsImported: extractedAccounts.length,
@@ -705,6 +853,7 @@ export async function parseMoneyManagerSqlite(buffer: ArrayBuffer): Promise<Sqli
       budgets: extractedBudgets,
       orphanedAccounts,
       report,
+      phase1Report,
     };
   } catch (err: any) {
     console.error('Error parsing Money Manager SQLite file:', err);

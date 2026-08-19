@@ -110,6 +110,8 @@ export default function AccountsPage() {
     setIsMounted(true);
   }, []);
 
+  const [showHiddenAccounts, setShowHiddenAccounts] = useState(true);
+
   const groupedAccounts = useMemo(() => {
     const groups: Record<string, { name: string; items: Account[]; total: number; icon: any; color: string }> = {};
 
@@ -117,10 +119,10 @@ export default function AccountsPage() {
     let totalLiabilities = 0;
 
     accounts.forEach(acc => {
-      if ((!acc.visible && acc.visible !== undefined) || acc.isDeletedSource) return;
+      if ((!showHiddenAccounts && !acc.visible && acc.visible !== undefined) || acc.isDeletedSource) return;
 
       const type = acc.type || 'accounts';
-      const catName = acc.category || (type === 'credit' ? 'Credit Cards' : type === 'cash' ? 'Cash Accounts' : type === 'loan' ? 'Loan Accounts' : 'Bank Accounts');
+      const catName = acc.category || 'Unassigned';
       const key = catName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
 
       if (!groups[key]) {

@@ -19,6 +19,7 @@ import {
   Zap,
   Info,
   Layers,
+  Plane,
 } from 'lucide-react';
 import {
   getAccounts,
@@ -48,9 +49,9 @@ const STARTER_PROMPTS = [
     prompt: '📊 Give me a complete summary and analysis of my spending and income this month.',
   },
   {
-    icon: Wallet,
-    title: 'Savings Tips',
-    prompt: '💡 How can I optimize my monthly budget to save ₹10,000 more?',
+    icon: Plane,
+    title: 'Trip Analysis',
+    prompt: '✈️ Analyze my trip spending and give me a detailed breakdown of all my trips.',
   },
   {
     icon: Target,

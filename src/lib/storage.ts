@@ -841,10 +841,18 @@ export function getAccounts(includeHidden = false): Account[] {
         const amount = Number(txn.amount) || 0;
         const type = txn.type;
 
+        const matchesAcc = (targetAccId?: string, targetAccUid?: string) => {
+          if (txn.isHistoricalAccountOnly) return false;
+          if (targetAccId && String(targetAccId) === String(acc.id)) return true;
+          if (acc.sourceUid && targetAccUid && String(targetAccUid) === String(acc.sourceUid)) return true;
+          if (targetAccId && targetAccId.trim().toLowerCase() === acc.name.trim().toLowerCase()) return true;
+          return false;
+        };
+
         if (type === 'income') {
-          if (txn.account === acc.id) balance += amount;
+          if (matchesAcc(txn.account, txn.accountUid)) balance += amount;
         } else if (type === 'expense') {
-          if (txn.account === acc.id) {
+          if (matchesAcc(txn.account, txn.accountUid)) {
             const splitObj = txn.splitDetails || (txn.isSplit ? getSplitExpenseByTxnId(txn.id) : undefined);
             if (txn.isSplit && splitObj?.totalAmount) {
               balance -= Number(splitObj.totalAmount);
@@ -853,8 +861,8 @@ export function getAccounts(includeHidden = false): Account[] {
             }
           }
         } else if (type === 'transfer') {
-          if (txn.account === acc.id) balance -= amount;
-          if (txn.toAccount === acc.id) balance += amount;
+          if (matchesAcc(txn.account, txn.accountUid)) balance -= amount;
+          if (matchesAcc(txn.toAccount, txn.toAccountUid)) balance += amount;
         }
       });
 

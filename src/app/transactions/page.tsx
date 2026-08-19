@@ -569,7 +569,13 @@ function TransactionsPageContent() {
   const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
 
   const getAccountName = useCallback(
-    (accountId: string) => accounts.find((a) => a.id === accountId)?.name ?? 'Unknown',
+    (accountId: string) => {
+      if (!accountId) return 'Unknown Account';
+      const found = accounts.find((a) => a.id === accountId || (a.sourceUid && a.sourceUid === accountId));
+      if (found) return found.name;
+      if (!accountId.startsWith('acc-') && !accountId.startsWith('mm-acc-')) return accountId;
+      return 'Deleted / Historical Account';
+    },
     [accounts]
   );
 
@@ -843,11 +849,20 @@ function TransactionsPageContent() {
     const balances: Record<string, { accountBalance: number; toAccountBalance?: number }> = {};
     const runningBalances = new Map<string, number>();
 
-    // Initialize with opening balances
+    // Initialize with initial opening balances (default 0)
     accounts.forEach((acc) => {
-      const opening = acc.openingBalance !== undefined ? acc.openingBalance : acc.balance || 0;
+      const opening = acc.openingBalance !== undefined ? acc.openingBalance : 0;
       runningBalances.set(acc.id, opening);
     });
+
+    const resolveAccId = (txnAccId?: string, txnAccUid?: string): string | undefined => {
+      if (!txnAccId && !txnAccUid) return undefined;
+      const found = accounts.find(
+        (a) => (txnAccId && (String(a.id) === String(txnAccId) || a.name.trim().toLowerCase() === txnAccId.trim().toLowerCase())) ||
+               (a.sourceUid && txnAccUid && String(a.sourceUid) === String(txnAccUid))
+      );
+      return found ? found.id : (txnAccId || txnAccUid);
+    };
 
     // Sort chronologically (ascending) to compute the running balance after each transaction
     const sorted = [...transactions].sort((a, b) => {
@@ -857,29 +872,38 @@ function TransactionsPageContent() {
     });
 
     sorted.forEach((txn) => {
+      if (txn.isHistoricalAccountOnly) return;
       const amount = Number(txn.amount) || 0;
       const type = txn.type;
 
+      const srcAccId = resolveAccId(txn.account, txn.accountUid);
+      const dstAccId = resolveAccId(txn.toAccount, txn.toAccountUid);
+
       if (type === 'income') {
-        const prev = runningBalances.get(txn.account) || 0;
+        if (!srcAccId) return;
+        const prev = runningBalances.get(srcAccId) || 0;
         const next = prev + amount;
-        runningBalances.set(txn.account, next);
+        runningBalances.set(srcAccId, next);
         balances[txn.id] = { accountBalance: next };
       } else if (type === 'expense') {
-        const prev = runningBalances.get(txn.account) || 0;
+        if (!srcAccId) return;
+        const prev = runningBalances.get(srcAccId) || 0;
         const next = prev - amount;
-        runningBalances.set(txn.account, next);
+        runningBalances.set(srcAccId, next);
         balances[txn.id] = { accountBalance: next };
       } else if (type === 'transfer') {
-        const srcPrev = runningBalances.get(txn.account) || 0;
-        const srcNext = srcPrev - amount;
-        runningBalances.set(txn.account, srcNext);
+        let srcNext: number = 0;
+        if (srcAccId) {
+          const srcPrev = runningBalances.get(srcAccId) || 0;
+          srcNext = srcPrev - amount;
+          runningBalances.set(srcAccId, srcNext);
+        }
 
         let dstNext: number | undefined = undefined;
-        if (txn.toAccount) {
-          const dstPrev = runningBalances.get(txn.toAccount) || 0;
+        if (dstAccId) {
+          const dstPrev = runningBalances.get(dstAccId) || 0;
           dstNext = dstPrev + amount;
-          runningBalances.set(txn.toAccount, dstNext);
+          runningBalances.set(dstAccId, dstNext);
         }
 
         balances[txn.id] = {
@@ -890,7 +914,7 @@ function TransactionsPageContent() {
     });
 
     return balances;
-  }, [transactions, accounts, getAccountName]);
+  }, [transactions, accounts]);
 
   const editCategories = useMemo(() => {
     if (!editForm) return [];
@@ -1738,8 +1762,8 @@ function TransactionsPageContent() {
                             
                             const title = txn.notes?.trim() || txn.category || 'Transaction';
                             
-                            const accName = getAccountName(txn.account);
-                            const toAccName = txn.toAccount ? getAccountName(txn.toAccount) : '';
+                            const accName = txn.historicalAccountName || getAccountName(txn.account);
+                            const toAccName = txn.historicalToAccountName || (txn.toAccount ? getAccountName(txn.toAccount) : '');
                             
                             let metadata = '';
                             if (isTransfer) {
@@ -1834,7 +1858,9 @@ function TransactionsPageContent() {
                                       {(() => {
                                         const bal = transactionBalances[txn.id];
                                         if (!bal) return '';
-                                        return (bal.accountBalance || 0).toLocaleString('en-IN');
+                                        const isDestAcc = accountFilter !== 'all' && (txn.toAccount === accountFilter || txn.toAccountUid === accountFilter);
+                                        const val = isDestAcc && bal.toAccountBalance !== undefined ? bal.toAccountBalance : bal.accountBalance;
+                                        return (val || 0).toLocaleString('en-IN');
                                       })()}
                                     </div>
                                   )}
@@ -1910,8 +1936,8 @@ function TransactionsPageContent() {
                           
                           const title = txn.notes?.trim() || txn.category || 'Transaction';
 
-                          const accName = getAccountName(txn.account);
-                          const toAccName = txn.toAccount ? getAccountName(txn.toAccount) : '';
+                          const accName = txn.historicalAccountName || getAccountName(txn.account);
+                          const toAccName = txn.historicalToAccountName || (txn.toAccount ? getAccountName(txn.toAccount) : '');
                           
                           let metadata = '';
                           if (isTransfer) {

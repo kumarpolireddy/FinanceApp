@@ -42,8 +42,17 @@ export async function POST(req: NextRequest) {
       if (context.monthlyIncome !== undefined || context.monthlyExpense !== undefined) {
         contextPrompt += `\nCurrent Month (${context.currentMonth || 'This Month'}): Income: ₹${(context.monthlyIncome || 0).toLocaleString('en-IN')} | Expense: ₹${(context.monthlyExpense || 0).toLocaleString('en-IN')}`;
       }
+      if (context.accountCategories && context.accountCategories.length > 0) {
+        contextPrompt += `\nAccount Categories (${context.accountCategories.length} categories): ${context.accountCategories.map((ac) => `"${ac.name}" (${ac.baseType})`).join(', ')}\n`;
+      }
       if (context.accounts && context.accounts.length > 0) {
-        contextPrompt += `\nAccounts & Balances: ${context.accounts.map((a) => `${a.name} (${a.type}): ₹${a.balance.toLocaleString('en-IN')}`).join(', ')}`;
+        contextPrompt += `\nAccounts, Credit Cards & Loans Details:\n` + context.accounts.map((a) => {
+          const catStr = a.category ? ` [Account Category: "${a.category}"]` : '';
+          const dueStr = a.dueDate ? ` | Payment Due: ${a.dueDate}th of month` : '';
+          const billStr = a.billingCycle ? ` | Billing Statement Date: ${a.billingCycle}th` : '';
+          const emiStr = a.emiAmount ? ` | EMI Amount: ₹${a.emiAmount} (Due Day: ${a.emiDueDay || 'Monthly'})` : '';
+          return `- ${a.name} (${a.type.toUpperCase()})${catStr}: Balance ₹${a.balance.toLocaleString('en-IN')}${dueStr}${billStr}${emiStr}`;
+        }).join('\n');
       }
       if (context.allTimeCategories && context.allTimeCategories.length > 0) {
         contextPrompt += `\nTop Expense Categories All-Time: ${context.allTimeCategories.map((c) => `${c.category}: ₹${c.amount.toLocaleString('en-IN')}`).join(', ')}`;
@@ -67,18 +76,53 @@ export async function POST(req: NextRequest) {
       if (context.goals && context.goals.length > 0) {
         contextPrompt += `\nSavings Goals: ${context.goals.map((g) => `${g.name}: ₹${g.current.toLocaleString('en-IN')} / ₹${g.target.toLocaleString('en-IN')}`).join(', ')}`;
       }
+      if (context.trips && context.trips.length > 0) {
+        contextPrompt += `\nTrips & Travel Context (${context.trips.length} registered trips):\n`;
+        context.trips.forEach((tr) => {
+          const dest = tr.destination ? ` (Destination: ${tr.destination})` : '';
+          const bgt = tr.budget ? `, Budget: ₹${tr.budget.toLocaleString('en-IN')}` : '';
+          const dates = tr.startDate ? ` [Dates: ${tr.startDate}${tr.endDate ? ` to ${tr.endDate}` : ''}]` : '';
+          const cats = Object.entries(tr.categoryBreakdown)
+            .map(([c, amt]) => `${c}: ₹${amt.toLocaleString('en-IN')}`)
+            .join(', ');
+          contextPrompt += `- Trip "${tr.name}"${dest}${dates} [Status: ${tr.status.toUpperCase()}${bgt}]: Total Spent: ₹${tr.totalExpense.toLocaleString('en-IN')}, Total Income: ₹${tr.totalIncome.toLocaleString('en-IN')}, Txns: ${tr.transactionCount}. Category Breakdown: { ${cats || 'No expenses recorded yet'} }\n`;
+        });
+      }
+      if (context.alarms && context.alarms.length > 0) {
+        contextPrompt += `\nAlarms, Reminders & Scheduled Notifications (${context.alarms.length} alarms, Master Status: ${context.alarmSettings?.masterEnabled ? 'ACTIVE' : 'MUTED'}):\n`;
+        context.alarms.forEach((a) => {
+          const notesStr = a.notes ? ` [Notes: ${a.notes}]` : '';
+          contextPrompt += `- Alarm "${a.title}" [Time: ${a.time}, Repeat: ${a.repeat}, Type: ${a.type}, Enabled: ${a.enabled ? 'YES' : 'NO'}]${notesStr}\n`;
+        });
+      }
+      if (context.alarmLogs && context.alarmLogs.length > 0) {
+        contextPrompt += `\nRecent Notification & Alarm Trigger History (${context.alarmLogs.length} items):\n` + context.alarmLogs.slice(0, 15).map((l) => {
+          return `- ${l.triggeredAt}: "${l.alarmTitle}" (${l.type}) -> Status: ${l.status.toUpperCase()}${l.actionTaken ? ` [Action: ${l.actionTaken}]` : ''}`;
+        }).join('\n');
+      }
+      if (context.splitExpenses && context.splitExpenses.length > 0) {
+        contextPrompt += `\nSplit & Shared Expenses (${context.splitExpenses.length} items):\n`;
+        context.splitExpenses.forEach((s) => {
+          const membersStr = (s.members || []).map((m) => `${m.personName}: Share ₹${m.share}, Paid ₹${m.paid}, Pending ₹${m.pending}`).join(', ');
+          contextPrompt += `- "${s.title}": Total ₹${s.totalAmount}, My Share: ₹${s.myShare}, Pending to receive: ₹${s.pendingToReceive}. Members: [ ${membersStr} ]\n`;
+        });
+      }
       if (context.largestExpenses && context.largestExpenses.length > 0) {
         contextPrompt += `\nLargest Single Expenses All-Time:\n` + context.largestExpenses.map((t) => {
           const sub = t.subcategory ? ` -> ${t.subcategory}` : '';
           const noteStr = t.notes ? ` [Notes: ${t.notes}]` : '';
-          return `- ${t.date}: ${t.description}${noteStr} (${t.category}${sub}) -> ₹${t.amount.toLocaleString('en-IN')} [Account: ${t.account}]`;
+          const tripStr = t.tripName ? ` [Trip: ${t.tripName}]` : '';
+          return `- ${t.date}: ${t.description}${noteStr}${tripStr} (${t.category}${sub}) -> ₹${t.amount.toLocaleString('en-IN')} [Account: ${t.account}]`;
         }).join('\n');
       }
       if (context.recentTransactions && context.recentTransactions.length > 0) {
-        contextPrompt += `\nComplete Recorded Transactions History (${context.recentTransactions.length} items):\n` + context.recentTransactions.map((t) => {
+        contextPrompt += `\nEVERY RECORDED TRANSACTION IN DATABASE (${context.recentTransactions.length} total transactions):\n` + context.recentTransactions.map((t) => {
           const sub = t.subcategory ? ` -> ${t.subcategory}` : '';
           const noteStr = t.notes ? ` [Notes: ${t.notes}]` : '';
-          return `- ${t.date}: ${t.description}${noteStr} (${t.category}${sub}) -> ₹${t.amount} [Type: ${t.type}, Account: ${t.account}]`;
+          const tripStr = t.tripName ? ` [Trip: ${t.tripName}]` : '';
+          const splitStr = t.isSplit ? ` [Split Expense]` : '';
+          const toAccStr = t.toAccount ? ` -> To: ${t.toAccount}` : '';
+          return `- ${t.date}: ${t.description}${noteStr}${tripStr}${splitStr} (${t.category}${sub}) -> ₹${t.amount} [Type: ${t.type}, Account: ${t.account}${toAccStr}]`;
         }).join('\n');
       }
       contextPrompt += `\n-----------------------------------\n`;
@@ -86,33 +130,23 @@ export async function POST(req: NextRequest) {
 
     const systemInstruction = `You are WealthIQ AI, an intelligent, empathetic, and highly accurate personal financial advisor built directly inside the WealthIQ app.
 CRITICAL AUTHORITATIVE DATA DIRECTIVES:
-1. NEVER perform financial calculations from memory or estimation when exact data is available in the context.
-2. USE application-provided calculated values (Net Worth, Monthly Totals, Account Balances, Category Totals) as 100% authoritative.
-3. NEVER INVENT or guess:
-   - transactions
-   - merchants
-   - amounts
-   - dates
-   - account balances
-   - categories
-   - loans
-   - budgets
-4. If the requested information is not present in the provided data or cannot be determined reliably, say so explicitly.
-5. Do NOT claim that a transaction exists merely because it is plausible.
-6. Do NOT infer a financial fact that is not supported by the provided data.
-7. DEEP DESCRIPTION & NOTES ANALYSIS: When answering spending queries, read and analyze transaction descriptions, notes, and subcategories to identify specific merchants, items, and exact user notes.
-8. NATURAL CONVERSATIONAL RESPONSE STYLE:
-   - Speak naturally and conversationally like a human personal assistant. Synthesize merchant names, notes, amounts, and dates into smooth, clear sentences.
+1. FULL APP DATA ACCESS: You have complete access to ALL user financial data including EVERY single recorded transaction, accounts, credit cards, billing statement dates, loan EMI dates, budgets, savings goals, trips, alarms, reminders, notification trigger logs, and split expenses.
+2. NEVER perform financial calculations from memory or estimation when exact data is available in the context.
+3. USE application-provided calculated values (Net Worth, Monthly Totals, Account Balances, Category Totals, Trip Summaries, Alarms) as 100% authoritative.
+4. NEVER INVENT or guess transactions, merchants, amounts, dates, account balances, categories, loans, budgets, trips, or alarms.
+5. DEEP DESCRIPTION, NOTES & ALARM ANALYSIS: Read and analyze transaction descriptions, notes, subcategories, trip names, and notification/alarm details when responding to queries about spending, reminders, scheduled bills, or upcoming EMI payments.
+6. ALARMS & NOTIFICATIONS ASSISTANT: When the user asks about notifications, reminders, alarms, due dates, statement dates, or scheduled alerts, inspect the configured Alarms, Notification Trigger History, Credit Card Due Dates, and Loan EMI dates and provide clear, accurate details.
+7. NATURAL CONVERSATIONAL RESPONSE STYLE:
+   - Speak naturally and conversationally like a human personal assistant. Synthesize merchant names, notes, amounts, dates, trips, and notification reminders into smooth, clear sentences.
    - NEVER use robotic prefaces like "Based on your transaction history...", "According to your records...", or "Looking at your data...".
    - Example ideal response style:
      "You purchased Pepe Jeans Sandals for ₹596 on March 14, 2026."
      Or:
-     "On March 14, 2026, you bought Pepe Jeans Sandals for ₹596 under Shopping."
-9. MULTI-TURN CONVERSATIONAL CONTINUITY:
+     "Your Daily Expense Logging alarm is set for 9:00 PM every day."
+8. MULTI-TURN CONVERSATIONAL CONTINUITY:
    - ALWAYS maintain context and topic continuity from preceding messages in the chat history.
-   - When the user asks a follow-up question (e.g., "breakdown the shopping", "show more details", "what about food?"), infer the implicit timeframe, month, category, or account from the immediately preceding conversation turn.
-   - Example: If the user previously asked about "Jan 2026 summary" and then asks "breakdown the shopping", interpret this as "Show the breakdown for Shopping in January 2026".
-10. Format all financial figures using Indian Rupees (₹) with Indian number formatting (e.g. ₹1,50,000).
+   - When the user asks a follow-up question (e.g., "breakdown the shopping", "show more details", "what about food?"), infer the implicit timeframe, month, category, trip, or account from the immediately preceding conversation turn.
+9. Format all financial figures using Indian Rupees (₹) with Indian number formatting (e.g. ₹1,50,000).
 
 ${contextPrompt}`;
 

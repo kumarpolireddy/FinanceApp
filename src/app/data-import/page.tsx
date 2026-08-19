@@ -310,17 +310,17 @@ export default function DataImportPage() {
           groupUid: acc.groupUid,
           name: acc.name,
           type: acc.type,
-          category: acc.category || acc.groupName || 'Main Accounts',
-          balance: 0,
-          openingBalance: 0,
+          category: acc.category || acc.groupName || 'Unassigned',
+          balance: acc.balance || 0,
+          openingBalance: acc.balance || 0,
           color: acc.color,
-          visible: true,
+          visible: acc.visible,
           icon: acc.icon,
           isInformal: acc.isBorrowing || acc.isLending,
         };
         newAccounts.push(newAcc);
-        accountIdMap[acc.sourceUid] = newAcc.id;
-        accountIdMap[acc.name] = newAcc.id;
+        if (acc.sourceUid) accountIdMap[acc.sourceUid] = newAcc.id;
+        accountIdMap[newAcc.id] = newAcc.id;
       });
 
       saveAccounts(newAccounts);
@@ -340,60 +340,29 @@ export default function DataImportPage() {
 
       saveCategories(newCategories);
 
-      // 4. Process & Save Transactions
+      // 4. Process & Save Transactions (Strict UID Matching)
       const parsedTransactions: Transaction[] = [];
 
-      const findAccId = (nameStr: string, uidStr?: string): string => {
-        if (uidStr && accountIdMap[uidStr]) return accountIdMap[uidStr];
-        if (nameStr && accountIdMap[nameStr]) return accountIdMap[nameStr];
-        if (nameStr && accountIdMap[nameStr.toLowerCase().trim()]) return accountIdMap[nameStr.toLowerCase().trim()];
-
-        const cleanName = (nameStr || '').trim();
-        const found = newAccounts.find(
-          (a) => (uidStr && a.sourceUid === uidStr) || (cleanName && a.name.toLowerCase().trim() === cleanName.toLowerCase())
-        );
-        if (found) return found.id;
-
-        // Search in all result accounts (including historical/deleted accounts in SQLite)
-        const sourceAcc = result.accounts.find(
-          (a) => (uidStr && a.sourceUid === uidStr) || (cleanName && a.name.toLowerCase().trim() === cleanName.toLowerCase())
-        );
-
-        const targetName = cleanName || sourceAcc?.name || (uidStr ? `Account (UID: ${uidStr})` : 'Imported Account');
-        const lowerName = targetName.toLowerCase();
-
-        let accType: 'accounts' | 'cash' | 'credit' | 'loan' = sourceAcc?.type || 'accounts';
-        if (!sourceAcc) {
-          if (lowerName.includes('card') || lowerName.includes('credit')) accType = 'credit';
-          else if (lowerName.includes('loan') || lowerName.includes('borrow') || lowerName.includes('lend') || lowerName.includes('emi')) accType = 'loan';
-          else if (lowerName.includes('cash') || lowerName.includes('wallet')) accType = 'cash';
+      const findAccId = (nameStr: string, uidStr?: string): { id: string; isHistorical: boolean } => {
+        if (uidStr && accountIdMap[uidStr]) {
+          return { id: accountIdMap[uidStr], isHistorical: false };
         }
-
-        const colors = { accounts: '#3b82f6', cash: '#10b981', credit: '#f97316', loan: '#ef4444' };
-        const restoredAcc: Account = {
-          id: `acc-restored-${uidStr || Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          sourceUid: uidStr || sourceAcc?.sourceUid,
-          groupUid: sourceAcc?.groupUid,
-          name: targetName,
-          type: accType,
-          category: sourceAcc?.category || sourceAcc?.groupName || 'Imported Accounts',
-          balance: sourceAcc?.balance || 0,
-          openingBalance: 0,
-          color: sourceAcc?.color || colors[accType],
-          visible: true,
-          icon: sourceAcc?.icon || (accType === 'cash' ? '💵' : accType === 'credit' ? '💳' : accType === 'loan' ? '📉' : '🏦'),
+        const cleanName = (nameStr || '').trim();
+        if (cleanName) {
+          const found = newAccounts.find((a) => a.name.toLowerCase().trim() === cleanName.toLowerCase());
+          if (found) return { id: found.id, isHistorical: false };
+        }
+        return {
+          id: cleanName || (uidStr ? `Deleted Account (UID: ${uidStr})` : 'Historical Account'),
+          isHistorical: true,
         };
-
-        newAccounts.push(restoredAcc);
-        if (uidStr) accountIdMap[uidStr] = restoredAcc.id;
-        accountIdMap[targetName] = restoredAcc.id;
-        accountIdMap[targetName.toLowerCase()] = restoredAcc.id;
-        return restoredAcc.id;
       };
 
       result.transactions.forEach((tx, index) => {
-        const accountId = findAccId(tx.account, tx.accountUid);
-        const toAccountId = tx.toAccount ? findAccId(tx.toAccount, tx.toAccountUid) : undefined;
+        const accRes = findAccId(tx.account, tx.accountUid);
+        const toAccRes = tx.toAccount ? findAccId(tx.toAccount, tx.toAccountUid) : undefined;
+        const isHistAcc = tx.isHistoricalAccountOnly || accRes.isHistorical;
+        const toAccVal = tx.historicalToAccountName || (toAccRes ? toAccRes.id : undefined);
 
         parsedTransactions.push({
           id: tx.id || `txn-${tx.sourceUid || Date.now()}-${index}`,
@@ -403,18 +372,18 @@ export default function DataImportPage() {
           category: (tx.category as any) || (tx.type === 'transfer' ? 'Transfer' : 'Other'),
           categoryUid: tx.categoryUid,
           subcategory: tx.subcategory,
-          account: accountId,
+          account: accRes.id,
           accountUid: tx.accountUid,
-          toAccount: toAccountId,
+          toAccount: toAccVal,
           toAccountUid: tx.toAccountUid,
           amount: tx.amount,
           type: tx.type,
           notes: tx.notes || '',
           historicalCategoryName: tx.historicalCategoryName,
-          historicalAccountName: tx.historicalAccountName,
-          historicalToAccountName: tx.historicalToAccountName,
+          historicalAccountName: tx.historicalAccountName || (accRes.isHistorical ? accRes.id : undefined),
+          historicalToAccountName: tx.historicalToAccountName || (toAccRes && toAccRes.isHistorical ? toAccRes.id : undefined),
           isHistoricalOnly: tx.isHistoricalOnly,
-          isHistoricalAccountOnly: tx.isHistoricalAccountOnly,
+          isHistoricalAccountOnly: isHistAcc,
           createdAt: new Date(Date.now() + index).toISOString(),
         });
       });
@@ -446,7 +415,9 @@ export default function DataImportPage() {
         accounts: newAccounts.length,
       });
 
-      if (result.report) {
+      if (result.phase1Report) {
+        setSqliteReport(result.phase1Report);
+      } else if (result.report) {
         setSqliteReport(result.report);
       }
 
@@ -1194,48 +1165,106 @@ export default function DataImportPage() {
                         ))}
                       </div>
 
-                      {sqliteReport && sqliteReport.groups && (
+                      {sqliteReport && (sqliteReport.groups || sqliteReport.totalSourceGroups) && (
                         <div className="max-w-xl mx-auto mb-6 p-4 bg-[#0b0f1a] border border-border rounded-xl text-left space-y-3 font-mono text-xs">
                           <div className="flex items-center justify-between border-b border-border pb-2">
-                            <span className="font-bold text-primary tracking-wide">PHASE 1 VALIDATION REPORT (ACCOUNTS & GROUPS)</span>
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">Phase 1 Passed</span>
+                            <span className="font-bold text-primary tracking-wide">REQUIRED VALIDATION REPORT (PHASE 1)</span>
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">Phase 1 Verified</span>
                           </div>
 
-                          <div className="space-y-2">
-                            <p className="font-bold text-slate-300">SOURCE ACCOUNT GROUPS (ASSETGROUP)</p>
-                            <div className="grid grid-cols-2 gap-2 text-muted-foreground bg-muted/10 p-2.5 rounded-lg border border-border">
-                              <div>Total Groups: <strong className="text-foreground">{sqliteReport.groups.totalGroups}</strong></div>
-                              <div>Active Groups (IS_DEL = 0): <strong className="text-emerald-400">{sqliteReport.groups.activeGroups}</strong></div>
-                              <div>Deleted Groups (IS_DEL != 0): <strong className="text-slate-400">{sqliteReport.groups.deletedGroups}</strong></div>
-                              <div>Imported Groups: <strong className="text-emerald-400">{sqliteReport.groups.importedGroups}</strong></div>
+                          {/* Account Group Validation */}
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-200">ACCOUNT GROUP VALIDATION</p>
+                            <div className="bg-muted/10 p-2.5 rounded-lg border border-border space-y-1 text-muted-foreground">
+                              <div>Source groups: <strong className="text-foreground">{sqliteReport.groups?.totalSourceGroups ?? sqliteReport.totalSourceGroups ?? 0}</strong></div>
+                              <div>Active groups (IS_DEL = 0): <strong className="text-emerald-400">{sqliteReport.groups?.activeGroupsCount ?? sqliteReport.activeAccountGroups ?? 0}</strong></div>
+                              <div>Deleted/inactive groups (IS_DEL != 0): <strong className="text-slate-400">{sqliteReport.groups?.deletedGroupsCount ?? sqliteReport.deletedAccountGroups ?? 0}</strong></div>
+                              <div>Imported groups: <strong className="text-emerald-400">{sqliteReport.groups?.importedGroupsCount ?? sqliteReport.activeAccountGroups ?? 0}</strong></div>
                             </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <p className="font-bold text-slate-300">SOURCE ACCOUNTS (ASSETS)</p>
-                            <div className="grid grid-cols-2 gap-2 text-muted-foreground bg-muted/10 p-2.5 rounded-lg border border-border">
-                              <div>Total ASSETS Rows: <strong className="text-foreground">{sqliteReport.accounts.totalAssets}</strong></div>
-                              <div>Active Accounts (ZDATA IN 0,3): <strong className="text-emerald-400">{sqliteReport.accounts.activeAccounts}</strong></div>
-                              <div>Deleted Accounts (ZDATA = 2): <strong className="text-amber-400">{sqliteReport.accounts.deletedAccounts}</strong></div>
-                              <div>Imported Active Accounts: <strong className="text-emerald-400">{sqliteReport.accounts.importedAccounts}</strong></div>
+                          {/* Account Validation */}
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-200">ACCOUNT VALIDATION</p>
+                            <div className="bg-muted/10 p-2.5 rounded-lg border border-border space-y-1 text-muted-foreground">
+                              <div>Total source accounts: <strong className="text-foreground">{sqliteReport.accounts?.totalSourceAccounts ?? sqliteReport.totalSourceAssets ?? 0}</strong></div>
+                              <div>Deleted accounts (ZDATA = 2): <strong className="text-amber-400">{sqliteReport.accounts?.deletedAccountsCount ?? sqliteReport.deletedAccountsExcluded ?? 0}</strong></div>
+                              <div>Active visible accounts (ZDATA = 0): <strong className="text-emerald-400">{sqliteReport.accounts?.activeVisibleAccountsCount ?? 0}</strong></div>
+                              <div>Active hidden accounts (ZDATA = 3): <strong className="text-sky-400">{sqliteReport.accounts?.activeHiddenAccountsCount ?? 0}</strong></div>
+                              <div>Imported active accounts: <strong className="text-emerald-400">{sqliteReport.accounts?.importedActiveAccountsCount ?? sqliteReport.activeAccountsImported ?? 0}</strong></div>
+                              <div>Skipped deleted accounts: <strong className="text-slate-400">{sqliteReport.accounts?.skippedDeletedAccountsCount ?? sqliteReport.deletedAccountsExcluded ?? 0}</strong></div>
                             </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <p className="font-bold text-slate-300">ACCOUNT → GROUP MAPPING</p>
-                            <div className="grid grid-cols-2 gap-2 text-muted-foreground bg-muted/10 p-2.5 rounded-lg border border-border">
-                              <div>Correctly Mapped: <strong className="text-emerald-400">{sqliteReport.mapping.correctlyMapped}</strong></div>
-                              <div>Unmapped GroupUid: <strong className="text-slate-400">{sqliteReport.mapping.unmapped}</strong></div>
-                              <div>Active Acc → Deleted Group: <strong className={sqliteReport.mapping.activeAccountToDeletedGroup > 0 ? 'text-amber-400' : 'text-slate-400'}>{sqliteReport.mapping.activeAccountToDeletedGroup}</strong></div>
-                              <div>Invalid GroupUid: <strong className="text-slate-400">{sqliteReport.mapping.invalidGroupUid}</strong></div>
+                          {/* Mappings */}
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-200">ACCOUNT → GROUP MAPPINGS</p>
+                            <div className="bg-muted/10 p-2.5 rounded-lg border border-border space-y-1 text-muted-foreground">
+                              <div>Valid: <strong className="text-emerald-400">{sqliteReport.mappings?.validCount ?? 0}</strong></div>
+                              <div>Invalid (Active Acc → Deleted Group): <strong className={sqliteReport.mappings?.invalidCount ? 'text-amber-400' : 'text-slate-400'}>{sqliteReport.mappings?.invalidCount ?? 0}</strong></div>
+                              <div>Unresolved: <strong className="text-slate-400">{sqliteReport.mappings?.unresolvedCount ?? 0}</strong></div>
                             </div>
                           </div>
 
-                          {sqliteReport.accounts.deletedAccountList.length > 0 && (
+                          {/* Accounts in Deleted Groups alert if any */}
+                          {sqliteReport.mappings?.accountsInDeletedGroups && sqliteReport.mappings.accountsInDeletedGroups.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="font-bold text-amber-400">ACTIVE ACCOUNT → DELETED GROUP (FLAGGED):</p>
+                              <div className="max-h-24 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-amber-500/30 text-[11px]">
+                                {sqliteReport.mappings.accountsInDeletedGroups.map((a: any) => (
+                                  <div key={a.accountUid} className="text-amber-300">
+                                    Account "{a.accountName}" (ID: {a.accountId}, UID: {a.accountUid}) → Deleted Group "{a.groupName}" (UID: {a.groupUid})
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Duplicate Account Names list if any */}
+                          {sqliteReport.mappings?.duplicateAccountNames && sqliteReport.mappings.duplicateAccountNames.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="font-bold text-sky-400">DUPLICATE ACCOUNT NAMES DETECTED:</p>
+                              <div className="max-h-24 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-border text-[11px]">
+                                {sqliteReport.mappings.duplicateAccountNames.map((d: any) => (
+                                  <div key={d.name} className="text-muted-foreground">
+                                    "{d.name}" ({d.count} instances: {d.instances.map((i: any) => `ID ${i.id} ZDATA ${i.zdata}`).join(', ')})
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Detailed Mapped Active Accounts List (Section 17 Requirement) */}
+                          {sqliteReport.accounts && ((sqliteReport.accounts.activeVisibleAccountsList && sqliteReport.accounts.activeVisibleAccountsList.length > 0) || (sqliteReport.accounts.activeHiddenAccountsList && sqliteReport.accounts.activeHiddenAccountsList.length > 0)) && (
+                            <div className="space-y-1">
+                              <p className="font-bold text-emerald-400">IMPORTED ACTIVE ACCOUNTS MAPPINGS:</p>
+                              <div className="max-h-48 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-border text-[11px]">
+                                {[...(sqliteReport.accounts.activeVisibleAccountsList || []), ...(sqliteReport.accounts.activeHiddenAccountsList || [])].map((a: any) => (
+                                  <div key={a.uid} className="p-1.5 border-b border-border/50 space-y-0.5 text-muted-foreground">
+                                    <div className="flex items-center justify-between text-foreground font-semibold">
+                                      <span>"{a.name}" (ID: {a.id}, UID: {a.uid})</span>
+                                      <span className={a.zdata === 0 ? 'text-emerald-400 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10' : 'text-sky-400 text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10'}>
+                                        {a.zdata === 0 ? 'ACTIVE + VISIBLE' : 'ACTIVE + HIDDEN'}
+                                      </span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-400">
+                                      Category: <strong className="text-slate-200">{a.groupName}</strong> (Group UID: {a.groupUid})
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 font-mono">
+                                      WealthIQ Acc ID: {a.wealthiqAccountId || `mm-acc-${a.uid}`} | WealthIQ Cat ID: {a.wealthiqCategoryId || `acc-cat-${a.groupUid}`}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Excluded Deleted Accounts List */}
+                          {sqliteReport.accounts?.deletedAccountsList && sqliteReport.accounts.deletedAccountsList.length > 0 && (
                             <div className="space-y-1">
                               <p className="font-bold text-amber-400">EXCLUDED DELETED ACCOUNTS (ZDATA = 2):</p>
-                              <div className="max-h-24 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-border text-[11px]">
-                                {sqliteReport.accounts.deletedAccountList.map((a: any) => (
+                              <div className="max-h-28 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-border text-[11px]">
+                                {sqliteReport.accounts.deletedAccountsList.map((a: any) => (
                                   <div key={a.uid} className="flex items-center justify-between text-muted-foreground">
                                     <span>"{a.name}" (ID: {a.id}, UID: {a.uid})</span>
                                     <span className="text-amber-400 font-bold">ZDATA = {a.zdata}</span>
