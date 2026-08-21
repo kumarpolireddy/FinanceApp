@@ -315,13 +315,6 @@ export default function SavingsTrendChartInner() {
 
       prevStart = new Date(selectedYear, drillMonth - 1, 1);
       prevEnd = new Date(selectedYear, drillMonth, 0, 23, 59, 59, 999);
-    } else if (granularity === 'monthly' && !useMonthFilter) {
-      const targetYear = selectedRange === 'Last Year' ? selectedYear - 1 : selectedYear;
-      start = new Date(targetYear, 0, 1);
-      end = new Date(targetYear, 11, 31, 23, 59, 59, 999);
-
-      prevStart = new Date(targetYear - 1, 0, 1);
-      prevEnd = new Date(targetYear - 1, 11, 31, 23, 59, 59, 999);
     } else {
       if (useMonthFilter) {
         start = new Date(selectedYear, selectedMonth, 1);
@@ -458,80 +451,82 @@ export default function SavingsTrendChartInner() {
 
       setData(points);
     } else if (granularity === 'monthly' && drillMonth === null && !useMonthFilter) {
-      const targetYear = selectedRange === 'Last Year' ? selectedYear - 1 : selectedYear;
-      const compareYear = targetYear - 1;
+      // 2b. Monthly view respecting start and end bounds of selectedRange
+      const startYear = start.getFullYear();
+      const startMonth = start.getMonth();
+      const endYear = end.getFullYear();
+      const endMonth = end.getMonth();
 
-      // 2b. Monthly view
-      const currentMonthlySums: Record<number, number> = {};
-      const prevMonthlySums: Record<number, number> = {};
-      for (let m = 0; m < 12; m++) {
-        currentMonthlySums[m] = 0;
-        prevMonthlySums[m] = 0;
-      }
-
-      txns.forEach((t) => {
-        if (!t.date || typeof t.date !== 'string') return;
-        const d = new Date(t.date);
-        if (isNaN(d.getTime())) return;
-
-        const y = d.getFullYear();
-        const m = d.getMonth();
-        const amt = Number(t.amount) || 0;
-
-        if (y === targetYear) {
-          if (trendType === 'income') {
-            if (t.type === 'income') currentMonthlySums[m] += amt;
-          } else if (trendType === 'expense') {
-            if (t.type === 'expense') currentMonthlySums[m] += amt;
-          } else if (trendType === 'savings') {
-            if (t.type === 'income') currentMonthlySums[m] += amt;
-            if (t.type === 'expense') currentMonthlySums[m] -= amt;
-          }
-        } else if (y === compareYear) {
-          if (trendType === 'income') {
-            if (t.type === 'income') prevMonthlySums[m] += amt;
-          } else if (trendType === 'expense') {
-            if (t.type === 'expense') prevMonthlySums[m] += amt;
-          } else if (trendType === 'savings') {
-            if (t.type === 'income') prevMonthlySums[m] += amt;
-            if (t.type === 'expense') prevMonthlySums[m] -= amt;
-          }
-        }
-      });
-
-      const monthNames = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
+      const totalMonths = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
       const points = [];
-      const lastMonth = targetYear === now.getFullYear() ? now.getMonth() : 11;
+      const monthNames = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
 
-      for (let m = 0; m <= lastMonth; m++) {
+      for (let i = 0; i < totalMonths; i++) {
+        const curDate = new Date(startYear, startMonth + i, 1);
+        const y = curDate.getFullYear();
+        const m = curDate.getMonth();
+
+        // Skip future months
+        if (y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth())) {
+          continue;
+        }
+
+        // Equivalent month in previous period offset
+        const prevDate = new Date(y, m - totalMonths, 1);
+        const pY = prevDate.getFullYear();
+        const pM = prevDate.getMonth();
+
         let savings = 0;
         let prevSavings = 0;
 
         if (trendType === 'balance') {
-          const lastDay = new Date(targetYear, m + 1, 0, 23, 59, 59, 999).toISOString();
-          const lastDayPrev = new Date(compareYear, m + 1, 0, 23, 59, 59, 999).toISOString();
-          savings = getBalanceAtDate(lastDay, selectedAccountId);
-          prevSavings = getBalanceAtDate(lastDayPrev, selectedAccountId);
+          const lastDayIso = new Date(y, m + 1, 0, 23, 59, 59, 999).toISOString();
+          const lastDayPrevIso = new Date(pY, pM + 1, 0, 23, 59, 59, 999).toISOString();
+          savings = getBalanceAtDate(lastDayIso, selectedAccountId);
+          prevSavings = getBalanceAtDate(lastDayPrevIso, selectedAccountId);
         } else {
-          savings = currentMonthlySums[m];
-          prevSavings = prevMonthlySums[m];
+          txns.forEach((t) => {
+            if (!t.date || typeof t.date !== 'string') return;
+            const d = new Date(t.date);
+            if (isNaN(d.getTime())) return;
+
+            const tY = d.getFullYear();
+            const tM = d.getMonth();
+            const amt = Number(t.amount) || 0;
+
+            if (tY === y && tM === m) {
+              if (trendType === 'income') {
+                if (t.type === 'income') savings += amt;
+              } else if (trendType === 'expense') {
+                if (t.type === 'expense') savings += amt;
+              } else if (trendType === 'savings') {
+                if (t.type === 'income') savings += amt;
+                if (t.type === 'expense') savings -= amt;
+              }
+            }
+
+            if (tY === pY && tM === pM) {
+              if (trendType === 'income') {
+                if (t.type === 'income') prevSavings += amt;
+              } else if (trendType === 'expense') {
+                if (t.type === 'expense') prevSavings += amt;
+              } else if (trendType === 'savings') {
+                if (t.type === 'income') prevSavings += amt;
+                if (t.type === 'expense') prevSavings -= amt;
+              }
+            }
+          });
         }
 
+        const label = totalMonths <= 12
+          ? monthNames[m]
+          : `${monthNames[m]} '${String(y).slice(-2)}`;
+
         points.push({
-          month: monthNames[m],
+          month: label,
           savings,
           prevSavings,
           monthIndex: m,
@@ -545,6 +540,7 @@ export default function SavingsTrendChartInner() {
       const currentDays: Date[] = [];
       const curr = new Date(start);
       while (curr <= end) {
+        if (curr > now) break;
         currentDays.push(new Date(curr));
         curr.setDate(curr.getDate() + 1);
       }
@@ -742,16 +738,34 @@ export default function SavingsTrendChartInner() {
           </div>
 
           {/* Granularity selector */}
-          <div className="flex gap-1 bg-muted/30 border border-border/80 rounded-xl p-1 w-fit">
+          <div className="flex gap-1 bg-muted/30 border border-border/80 rounded-xl p-1 w-fit select-none">
             <button
               onClick={() => {
                 setGranularity('monthly');
                 setDrillMonth(null);
                 setDrillDate(null);
               }}
-              className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all bg-primary/20 text-primary shadow-sm"
+              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                granularity === 'monthly'
+                  ? 'bg-primary/20 text-primary shadow-xs border border-primary/30'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               Monthly
+            </button>
+            <button
+              onClick={() => {
+                setGranularity('daily');
+                setDrillMonth(null);
+                setDrillDate(null);
+              }}
+              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                granularity === 'daily'
+                  ? 'bg-primary/20 text-primary shadow-xs border border-primary/30'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Daily
             </button>
           </div>
         </div>

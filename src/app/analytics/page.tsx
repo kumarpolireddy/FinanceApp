@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
-import AnalyticsHeader from './components/AnalyticsHeader';
 import SavingsTrendChart from './components/SavingsTrendChart';
 import CategoryYoYChart from './components/CategoryYoYChart';
 import SpendingHeatmap from './components/SpendingHeatmap';
@@ -47,16 +46,12 @@ export default function AnalyticsPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto px-0 md:px-4 pt-3 pb-32 space-y-4 bg-background">
-        <div className="px-4 md:px-0">
-          <AnalyticsHeader />
-        </div>
-
+      <div className="w-full min-h-screen px-0 pt-0 pb-32 space-y-4 bg-secondary/70">
         {/* Swipeable Graph Carousel */}
-        <div className="relative overflow-hidden select-none mb-6">
+        <div className="select-none mb-6 pt-3">
           
           {/* Slider Controls & Sliding Progress Indicator Bar */}
-          <div className="flex items-center justify-between mb-3 px-3 py-2">
+          <div className="flex items-center justify-between mb-3 px-3 sm:px-6 py-2">
             <button
               disabled={activeSlide === 0}
               onClick={() => setActiveSlide((p) => Math.max(p - 1, 0))}
@@ -96,44 +91,45 @@ export default function AnalyticsPage() {
             </button>
           </div>
 
-          {/* Slides Container */}
-          <div 
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            className="flex transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(-${activeSlide * 100}%)` }}
-          >
-            {/* Slide 0: Category Spending */}
-            <div className="w-full shrink-0 px-0.5">
-              <CategoryYoYChart transactions={allTransactions} />
-            </div>
-            
-            {/* Slide 1: Savings Trend */}
-            <div className="w-full shrink-0 px-0.5">
-              <SavingsTrendChart />
-            </div>
+          {/* Unpadded Overflow Viewport for Perfect Slide Alignment */}
+          <div className="w-full overflow-hidden">
+            <div 
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              className="flex transition-transform duration-300 ease-out"
+              style={{ transform: `translateX(-${activeSlide * 100}%)` }}
+            >
+              {/* Slide 0: Category Spending */}
+              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+                <CategoryYoYChart transactions={allTransactions} />
+              </div>
+              
+              {/* Slide 1: Savings Trend */}
+              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+                <SavingsTrendChart />
+              </div>
 
-            {/* Slide 2: Weekday vs Weekend */}
-            <div className="w-full shrink-0 px-0.5">
-              <WeekdayWeekendChart transactions={allTransactions} />
-            </div>
+              {/* Slide 2: Weekday vs Weekend */}
+              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+                <WeekdayWeekendChart transactions={allTransactions} />
+              </div>
 
-            {/* Slide 3: Top Merchants */}
-            <div className="w-full shrink-0 px-0.5">
-              <TopMerchantsTable allTransactions={allTransactions} />
-            </div>
+              {/* Slide 3: Top Merchants */}
+              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+                <TopMerchantsTable allTransactions={allTransactions} />
+              </div>
 
-            {/* Slide 4: Spending Heatmap */}
-            <div className="w-full shrink-0 px-0.5">
-              <SpendingHeatmap allTransactions={allTransactions} />
-            </div>
+              {/* Slide 4: Spending Heatmap */}
+              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+                <SpendingHeatmap allTransactions={allTransactions} />
+              </div>
 
-            {/* Slide 5: AI Insights */}
-            <div className="w-full shrink-0 px-0.5">
-              <AiInsightsPanel transactions={allTransactions} />
+              {/* Slide 5: AI Insights */}
+              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+                <AiInsightsPanel transactions={allTransactions} />
+              </div>
             </div>
           </div>
-
         </div>
       </div>
     </AppLayout>

@@ -29,10 +29,10 @@ export default function MetricCard({
   onClick,
 }: MetricCardProps) {
   const variantStyles: Record<string, string> = {
-    default: 'bg-card border-border',
-    positive: 'bg-card border-border bg-positive-subtle border-positive-subtle',
-    negative: 'bg-card border-border bg-negative-subtle border-negative-subtle card-glow-negative',
-    warning: 'bg-card border-border bg-warning-subtle border-warning-subtle card-glow-warning',
+    default: 'bg-card/95 border-border shadow-card',
+    positive: 'bg-card/95 border-border bg-positive-subtle border-positive-subtle shadow-card',
+    negative: 'bg-card/95 border-border bg-negative-subtle border-negative-subtle card-glow-negative',
+    warning: 'bg-card/95 border-border bg-warning-subtle border-warning-subtle card-glow-warning',
     hero: 'bg-card border-border card-glow-primary',
   };
 
@@ -42,8 +42,8 @@ export default function MetricCard({
   return (
     <div
       onClick={onClick}
-      className={`relative rounded-xl border p-5 md:p-6 flex flex-col justify-between h-full min-h-[140px] ${
-        onClick ? 'cursor-pointer hover:bg-muted/10 transition-colors' : ''
+      className={`relative rounded-2xl border p-5 md:p-6 flex flex-col justify-between h-full min-h-[140px] transition-all duration-200 ${
+        onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-card-lg' : ''
       } ${variantStyles[variant]} ${className}`}
     >
       <div className="flex items-start justify-between">

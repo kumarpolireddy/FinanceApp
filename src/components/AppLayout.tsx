@@ -211,7 +211,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     if (pathname.startsWith('/ai-advisor')) return 'WealthIQ Gemini AI Advisor';
     if (pathname === '/' || pathname.startsWith('/dashboard')) return 'Dashboard';
     if (pathname.startsWith('/transactions')) return 'Transactions';
-    if (pathname.startsWith('/analytics')) return 'Statistics';
+    if (pathname.startsWith('/analytics')) return '📊 Spending Intelligence';
     if (pathname.startsWith('/accounts')) return 'Accounts';
     if (pathname.startsWith('/budgets')) return 'Budgets';
     if (pathname.startsWith('/loans')) return 'Loans & Debts';
@@ -233,12 +233,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div 
         onTouchStart={handleGlobalTouchStart}
         onTouchEnd={handleGlobalTouchEnd}
-        className="flex flex-col h-[100dvh] min-h-[100dvh] max-w-md mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none"
+        className="flex flex-col h-[100dvh] min-h-[100dvh] max-w-md mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none shadow-2xl shadow-black/20"
       >
         <AlarmListener />
         
         {/* Mobile Header */}
-        <header className="fixed top-0 left-0 right-0 w-full max-w-md mx-auto h-14 bg-card border-b border-border flex items-center justify-between px-3 z-50 shadow-sm">
+        <header className="fixed top-0 left-0 right-0 w-full max-w-md mx-auto h-14 bg-card/95 backdrop-blur-xl border-b border-border/80 flex items-center justify-between px-3 z-50 shadow-sm">
           <div className="flex items-center gap-1.5 shrink-0">
             {!isMainTab && pathname !== '/' ? (
               <button 
@@ -309,7 +309,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         {showFAB && (
           <button
             onClick={() => router.push('/add-expense')}
-            className="fixed bottom-20 right-6 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95 z-40 cursor-pointer hover:opacity-90"
+            className="fixed bottom-20 right-6 w-12 h-12 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 transition-all active:scale-95 z-40 cursor-pointer hover:brightness-110"
             aria-label="Add transaction"
           >
             <Plus size={24} />
@@ -383,7 +383,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
         {/* Mobile Bottom Tab Bar */}
         {!pathname.startsWith('/add-expense') && !pathname.startsWith('/ai-advisor') && (
-          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card border-t border-border flex justify-around items-center z-50 pb-safe shadow-2xl">
+          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card/95 backdrop-blur-xl border-t border-border/80 flex justify-around items-center z-50 pb-safe shadow-2xl">
             {TABS.map((tab) => {
               const IconComponent = tab.icon;
               const isActive = activeTab === tab.id;
@@ -414,12 +414,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <div className="flex min-h-screen bg-background">
       <AlarmListener />
       <Sidebar />
-      <main className="flex-1 min-w-0 overflow-auto relative">
+      <main className="flex-1 min-w-0 overflow-auto relative bg-gradient-to-b from-transparent to-black/5">
         {children}
         {showFAB && (
           <button
             onClick={() => router.push('/add-expense')}
-            className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-xl transition-all active:scale-95 hover:scale-105 z-40 cursor-pointer"
+            className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xl shadow-primary/25 transition-all active:scale-95 hover:scale-105 hover:brightness-110 z-40 cursor-pointer"
             aria-label="Add transaction"
           >
             <Plus size={28} />

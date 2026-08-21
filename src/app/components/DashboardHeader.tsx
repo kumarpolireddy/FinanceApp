@@ -272,10 +272,10 @@ export default function DashboardHeader({
   const hasAlerts = notifications.some((n) => n.includes('Exceeded') || n.includes('Approaching'));
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
-      <div>
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold text-foreground">Financial Dashboard</h1>
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-5">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Financial Dashboard</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefresh}
@@ -338,7 +338,7 @@ export default function DashboardHeader({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
           <div className="w-2 h-2 rounded-full bg-positive animate-pulse" />
           <span className="text-xs text-muted-foreground">
             Live data — last updated {lastUpdated}
@@ -349,13 +349,13 @@ export default function DashboardHeader({
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:flex-nowrap">
         {/* Account selection dropdown */}
-        <div className="relative">
+        <div className="relative min-w-[128px] flex-1 sm:flex-none">
           <select
             value={selectedAccountId || ''}
             onChange={(e) => setSelectedAccountId && setSelectedAccountId(e.target.value)}
-            className="h-12 text-sm bg-[#0b0f1a] border border-border rounded-xl px-4 py-2.5 text-slate-200 appearance-none cursor-pointer pr-10 hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150 font-semibold"
+            className="h-12 w-full sm:w-auto text-sm bg-[#0b0f1a] border border-border rounded-xl px-4 py-2.5 text-slate-200 appearance-none cursor-pointer pr-10 hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150 font-semibold"
             aria-label="Select Account"
           >
             <option value="" className="bg-[#0b0f1a] text-slate-200 text-sm">

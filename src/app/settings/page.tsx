@@ -1101,16 +1101,19 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto px-4 py-3 space-y-4 bg-background">
-        <div>
-          <h1 className="text-sm font-black uppercase text-foreground">Settings</h1>
+      <div className="max-w-3xl mx-auto px-4 py-5 pb-32 space-y-5 bg-background">
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-foreground">Settings</h1>
+            <p className="text-2xs text-muted-foreground mt-1">Personalise your money workspace</p>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex bg-secondary p-1 border border-border rounded-lg overflow-x-auto select-scrollbar gap-1">
+        <div className="grid grid-cols-5 bg-secondary p-1 border border-border rounded-xl gap-1">
           <button
             onClick={() => setActiveTab('accounts')}
-            className={`flex-1 text-center py-2 px-2.5 rounded text-3xs font-bold uppercase tracking-wider transition ${
+            className={`min-w-0 text-center py-2.5 px-1 rounded-lg text-3xs font-bold uppercase tracking-wide transition ${
               activeTab === 'accounts'
                 ? 'bg-primary text-primary-foreground font-black'
                 : 'text-muted-foreground hover:text-foreground'
@@ -1120,7 +1123,7 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={() => setActiveTab('categories')}
-            className={`flex-1 text-center py-2 px-2.5 rounded text-3xs font-bold uppercase tracking-wider transition ${
+            className={`min-w-0 text-center py-2.5 px-1 rounded-lg text-3xs font-bold uppercase tracking-wide transition ${
               activeTab === 'categories'
                 ? 'bg-primary text-primary-foreground font-black'
                 : 'text-muted-foreground hover:text-foreground'
@@ -1130,7 +1133,7 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={() => setActiveTab('general')}
-            className={`flex-1 text-center py-2 px-2.5 rounded text-3xs font-bold uppercase tracking-wider transition ${
+            className={`min-w-0 text-center py-2.5 px-1 rounded-lg text-3xs font-bold uppercase tracking-wide transition ${
               activeTab === 'general'
                 ? 'bg-primary text-primary-foreground font-black'
                 : 'text-muted-foreground hover:text-foreground'
@@ -1140,7 +1143,7 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={() => setActiveTab('budgets')}
-            className={`flex-1 text-center py-2 px-2.5 rounded text-3xs font-bold uppercase tracking-wider transition ${
+            className={`min-w-0 text-center py-2.5 px-1 rounded-lg text-3xs font-bold uppercase tracking-wide transition ${
               activeTab === 'budgets'
                 ? 'bg-primary text-primary-foreground font-black'
                 : 'text-muted-foreground hover:text-foreground'
@@ -1150,7 +1153,7 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={() => setActiveTab('system')}
-            className={`flex-1 text-center py-2 px-2.5 rounded text-3xs font-bold uppercase tracking-wider transition ${
+            className={`min-w-0 text-center py-2.5 px-1 rounded-lg text-3xs font-bold uppercase tracking-wide transition ${
               activeTab === 'system'
                 ? 'bg-primary text-primary-foreground font-black'
                 : 'text-muted-foreground hover:text-foreground'
@@ -1164,9 +1167,9 @@ export default function SettingsPage() {
         {activeTab === 'accounts' && (
           <div className="space-y-4 transition-all duration-300">
             {/* Desktop Filters Bar */}
-            <div className="bg-card border border-border rounded-2xl p-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 grid grid-cols-2 md:grid-cols-12 gap-2.5 sm:gap-3 items-center shadow-card">
               {/* Search */}
-              <div className="md:col-span-4 relative">
+              <div className="col-span-2 md:col-span-4 relative">
                 <input
                   type="text"
                   value={accountSearch}
@@ -1204,7 +1207,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Toggles */}
-              <div className="md:col-span-4 flex items-center justify-start md:justify-end gap-4 flex-wrap text-2xs text-muted-foreground font-semibold">
+              <div className="col-span-2 md:col-span-4 flex items-center justify-between md:justify-end gap-3 sm:gap-4 flex-wrap text-2xs text-muted-foreground font-semibold pt-1 md:pt-0">
                 <label className="flex items-center gap-2 cursor-pointer hover:text-foreground transition select-none">
                   <input
                     type="checkbox"

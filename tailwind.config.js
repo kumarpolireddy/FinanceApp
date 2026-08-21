@@ -54,7 +54,8 @@ module.exports = {
         mono: ['var(--font-geist-mono)', 'monospace'],
       },
       fontSize: {
-        '2xs': ['0.625rem', { lineHeight: '1rem' }],
+        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
+        '3xs': ['0.625rem', { lineHeight: '0.875rem' }],
       },
       boxShadow: {
         'card': '0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)',

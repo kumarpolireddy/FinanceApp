@@ -144,7 +144,7 @@ export default function DashboardKPIs({
       <div className="col-span-2 md:col-span-2 xl:col-span-2">
         <div
           onClick={() => router.push('/settings')}
-          className="bg-[#0b0f1a] border border-primary/20 rounded-2xl p-5 md:p-6 flex flex-col justify-between h-full relative overflow-hidden shadow-xl shadow-primary/5 min-h-[140px] cursor-pointer hover:bg-muted/5 transition-colors"
+          className="bg-card/95 border border-primary/25 rounded-2xl p-5 md:p-6 flex flex-col justify-between h-full relative overflow-hidden shadow-xl shadow-primary/10 min-h-[140px] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-card-lg"
         >
           <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full blur-xl pointer-events-none" />
           <div>
@@ -261,7 +261,7 @@ export default function DashboardKPIs({
       {/* Budget Utilization Card */}
       <div
         onClick={() => router.push('/budgets')}
-        className="relative rounded-xl border p-5 md:p-6 flex flex-col justify-between bg-card border-border h-full min-h-[140px] col-span-1 md:col-span-2 xl:col-span-2 cursor-pointer hover:bg-muted/5 transition-colors"
+        className="relative rounded-2xl border p-5 md:p-6 flex flex-col justify-between bg-card/95 border-border shadow-card h-full min-h-[140px] col-span-1 md:col-span-2 xl:col-span-2 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-card-lg"
       >
         <div className="flex items-start justify-between">
           <p className="text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
@@ -313,7 +313,7 @@ export default function DashboardKPIs({
 
       {/* Over-Budget Alert Card */}
       <div
-        className={`relative rounded-xl border p-5 md:p-6 flex flex-col justify-between bg-card border-border h-full min-h-[140px] col-span-1 md:col-span-2 xl:col-span-2 ${
+        className={`relative rounded-2xl border p-5 md:p-6 flex flex-col justify-between bg-card/95 border-border shadow-card h-full min-h-[140px] col-span-1 md:col-span-2 xl:col-span-2 ${
           budgetSummary.overBudgetCount > 0
             ? 'bg-negative-subtle/10 border-negative-subtle/50 card-glow-negative'
             : ''

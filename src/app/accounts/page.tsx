@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { getAccounts, type Account, addAccount, getTransactions, type Transaction, calculateCreditCardBalances } from '@/lib/storage';
-import { Landmark, Wallet, CreditCard, ShieldAlert, ChevronDown, ChevronRight, Eye, EyeOff, Plus } from 'lucide-react';
+import { Landmark, Wallet, CreditCard, ShieldAlert, ChevronDown, ChevronRight, Eye, EyeOff, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
 
@@ -38,10 +38,10 @@ export default function AccountsPage() {
     const balanceNum = parseFloat(newAccBalance) || 0;
     
     const colors = {
-      accounts: '#3b82f6',
-      cash: '#22c55e',
-      credit: '#f97316',
-      loan: '#ef4444'
+      accounts: '#60a5fa',
+      cash: '#60a5fa',
+      credit: '#60a5fa',
+      loan: '#60a5fa'
     };
     
     const icons = {
@@ -111,6 +111,77 @@ export default function AccountsPage() {
   }, []);
 
   const [showHiddenAccounts, setShowHiddenAccounts] = useState(true);
+  const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+  const [reorderTab, setReorderTab] = useState<'groups' | 'accounts'>('groups');
+
+  const [groupOrder, setGroupOrder] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('wealthiq_account_group_order');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [];
+  });
+
+  const [accountOrderMap, setAccountOrderMap] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('wealthiq_account_item_order');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [];
+  });
+
+  const saveGroupOrder = (newOrder: string[]) => {
+    setGroupOrder(newOrder);
+    localStorage.setItem('wealthiq_account_group_order', JSON.stringify(newOrder));
+  };
+
+  const saveAccountOrder = (newOrder: string[]) => {
+    setAccountOrderMap(newOrder);
+    localStorage.setItem('wealthiq_account_item_order', JSON.stringify(newOrder));
+  };
+
+  const moveGroup = (index: number, direction: 'up' | 'down') => {
+    const activeGroupKeys = Object.keys(groupedAccounts.groups);
+    const currentOrder = [...groupOrder];
+    activeGroupKeys.forEach((k) => {
+      if (!currentOrder.includes(k)) currentOrder.push(k);
+    });
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentOrder.length) return;
+
+    const updated = [...currentOrder];
+    const [moved] = updated.splice(index, 1);
+    updated.splice(targetIndex, 0, moved);
+    saveGroupOrder(updated);
+  };
+
+  const moveAccount = (accId: string, direction: 'up' | 'down') => {
+    const allAccIds = accounts.map((a) => a.id);
+    const currentOrder = [...accountOrderMap];
+    allAccIds.forEach((id) => {
+      if (!currentOrder.includes(id)) currentOrder.push(id);
+    });
+
+    const index = currentOrder.indexOf(accId);
+    if (index === -1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentOrder.length) return;
+
+    const updated = [...currentOrder];
+    const [moved] = updated.splice(index, 1);
+    updated.splice(targetIndex, 0, moved);
+    saveAccountOrder(updated);
+  };
 
   const groupedAccounts = useMemo(() => {
     const groups: Record<string, { name: string; items: Account[]; total: number; icon: any; color: string }> = {};
@@ -131,13 +202,10 @@ export default function AccountsPage() {
 
         if (type === 'cash' || catName.toLowerCase().includes('cash')) {
           icon = Wallet;
-          color = 'text-positive';
         } else if (type === 'credit' || catName.toLowerCase().includes('card') || catName.toLowerCase().includes('credit')) {
           icon = CreditCard;
-          color = 'text-warning';
         } else if (catName.toLowerCase().includes('borrow') || catName.toLowerCase().includes('debt') || catName.toLowerCase().includes('loan') || type === 'loan') {
           icon = ShieldAlert;
-          color = 'text-negative';
         }
 
         groups[key] = {
@@ -160,13 +228,40 @@ export default function AccountsPage() {
       }
     });
 
+    // Sort items within each group
+    Object.keys(groups).forEach((key) => {
+      groups[key].items.sort((a, b) => {
+        const indexA = accountOrderMap.indexOf(a.id);
+        const indexB = accountOrderMap.indexOf(b.id);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return 0;
+      });
+    });
+
+    // Sort group entries according to custom groupOrder
+    const sortedGroupEntries = Object.entries(groups).sort(([keyA], [keyB]) => {
+      const indexA = groupOrder.indexOf(keyA);
+      const indexB = groupOrder.indexOf(keyB);
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      return 0;
+    });
+
+    const sortedGroupsObj: Record<string, typeof groups[string]> = {};
+    sortedGroupEntries.forEach(([key, val]) => {
+      sortedGroupsObj[key] = val;
+    });
+
     return {
-      groups,
+      groups: sortedGroupsObj,
       totalAssets,
       totalLiabilities,
       netWorth: totalAssets - totalLiabilities
     };
-  }, [accounts]);
+  }, [accounts, showHiddenAccounts, groupOrder, accountOrderMap]);
 
   const creditCardTotals = useMemo(() => {
     let payable = 0;
@@ -202,16 +297,26 @@ export default function AccountsPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-md mx-auto px-0 md:px-4 pt-3 pb-32 space-y-4 bg-background">
+      <div className="w-full px-0 pt-3 pb-32 space-y-4">
         
         {/* Header Bar */}
-        <div className="px-4 md:px-0">
-          <div className="flex items-center justify-between pb-1.5 border-b border-border/40">
-            <h1 className="text-xs font-black text-foreground uppercase tracking-wider">My Accounts</h1>
+        <div className="px-3 sm:px-4">
+          <div className="flex items-center justify-between pb-3 border-b border-border/60">
+            <div>
+              <h1 className="text-lg font-bold text-foreground">My Accounts</h1>
+              <p className="text-2xs text-muted-foreground mt-0.5">Balances across your money sources</p>
+            </div>
             <div className="flex items-center gap-1">
               <button
+                onClick={() => setIsReorderModalOpen(true)}
+                className="w-9 h-9 rounded-xl transition border border-border text-muted-foreground hover:text-foreground hover:bg-secondary/70 active:scale-95 flex items-center justify-center"
+                title="Modify / Reorder Accounts & Groups"
+              >
+                <ArrowUpDown size={16} />
+              </button>
+              <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="p-1.5 rounded-md transition border border-transparent text-primary hover:bg-primary/10 active:scale-95"
+                className="w-9 h-9 rounded-xl transition border border-primary/25 bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 flex items-center justify-center"
                 title="Add New Account"
               >
                 <Plus size={16} />
@@ -222,7 +327,7 @@ export default function AccountsPage() {
                   setShowBalances(nextVal);
                   localStorage.setItem('wealthiq_show_balances', String(nextVal));
                 }}
-                className="p-1.5 rounded-md transition border border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/40 active:scale-95"
+                className="w-9 h-9 rounded-xl transition border border-border text-muted-foreground hover:text-foreground hover:bg-secondary/70 active:scale-95 flex items-center justify-center"
                 title={showBalances ? "Hide Balances" : "Show Balances"}
               >
                 {showBalances ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -232,41 +337,40 @@ export default function AccountsPage() {
         </div>
 
         {/* Net Worth Summary Banner */}
-        <div className="bg-secondary p-3.5 rounded-lg border border-border/80 text-center font-mono tabular-nums space-y-2.5">
+        <div className="w-full py-3.5 px-4 bg-secondary text-center font-mono tabular-nums space-y-3">
           <div className="grid grid-cols-2 divide-x divide-border/60">
             <div>
-              <span className="text-xs font-bold text-muted-foreground uppercase block">Total Assets</span>
-              <span className="text-base font-bold text-positive block mt-0.5">{formatVal(groupedAccounts.totalAssets)}</span>
+              <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide block">Total Assets</span>
+              <span className="text-base font-bold text-positive block mt-1">{formatVal(groupedAccounts.totalAssets)}</span>
             </div>
             <div>
-              <span className="text-xs font-bold text-muted-foreground uppercase block">Liabilities</span>
-              <span className="text-base font-bold text-negative block mt-0.5">{formatVal(groupedAccounts.totalLiabilities)}</span>
+              <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide block">Liabilities</span>
+              <span className="text-base font-bold text-negative block mt-1">{formatVal(groupedAccounts.totalLiabilities)}</span>
             </div>
           </div>
           <div className="border-t border-border/55 pt-2 flex items-center justify-between px-2">
-            <span className="text-xs font-bold text-muted-foreground uppercase">Net Worth Valuation</span>
-            <span className={`text-lg font-black ${groupedAccounts.netWorth >= 0 ? 'text-positive' : 'text-negative'}`}>
+            <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide">Net Worth</span>
+            <span className={`text-xl font-bold ${groupedAccounts.netWorth >= 0 ? 'text-positive' : 'text-negative'}`}>
               {formatVal(groupedAccounts.netWorth)}
             </span>
           </div>
         </div>
 
         {/* Classified Accounts Ledger */}
-        <div className="space-y-4">
+        <div className="space-y-3 px-0">
           {Object.entries(groupedAccounts.groups).map(([key, group]) => {
             if (group.items.length === 0) return null;
-            const isLiability = key === 'credit' || key === 'loan';
             const Icon = group.icon;
 
             const isCollapsed = collapsedSections[key];
 
             return (
-              <div key={key} className="bg-secondary rounded-lg border border-border/60 overflow-hidden text-xs">
+              <div key={key} className="overflow-hidden text-xs bg-secondary p-3.5 sm:p-4 space-y-2">
                 
                 {/* Section Header */}
                 <div 
                   onClick={() => toggleSection(key)}
-                  className={`flex justify-between items-center bg-secondary/50 px-3 py-2.5 cursor-pointer hover:bg-secondary/70 transition select-none ${!isCollapsed ? 'border-b border-border/55' : ''}`}
+                  className={`flex justify-between items-center px-1 py-2 cursor-pointer hover:bg-muted/20 rounded-lg transition select-none ${!isCollapsed ? 'pb-2.5 border-b border-border/40' : ''}`}
                 >
                   <div className="flex items-center gap-1.5 flex-shrink-0 min-w-0">
                     <Icon size={16} className={group.color} />
@@ -307,21 +411,21 @@ export default function AccountsPage() {
 
                 {/* Account Rows */}
                 {!isCollapsed && (
-                  <div className="divide-y divide-border/30">
+                  <div className="pt-1 space-y-0.5">
                     {group.items.map((acc) => {
                       const isCreditCard = key === 'credit';
                       return (
                         <div 
                           key={acc.id}
                           onClick={() => router.push(`/transactions?account=${acc.id}`)}
-                          className="flex justify-between items-start px-3.5 py-3 hover:bg-background/20 transition cursor-pointer"
+                          className="flex justify-between items-center px-2 py-3 hover:bg-muted/30 transition cursor-pointer"
                         >
                           <div className="min-w-0 pr-4 space-y-1">
                             <span className="text-sm font-semibold text-foreground truncate block">{acc.name}</span>
                             {acc.notes && <span className="text-[11px] text-muted-foreground/80 block truncate max-w-[200px]">{acc.notes}</span>}
                             {isCreditCard && acc.dueDate && (
                               <div className="flex flex-wrap gap-1 mt-1 select-none">
-                                <span className="inline-flex items-center gap-0.5 bg-warning/10 text-warning px-1.5 py-0.5 rounded border border-warning/10 text-[9px] font-bold">
+                                <span className="inline-flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 text-[9px] font-bold">
                                   📅 Due Day: {acc.dueDate}th
                                 </span>
                               </div>
@@ -339,7 +443,7 @@ export default function AccountsPage() {
                                       </span>
                                     </div>
                                     <div className="min-w-[70px]">
-                                      <span className="text-sm font-bold text-warning block">
+                                      <span className="text-sm font-bold text-muted-foreground block">
                                         {formatVal(cc.outstanding)}
                                       </span>
                                     </div>
@@ -539,6 +643,124 @@ export default function AccountsPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Reorder Accounts & Groups Modal */}
+      <Modal
+        isOpen={isReorderModalOpen}
+        onClose={() => setIsReorderModalOpen(false)}
+        title="Modify Display Order"
+        description="Reorder account groups or individual accounts"
+      >
+        <div className="space-y-4">
+          {/* Tab Switcher */}
+          <div className="flex bg-secondary/80 p-1 rounded-xl border border-border/60">
+            <button
+              onClick={() => setReorderTab('groups')}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
+                reorderTab === 'groups'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              📂 Account Groups
+            </button>
+            <button
+              onClick={() => setReorderTab('accounts')}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
+                reorderTab === 'accounts'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              💳 Accounts List
+            </button>
+          </div>
+
+          {/* Groups Reorder Tab */}
+          {reorderTab === 'groups' && (
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1 select-scrollbar">
+              {Object.entries(groupedAccounts.groups).map(([key, group], idx, arr) => {
+                const GroupIcon = group.icon;
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between p-3 bg-secondary/60 border border-border/40 rounded-xl"
+                  >
+                    <div className="flex items-center gap-2">
+                      <GroupIcon size={16} className={group.color} />
+                      <span className="text-sm font-bold text-foreground">{group.name}</span>
+                    </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      disabled={idx === 0}
+                      onClick={() => moveGroup(idx, 'up')}
+                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted/40 disabled:opacity-30 disabled:pointer-events-none transition"
+                      title="Move Up"
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button
+                      disabled={idx === arr.length - 1}
+                      onClick={() => moveGroup(idx, 'down')}
+                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted/40 disabled:opacity-30 disabled:pointer-events-none transition"
+                      title="Move Down"
+                    >
+                      <ArrowDown size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            </div>
+          )}
+
+          {/* Individual Accounts Reorder Tab */}
+          {reorderTab === 'accounts' && (
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1 select-scrollbar">
+              {accounts.map((acc, idx) => (
+                <div
+                  key={acc.id}
+                  className="flex items-center justify-between p-3 bg-secondary/60 border border-border/40 rounded-xl"
+                >
+                  <div className="min-w-0 pr-2">
+                    <div className="text-sm font-bold text-foreground truncate">{acc.name}</div>
+                    <div className="text-[10px] text-muted-foreground capitalize mt-0.5">
+                      {acc.category || acc.type} • ₹{acc.balance.toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      disabled={idx === 0}
+                      onClick={() => moveAccount(acc.id, 'up')}
+                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted/40 disabled:opacity-30 disabled:pointer-events-none transition"
+                      title="Move Up"
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button
+                      disabled={idx === accounts.length - 1}
+                      onClick={() => moveAccount(acc.id, 'down')}
+                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted/40 disabled:opacity-30 disabled:pointer-events-none transition"
+                      title="Move Down"
+                    >
+                      <ArrowDown size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="pt-2">
+            <button
+              onClick={() => setIsReorderModalOpen(false)}
+              className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-bold uppercase tracking-wider text-xs shadow-sm hover:brightness-110 active:scale-95 transition"
+            >
+              Done Reordering
+            </button>
+          </div>
+        </div>
       </Modal>
     </AppLayout>
   );

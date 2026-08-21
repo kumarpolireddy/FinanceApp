@@ -1437,11 +1437,11 @@ function TransactionsPageContent() {
               <select
                 value={selectedMonth}
                 onChange={(e) => updateDate(parseInt(e.target.value, 10), selectedYear)}
-                className="h-9 text-base bg-transparent border-0 px-1 font-normal uppercase appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
+                className="h-9 text-lg bg-transparent border-0 px-1 font-normal uppercase appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
                 aria-label="Select Month"
               >
                 {MONTH_NAMES.map((m, i) => (
-                  <option key={m} value={i} className="bg-popover text-popover-foreground uppercase text-xs font-normal">
+                  <option key={m} value={i} className="bg-popover text-popover-foreground uppercase text-sm font-normal">
                     {m.slice(0, 3)}
                   </option>
                 ))}
@@ -1453,11 +1453,11 @@ function TransactionsPageContent() {
               <select
                 value={selectedYear}
                 onChange={(e) => updateDate(selectedMonth, parseInt(e.target.value, 10))}
-                className="h-9 text-base bg-transparent border-0 px-1 font-normal appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
+                className="h-9 text-lg bg-transparent border-0 px-1 font-normal appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
                 aria-label="Select Year"
               >
                 {availableYears.map((y) => (
-                  <option key={y} value={y} className="bg-popover text-popover-foreground text-xs font-normal">
+                  <option key={y} value={y} className="bg-popover text-popover-foreground text-sm font-normal">
                     {y}
                   </option>
                 ))}
@@ -1475,7 +1475,7 @@ function TransactionsPageContent() {
             <button
               onClick={goToToday}
               disabled={selectedMonth === now.getMonth() && selectedYear === now.getFullYear()}
-              className="h-8 px-2 bg-transparent text-primary hover:text-primary/80 disabled:text-muted-foreground/40 disabled:opacity-40 disabled:cursor-not-allowed font-extrabold text-xs transition duration-150 flex items-center gap-1 active:scale-95 shrink-0"
+              className="h-8 px-2 bg-transparent text-primary hover:text-primary/80 disabled:text-muted-foreground/40 disabled:opacity-40 disabled:cursor-not-allowed font-extrabold text-sm transition duration-150 flex items-center gap-1 active:scale-95 shrink-0"
             >
               Today
             </button>
@@ -1486,7 +1486,7 @@ function TransactionsPageContent() {
               <>
                 <button 
                   onClick={handleOpenEditAccount}
-                  className="p-1.5 rounded-md transition border border-transparent text-primary hover:bg-primary/10 active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+                  className="p-1.5 rounded-md transition border border-transparent text-primary hover:bg-primary/10 active:scale-95 flex items-center gap-1 text-xs font-bold"
                   title="Edit Account Details"
                 >
                   <Edit3 size={14} />
@@ -1526,20 +1526,20 @@ function TransactionsPageContent() {
         <div className="bg-secondary p-3 rounded-lg border border-border space-y-2.5 animate-slide-up">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div>
-              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Search description</label>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Search description</label>
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full text-xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
+                className="w-full text-sm bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Account</label>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Account</label>
               <select
                 value={accountFilter}
                 onChange={(e) => setAccountFilter(e.target.value)}
-                className="w-full text-xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
+                className="w-full text-sm bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="all">All Accounts</option>
                 {accounts.map(acc => (
@@ -1548,11 +1548,11 @@ function TransactionsPageContent() {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Category</label>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Category</label>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full text-xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
+                className="w-full text-sm bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="all">All Categories</option>
                 {filterCategories.map(cat => (
@@ -1568,7 +1568,7 @@ function TransactionsPageContent() {
                 <button
                   key={t}
                   onClick={() => handleTypeFilterChange(t)}
-                  className={`px-2 py-1 text-2xs font-bold uppercase rounded transition ${
+                  className={`px-2 py-1 text-xs font-bold uppercase rounded transition ${
                     typeFilter === t
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-background text-muted-foreground hover:text-foreground'
@@ -1586,7 +1586,7 @@ function TransactionsPageContent() {
                 setTypeFilter('all');
                 toast.success('Filters cleared');
               }}
-              className="text-2xs font-bold text-primary uppercase tracking-wider px-2 py-1 bg-background hover:bg-muted/30 rounded border border-border"
+              className="text-xs font-bold text-primary uppercase tracking-wider px-2 py-1 bg-background hover:bg-muted/30 rounded border border-border"
             >
               Reset
             </button>
@@ -1682,7 +1682,7 @@ function TransactionsPageContent() {
                 setActiveTab(tab);
                 if (tab !== 'calendar') setSelectedCalendarDay(null);
               }}
-              className={`flex-1 min-w-[70px] text-center py-2 text-xs font-bold uppercase tracking-wider transition border-b-2 shrink-0 ${
+              className={`flex-1 min-w-[70px] text-center py-2 text-sm font-bold uppercase tracking-wider transition border-b-2 shrink-0 ${
                 activeTab === tab 
                   ? 'border-white text-white font-black' 
                   : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -1695,18 +1695,18 @@ function TransactionsPageContent() {
       </div>
 
       {/* 3. Transaction Summary Banner */}
-      <div className="grid grid-cols-3 bg-secondary/35 py-2 rounded-md border border-border/30 text-center font-mono tabular-nums text-xs">
+      <div className="grid grid-cols-3 bg-secondary/35 py-2 rounded-md border border-border/30 text-center font-mono tabular-nums text-sm">
         <div>
-          <span className="text-[11px] font-semibold text-muted-foreground uppercase block">Income</span>
-          <span className="text-sm font-bold text-positive block mt-0.5">{formatVal(totals.income)}</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase block">Income</span>
+          <span className="text-base font-bold text-positive block mt-0.5">{formatVal(totals.income)}</span>
         </div>
         <div className="border-x border-border/30">
-          <span className="text-[11px] font-semibold text-muted-foreground uppercase block">Expenses</span>
-          <span className="text-sm font-bold text-negative block mt-0.5">{formatVal(totals.expense)}</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase block">Expenses</span>
+          <span className="text-base font-bold text-negative block mt-0.5">{formatVal(totals.expense)}</span>
         </div>
         <div>
-          <span className="text-[11px] font-semibold text-muted-foreground uppercase block">Net</span>
-          <span className={`text-sm font-bold block mt-0.5 ${totals.net >= 0 ? 'text-positive' : 'text-negative'}`}>
+          <span className="text-xs font-semibold text-muted-foreground uppercase block">Net</span>
+          <span className={`text-base font-bold block mt-0.5 ${totals.net >= 0 ? 'text-positive' : 'text-negative'}`}>
             {totals.net >= 0 ? '+' : ''}{formatVal(totals.net)}
           </span>
         </div>
@@ -1730,7 +1730,7 @@ function TransactionsPageContent() {
             {activeTab === 'daily' && (
               <div className="space-y-4">
                 {groupedDailyTransactions.length === 0 ? (
-                  <p className="text-center text-xs text-muted-foreground py-10 font-medium">No records found for this period.</p>
+                  <p className="text-center text-sm text-muted-foreground py-10 font-medium">No records found for this period.</p>
                 ) : (() => {
                   const seenTripIds = new Set<string>();
                   return groupedDailyTransactions.map((group) => {
@@ -1742,13 +1742,13 @@ function TransactionsPageContent() {
                         {/* Day Group Header */}
                         <div className="flex items-center justify-between pb-2 border-b border-border/40">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-lg font-bold text-white leading-none">{day}</span>
-                            <span className="text-[10px] font-semibold uppercase text-white/80">{weekday}</span>
-                            <span className="text-xs text-muted-foreground font-normal">
+                            <span className="text-xl font-bold text-white leading-none">{day}</span>
+                            <span className="text-xs font-semibold uppercase text-white/80">{weekday}</span>
+                            <span className="text-sm text-muted-foreground font-normal">
                               {group.date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs font-semibold font-mono text-right">
+                          <div className="flex items-center gap-2 text-sm font-semibold font-mono text-right">
                             {group.incomeSum > 0 && <span className="text-positive">{formatVal(group.incomeSum)}</span>}
                             {group.expenseSum > 0 && <span className="text-negative">{formatVal(group.expenseSum)}</span>}
                           </div>
@@ -1815,16 +1815,16 @@ function TransactionsPageContent() {
                                 {/* Left: Notes / Category & Metadata */}
                                 <div className="flex-1 min-w-0 pr-2">
                                   <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-sm font-normal text-foreground truncate">
+                                    <span className="text-base font-normal text-foreground truncate">
                                       {title}
                                     </span>
                                     {txn.isSplit && (
-                                      <span className="text-[10px] font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase shrink-0 max-w-[180px] truncate">
+                                      <span className="text-xs font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase shrink-0 max-w-[180px] truncate">
                                         Split{txn.splitDetails?.members ? `: ${txn.splitDetails.members.map(m => m.name).filter(Boolean).join(', ')}` : ''}
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-[11px] font-normal text-muted-foreground truncate mt-0.5">
+                                  <div className="text-xs font-normal text-muted-foreground truncate mt-0.5">
                                     {metadata}
                                   </div>
                                 </div>
@@ -1833,7 +1833,7 @@ function TransactionsPageContent() {
                                 {isTrip && isFirstTripStartTxn && (
                                   <div className="px-3 shrink-0 text-center">
                                     <span 
-                                      className="text-xs font-bold max-w-[120px] truncate block"
+                                      className="text-sm font-bold max-w-[120px] truncate block"
                                       style={{ color: tripBgColor }}
                                     >
                                       {tripName}
@@ -1843,7 +1843,7 @@ function TransactionsPageContent() {
 
                                 {/* Right: Amount */}
                                 <div className="text-right font-mono tabular-nums shrink-0 ml-auto pl-1">
-                                  <span className={`text-sm font-bold block ${
+                                  <span className={`text-base font-bold block ${
                                     isTransfer 
                                       ? 'text-info' 
                                       : isIncome 
@@ -1854,7 +1854,7 @@ function TransactionsPageContent() {
                                   </span>
                                   {/* Running Balance */}
                                   {showBalances && (
-                                    <div className="text-[11px] text-muted-foreground/70 font-normal mt-0.5 animate-fade-in">
+                                    <div className="text-xs text-muted-foreground/70 font-normal mt-0.5 animate-fade-in">
                                       {(() => {
                                         const bal = transactionBalances[txn.id];
                                         if (!bal) return '';
@@ -1883,7 +1883,7 @@ function TransactionsPageContent() {
                 <div className="bg-secondary p-2.5 rounded-lg border border-border/80 flex flex-col h-[calc(100vh-270px)] min-h-[380px] md:h-[480px]">
                   <div className="grid grid-cols-7 text-center border-b border-border/50 pb-1.5 mb-1.5 flex-shrink-0">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <span key={day} className="text-2xs font-bold text-muted-foreground uppercase">{day}</span>
+                      <span key={day} className="text-xs font-bold text-muted-foreground uppercase">{day}</span>
                     ))}
                   </div>
                   <div className="grid grid-cols-7 gap-1 flex-1">
@@ -1903,11 +1903,11 @@ function TransactionsPageContent() {
                               : 'bg-transparent hover:bg-muted/20'
                           }`}
                         >
-                          <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-slate-300'}`}>
+                          <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-300'}`}>
                             {cell.day}
                           </span>
                           {hasActivity && (
-                            <div className="space-y-0.5 text-[9px] leading-tight font-mono text-right w-full mt-auto">
+                            <div className="space-y-0.5 text-[11px] leading-tight font-mono text-right w-full mt-auto">
                               {cell.income > 0 && <span className="text-positive block font-bold">+{cell.income >= 1000 ? `${(cell.income / 1000).toFixed(0)}k` : cell.income}</span>}
                               {cell.expense > 0 && <span className="text-negative block font-bold">-{cell.expense >= 1000 ? `${(cell.expense / 1000).toFixed(0)}k` : cell.expense}</span>}
                             </div>
@@ -1922,13 +1922,13 @@ function TransactionsPageContent() {
                 {selectedCalendarDay !== null && (
                   <div className="bg-secondary border border-border/80 rounded-xl p-3.5 space-y-2 shadow-xs">
                     <div className="flex justify-between items-center pb-2 border-b border-border/40">
-                      <span className="text-xs font-bold uppercase tracking-wider text-white">Transactions on Day {selectedCalendarDay}</span>
-                      <button onClick={() => setSelectedCalendarDay(null)} className="text-xs text-white/90 hover:text-white font-bold uppercase tracking-wider">Clear Selection</button>
+                      <span className="text-sm font-bold uppercase tracking-wider text-white">Transactions on Day {selectedCalendarDay}</span>
+                      <button onClick={() => setSelectedCalendarDay(null)} className="text-sm text-white/90 hover:text-white font-bold uppercase tracking-wider">Clear Selection</button>
                     </div>
                     
                     <div>
                       {selectedDayTransactions.length === 0 ? (
-                        <p className="text-center text-xs text-muted-foreground py-4 font-semibold">No transactions recorded on this day.</p>
+                        <p className="text-center text-sm text-muted-foreground py-4 font-semibold">No transactions recorded on this day.</p>
                       ) : (
                         selectedDayTransactions.map((txn) => {
                           const isIncome = txn.type === 'income';
@@ -1962,19 +1962,19 @@ function TransactionsPageContent() {
                                }`}
                              >
                                <div className="flex-1 min-w-0 pr-3">
-                                 <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
+                                 <div className="text-base font-semibold text-foreground truncate flex items-center gap-1.5">
                                    <span>{title}</span>
                                    {isTrip && (
-                                     <span className="text-[10px] font-bold text-amber-500 bg-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                                     <span className="text-xs font-bold text-amber-500 bg-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
                                        ✈️ Trip
                                      </span>
                                    )}
                                  </div>
-                                 <div className="text-[11px] font-medium text-muted-foreground truncate mt-0.5">
+                                 <div className="text-xs font-medium text-muted-foreground truncate mt-0.5">
                                    {metadata}
                                  </div>
                                </div>
-                               <span className={`font-mono text-sm font-bold shrink-0 ${isTransfer ? 'text-info' : isIncome ? 'text-positive' : 'text-negative'}`}>
+                               <span className={`font-mono text-base font-bold shrink-0 ${isTransfer ? 'text-info' : isIncome ? 'text-positive' : 'text-negative'}`}>
                                  {txn.amount.toLocaleString('en-IN')}
                                </span>
                              </div>
@@ -1989,8 +1989,8 @@ function TransactionsPageContent() {
 
             {/* MONTHLY TAB */}
             {activeTab === 'monthly' && (
-              <div className="space-y-2 animate-slide-up font-mono text-xs font-bold">
-                <div className="grid grid-cols-4 bg-secondary p-2 rounded-lg text-muted-foreground uppercase text-[10px] font-bold tracking-wider text-center border border-border/60">
+              <div className="space-y-2 animate-slide-up font-mono text-sm font-bold">
+                <div className="grid grid-cols-4 bg-secondary p-2 rounded-lg text-muted-foreground uppercase text-xs font-bold tracking-wider text-center border border-border/60">
                   <span className="text-left pl-2">Month</span>
                   <span>Income</span>
                   <span>Expense</span>
@@ -2009,10 +2009,10 @@ function TransactionsPageContent() {
                       }}
                       className="w-full grid grid-cols-4 bg-secondary/35 border border-border/40 hover:bg-secondary/60 p-2.5 rounded hover:border-primary/40 transition text-center items-center cursor-pointer"
                     >
-                      <span className="text-left text-foreground pl-2 text-xs">{row.name}</span>
-                      <span className="text-positive text-xs">+{row.income.toLocaleString('en-IN')}</span>
-                      <span className="text-negative text-xs">-{row.expense.toLocaleString('en-IN')}</span>
-                      <span className={`text-xs ${row.net >= 0 ? 'text-positive' : 'text-negative'}`}>
+                      <span className="text-left text-foreground pl-2 text-sm">{row.name}</span>
+                      <span className="text-positive text-sm">+{row.income.toLocaleString('en-IN')}</span>
+                      <span className="text-negative text-sm">-{row.expense.toLocaleString('en-IN')}</span>
+                      <span className={`text-sm ${row.net >= 0 ? 'text-positive' : 'text-negative'}`}>
                         {row.net >= 0 ? '+' : ''}{row.net.toLocaleString('en-IN')}
                       </span>
                     </button>
@@ -2023,18 +2023,18 @@ function TransactionsPageContent() {
 
             {/* TOTAL TAB */}
             {activeTab === 'total' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up text-sm">
                 
                 {/* Expenses Breakdown */}
                 <div className="bg-secondary/40 p-3 rounded-lg border border-border/60 space-y-2.5">
-                  <h3 className="text-xs font-bold text-negative uppercase tracking-wider pb-1.5 border-b border-border">Expenses Categories</h3>
+                  <h3 className="text-sm font-bold text-negative uppercase tracking-wider pb-1.5 border-b border-border">Expenses Categories</h3>
                   {categoryTotals.expenseList.length === 0 ? (
-                    <p className="text-center text-2xs text-muted-foreground py-6">No expenses in this period.</p>
+                    <p className="text-center text-xs text-muted-foreground py-6">No expenses in this period.</p>
                   ) : (
                     <div className="space-y-2.5">
                       {categoryTotals.expenseList.map(cat => (
                         <div key={`exp-${cat.name}`} className="space-y-1">
-                          <div className="flex justify-between items-center text-xs font-normal">
+                          <div className="flex justify-between items-center text-sm font-normal">
                             <span className="text-foreground">{cat.name} ({cat.count})</span>
                             <span className="font-mono font-normal text-negative">{formatVal(cat.amount)} ({cat.percentage}%)</span>
                           </div>
@@ -2049,14 +2049,14 @@ function TransactionsPageContent() {
 
                 {/* Income Breakdown */}
                 <div className="bg-secondary/40 p-3 rounded-lg border border-border/60 space-y-2.5">
-                  <h3 className="text-xs font-bold text-positive uppercase tracking-wider pb-1.5 border-b border-border">Income Categories</h3>
+                  <h3 className="text-sm font-bold text-positive uppercase tracking-wider pb-1.5 border-b border-border">Income Categories</h3>
                   {categoryTotals.incomeList.length === 0 ? (
-                    <p className="text-center text-2xs text-muted-foreground py-6">No income in this period.</p>
+                    <p className="text-center text-xs text-muted-foreground py-6">No income in this period.</p>
                   ) : (
                     <div className="space-y-2.5">
                       {categoryTotals.incomeList.map(cat => (
                         <div key={`inc-${cat.name}`} className="space-y-1">
-                          <div className="flex justify-between items-center text-xs font-normal">
+                          <div className="flex justify-between items-center text-sm font-normal">
                             <span className="text-foreground">{cat.name} ({cat.count})</span>
                             <span className="font-mono font-normal text-positive">{formatVal(cat.amount)} ({cat.percentage}%)</span>
                           </div>
@@ -2082,12 +2082,12 @@ function TransactionsPageContent() {
                       type="text"
                       value={noteSearch}
                       onChange={(e) => setNoteSearch(e.target.value)}
-                      className="w-full text-2xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none"
+                      className="w-full text-xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none"
                     />
                     {noteSearch && (
                       <button 
                         onClick={() => setNoteSearch('')}
-                        className="text-2xs font-bold text-primary px-2 uppercase"
+                        className="text-xs font-bold text-primary px-2 uppercase"
                       >
                         Clear
                       </button>
@@ -2100,7 +2100,7 @@ function TransactionsPageContent() {
                       setNoteContent('');
                       setIsGeneralNoteModalOpen(true);
                     }}
-                    className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/95 transition flex items-center gap-1.5 shrink-0"
+                    className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/95 transition flex items-center gap-1.5 shrink-0"
                   >
                     <Plus size={14} /> Add Note
                   </button>
@@ -2116,8 +2116,8 @@ function TransactionsPageContent() {
                   if (filteredNotes.length === 0) {
                     return (
                       <div className="text-center py-12 bg-[#0b0f1a]/40 border border-border/40 rounded-xl space-y-1">
-                        <p className="text-xs text-muted-foreground">No notes found.</p>
-                        <p className="text-2xs text-muted-foreground/60">Create a general budget checklist, shopping list, or plan.</p>
+                        <p className="text-sm text-muted-foreground">No notes found.</p>
+                        <p className="text-xs text-muted-foreground/60">Create a general budget checklist, shopping list, or plan.</p>
                       </div>
                     );
                   }
@@ -2131,12 +2131,12 @@ function TransactionsPageContent() {
                         >
                           <div className="space-y-1.5">
                             <div className="flex items-start justify-between">
-                              <h4 className="text-sm font-bold text-foreground">{note.title || 'Untitled Note'}</h4>
-                              <span className="text-3xs text-muted-foreground shrink-0 font-mono">
+                              <h4 className="text-base font-bold text-foreground">{note.title || 'Untitled Note'}</h4>
+                              <span className="text-2xs text-muted-foreground shrink-0 font-mono">
                                 {new Date(note.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
-                            <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{note.content}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{note.content}</p>
                           </div>
                           <div className="flex justify-end items-center gap-3 mt-4 pt-3 border-t border-border/40">
                             <button
@@ -2146,7 +2146,7 @@ function TransactionsPageContent() {
                                 setNoteContent(note.content);
                                 setIsGeneralNoteModalOpen(true);
                               }}
-                              className="text-2xs text-primary font-bold hover:underline"
+                              className="text-xs text-primary font-bold hover:underline"
                             >
                               Edit Note
                             </button>
@@ -2157,7 +2157,7 @@ function TransactionsPageContent() {
                                   toast.success('Note deleted');
                                 }
                               }}
-                              className="text-2xs text-negative font-bold hover:underline"
+                              className="text-xs text-negative font-bold hover:underline"
                             >
                               Delete
                             </button>
@@ -3029,13 +3029,13 @@ function TransactionsPageContent() {
         <>
           {/* Floating Action Bar */}
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-5 py-3 flex items-center gap-4 animate-slide-up text-foreground">
-            <span className="text-xs font-bold bg-primary/20 text-primary px-2.5 py-1 rounded-full">
+            <span className="text-sm font-bold bg-primary/20 text-primary px-2.5 py-1 rounded-full">
               {selectedTxnIds.length} Selected
             </span>
 
             <button
               onClick={handleSelectAll}
-              className="text-xs font-semibold hover:text-primary transition"
+              className="text-sm font-semibold hover:text-primary transition"
             >
               {selectedTxnIds.length === transactions.length ? 'Deselect All' : 'Select All'}
             </button>
@@ -3045,7 +3045,7 @@ function TransactionsPageContent() {
                 setIsSelectionMode(false);
                 setSelectedTxnIds([]);
               }}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition pl-2 border-l border-border/60"
+              className="text-sm font-semibold text-muted-foreground hover:text-foreground transition pl-2 border-l border-border/60"
             >
               Cancel
             </button>
