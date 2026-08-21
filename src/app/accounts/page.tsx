@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
-import { getAccounts, type Account, addAccount, getTransactions, type Transaction, calculateCreditCardBalances } from '@/lib/storage';
-import { Landmark, Wallet, CreditCard, ShieldAlert, ChevronDown, ChevronRight, Eye, EyeOff, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { getAccounts, type Account, addAccount, updateAccount, getTransactions, type Transaction, calculateCreditCardBalances } from '@/lib/storage';
+import { Landmark, Wallet, CreditCard, ShieldAlert, ChevronDown, ChevronRight, Eye, EyeOff, Plus, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
 
@@ -146,6 +146,140 @@ export default function AccountsPage() {
   const saveAccountOrder = (newOrder: string[]) => {
     setAccountOrderMap(newOrder);
     localStorage.setItem('wealthiq_account_item_order', JSON.stringify(newOrder));
+  };
+
+  // Group Rename state & long press timer
+  const [renameGroupTarget, setRenameGroupTarget] = useState<{ key: string; name: string } | null>(null);
+  const [renameGroupName, setRenameGroupName] = useState('');
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handlePressStart = (key: string, name: string) => {
+    longPressTimerRef.current = setTimeout(() => {
+      setRenameGroupTarget({ key, name });
+      setRenameGroupName(name);
+      toast.info(`Rename group: "${name}"`);
+    }, 500);
+  };
+
+  const handlePressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleRenameGroup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renameGroupTarget || !renameGroupName.trim()) return;
+
+    const oldName = renameGroupTarget.name;
+    const newName = renameGroupName.trim();
+
+    if (oldName === newName) {
+      setRenameGroupTarget(null);
+      return;
+    }
+
+    const groupToRename = groupedAccounts.groups[renameGroupTarget.key];
+    if (groupToRename && groupToRename.items.length > 0) {
+      groupToRename.items.forEach((acc) => {
+        updateAccount(acc.id, { category: newName });
+      });
+    }
+
+    const oldKey = renameGroupTarget.key;
+    const newKey = newName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+    if (groupOrder.includes(oldKey)) {
+      const newOrder = groupOrder.map((k) => (k === oldKey ? newKey : k));
+      saveGroupOrder(newOrder);
+    }
+
+    toast.success(`Renamed group to "${newName}"`);
+    setAccounts(getAccounts(true));
+    setRenameGroupTarget(null);
+  };
+
+  // Edit Account state & long press timer
+  const [editingAccountTarget, setEditingAccountTarget] = useState<Account | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editType, setEditType] = useState<Account['type']>('accounts');
+  const [editBalance, setEditBalance] = useState('0');
+  const [editNotes, setEditNotes] = useState('');
+  const [editCreditLimit, setEditCreditLimit] = useState('100000');
+  const [editBillingCycle, setEditBillingCycle] = useState('4');
+  const [editDueDate, setEditDueDate] = useState('25');
+  const [editMinPayment, setEditMinPayment] = useState('0');
+  const [editNotifyDays, setEditNotifyDays] = useState('3');
+  const [editInterestRate, setEditInterestRate] = useState('8.5');
+
+  const accountLongPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isAccountLongPressTriggered = useRef(false);
+
+  const openEditAccountModal = (acc: Account) => {
+    setEditingAccountTarget(acc);
+    setEditName(acc.name);
+    setEditType(acc.type || 'accounts');
+    setEditBalance(String(acc.balance || 0));
+    setEditNotes(acc.notes || '');
+    setEditCreditLimit(String(acc.creditLimit || 100000));
+    setEditBillingCycle(acc.billingCycle || '4');
+    setEditDueDate(acc.dueDate || '25');
+    setEditMinPayment(String(acc.minPayment || 0));
+    setEditNotifyDays(String(acc.notificationDaysBefore || 3));
+    setEditInterestRate(String(acc.interestRate || 8.5));
+  };
+
+  const handleAccountPressStart = (acc: Account) => {
+    isAccountLongPressTriggered.current = false;
+    accountLongPressTimerRef.current = setTimeout(() => {
+      isAccountLongPressTriggered.current = true;
+      openEditAccountModal(acc);
+      toast.info(`Editing account: "${acc.name}"`);
+    }, 500);
+  };
+
+  const handleAccountPressEnd = () => {
+    if (accountLongPressTimerRef.current) {
+      clearTimeout(accountLongPressTimerRef.current);
+      accountLongPressTimerRef.current = null;
+    }
+  };
+
+  const handleAccountClick = (accId: string) => {
+    if (isAccountLongPressTriggered.current) {
+      isAccountLongPressTriggered.current = false;
+      return;
+    }
+    router.push(`/transactions?account=${accId}`);
+  };
+
+  const handleSaveAccountEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAccountTarget || !editName.trim()) return;
+
+    const balanceNum = parseFloat(editBalance) || 0;
+    const updatedData: Partial<Account> = {
+      name: editName.trim(),
+      type: editType,
+      balance: balanceNum,
+      notes: editNotes.trim(),
+    };
+
+    if (editType === 'credit') {
+      updatedData.creditLimit = parseFloat(editCreditLimit) || 0;
+      updatedData.dueDate = editDueDate.trim();
+      updatedData.minPayment = parseFloat(editMinPayment) || 0;
+      updatedData.billingCycle = editBillingCycle.trim();
+      updatedData.notificationDaysBefore = parseInt(editNotifyDays, 10) || 3;
+    } else if (editType === 'loan') {
+      updatedData.interestRate = parseFloat(editInterestRate) || 0;
+    }
+
+    updateAccount(editingAccountTarget.id, updatedData);
+    toast.success(`Updated "${editName.trim()}"`);
+    setAccounts(getAccounts(true));
+    setAllTransactions(getTransactions(true));
+    setEditingAccountTarget(null);
   };
 
   const moveGroup = (index: number, direction: 'up' | 'down') => {
@@ -300,11 +434,10 @@ export default function AccountsPage() {
       <div className="w-full px-0 pt-3 pb-32 space-y-4">
         
         {/* Header Bar */}
-        <div className="px-3 sm:px-4">
-          <div className="flex items-center justify-between pb-3 border-b border-border/60">
+        <div className="px-2.5 sm:px-3">
+          <div className="flex items-center justify-between pb-2">
             <div>
               <h1 className="text-lg font-bold text-foreground">My Accounts</h1>
-              <p className="text-2xs text-muted-foreground mt-0.5">Balances across your money sources</p>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -337,22 +470,22 @@ export default function AccountsPage() {
         </div>
 
         {/* Net Worth Summary Banner */}
-        <div className="w-full py-3.5 px-4 bg-secondary text-center font-mono tabular-nums space-y-3">
-          <div className="grid grid-cols-2 divide-x divide-border/60">
+        <div className="w-full py-3.5 px-0.5 bg-secondary text-center font-mono tabular-nums">
+          <div className="grid grid-cols-3 divide-x divide-border/60">
             <div>
               <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide block">Total Assets</span>
-              <span className="text-base font-bold text-positive block mt-1">{formatVal(groupedAccounts.totalAssets)}</span>
+              <span className="text-sm sm:text-base font-bold text-positive block mt-1">{formatVal(groupedAccounts.totalAssets)}</span>
             </div>
             <div>
               <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide block">Liabilities</span>
-              <span className="text-base font-bold text-negative block mt-1">{formatVal(groupedAccounts.totalLiabilities)}</span>
+              <span className="text-sm sm:text-base font-bold text-negative block mt-1">{formatVal(groupedAccounts.totalLiabilities)}</span>
             </div>
-          </div>
-          <div className="border-t border-border/55 pt-2 flex items-center justify-between px-2">
-            <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide">Net Worth</span>
-            <span className={`text-xl font-bold ${groupedAccounts.netWorth >= 0 ? 'text-positive' : 'text-negative'}`}>
-              {formatVal(groupedAccounts.netWorth)}
-            </span>
+            <div>
+              <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide block">Net Worth</span>
+              <span className={`text-sm sm:text-base font-bold block mt-1 ${groupedAccounts.netWorth >= 0 ? 'text-positive' : 'text-negative'}`}>
+                {formatVal(groupedAccounts.netWorth)}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -365,12 +498,18 @@ export default function AccountsPage() {
             const isCollapsed = collapsedSections[key];
 
             return (
-              <div key={key} className="overflow-hidden text-xs bg-secondary p-3.5 sm:p-4 space-y-2">
+              <div key={key} className="overflow-hidden text-xs space-y-2">
                 
-                {/* Section Header */}
+                {/* Section Header (No grey background, borderless with long press & edit icon) */}
                 <div 
                   onClick={() => toggleSection(key)}
-                  className={`flex justify-between items-center px-1 py-2 cursor-pointer hover:bg-muted/20 rounded-lg transition select-none ${!isCollapsed ? 'pb-2.5 border-b border-border/40' : ''}`}
+                  onTouchStart={() => handlePressStart(key, group.name)}
+                  onTouchEnd={handlePressEnd}
+                  onTouchMove={handlePressEnd}
+                  onMouseDown={() => handlePressStart(key, group.name)}
+                  onMouseUp={handlePressEnd}
+                  onMouseLeave={handlePressEnd}
+                  className={`flex justify-between items-center px-2 py-2 cursor-pointer hover:bg-muted/20 rounded-lg transition select-none ${!isCollapsed ? 'pb-1' : ''}`}
                 >
                   <div className="flex items-center gap-1.5 flex-shrink-0 min-w-0">
                     <Icon size={16} className={group.color} />
@@ -409,16 +548,22 @@ export default function AccountsPage() {
                   </div>
                 </div>
 
-                {/* Account Rows */}
+                {/* Account Rows (Tripled left indentation under group header) */}
                 {!isCollapsed && (
-                  <div className="pt-1 space-y-0.5">
+                  <div className="bg-secondary py-1.5 pl-10 sm:pl-12 pr-2 sm:pr-3 space-y-0.5">
                     {group.items.map((acc) => {
                       const isCreditCard = key === 'credit';
                       return (
                         <div 
                           key={acc.id}
-                          onClick={() => router.push(`/transactions?account=${acc.id}`)}
-                          className="flex justify-between items-center px-2 py-3 hover:bg-muted/30 transition cursor-pointer"
+                          onClick={() => handleAccountClick(acc.id)}
+                          onTouchStart={() => handleAccountPressStart(acc)}
+                          onTouchEnd={handleAccountPressEnd}
+                          onTouchMove={handleAccountPressEnd}
+                          onMouseDown={() => handleAccountPressStart(acc)}
+                          onMouseUp={handleAccountPressEnd}
+                          onMouseLeave={handleAccountPressEnd}
+                          className="flex justify-between items-center px-0.5 py-2.5 hover:bg-muted/30 transition cursor-pointer"
                         >
                           <div className="min-w-0 pr-4 space-y-1">
                             <span className="text-sm font-semibold text-foreground truncate block">{acc.name}</span>
@@ -761,6 +906,213 @@ export default function AccountsPage() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Rename Account Group Modal */}
+      <Modal
+        isOpen={!!renameGroupTarget}
+        onClose={() => setRenameGroupTarget(null)}
+        title="Rename Account Group"
+      >
+        <form onSubmit={handleRenameGroup} className="space-y-4 font-semibold text-sm">
+          <div>
+            <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Group Name *
+            </label>
+            <input
+              type="text"
+              required
+              autoFocus
+              value={renameGroupName}
+              onChange={(e) => setRenameGroupName(e.target.value)}
+              className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setRenameGroupTarget(null)}
+              className="flex-1 bg-secondary text-foreground hover:bg-secondary/70 border border-border px-4 py-2.5 rounded-lg text-xs font-bold transition uppercase tracking-wider active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary-light px-4 py-2.5 rounded-lg text-xs font-black transition uppercase tracking-wider shadow-sm active:scale-95"
+            >
+              Save Name
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Account Modal */}
+      <Modal
+        isOpen={!!editingAccountTarget}
+        onClose={() => setEditingAccountTarget(null)}
+        title="Edit Account Details"
+      >
+        <form onSubmit={handleSaveAccountEdit} className="space-y-5 text-sm font-semibold">
+          <div>
+            <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Account Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                Account Type
+              </label>
+              <div className="relative">
+                <select
+                  value={editType}
+                  onChange={(e) => setEditType(e.target.value as any)}
+                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary transition font-bold"
+                >
+                  <option value="accounts">🏦 Bank Account</option>
+                  <option value="cash">💵 Cash Account</option>
+                  <option value="credit">💳 Credit Card</option>
+                  <option value="loan">📉 Loan Account</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none opacity-60" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                Base Balance (₹)
+              </label>
+              <input
+                type="number"
+                step="any"
+                value={editBalance}
+                onChange={(e) => setEditBalance(e.target.value)}
+                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+              />
+            </div>
+          </div>
+
+          {editType === 'credit' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Credit Limit (₹)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={editCreditLimit}
+                  onChange={(e) => setEditCreditLimit(e.target.value)}
+                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Cycle Start Day
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={editBillingCycle}
+                    onChange={(e) => setEditBillingCycle(e.target.value)}
+                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Due Day (1-31)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Min Payment (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={editMinPayment}
+                    onChange={(e) => setEditMinPayment(e.target.value)}
+                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Notify Me X Days Before Due Date
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={editNotifyDays}
+                  onChange={(e) => setEditNotifyDays(e.target.value)}
+                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                />
+              </div>
+            </div>
+          )}
+
+          {editType === 'loan' && (
+            <div>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                Interest Rate (% p.a.)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={editInterestRate}
+                onChange={(e) => setEditInterestRate(e.target.value)}
+                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Notes / Description
+            </label>
+            <textarea
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              rows={2}
+              className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-medium"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setEditingAccountTarget(null)}
+              className="flex-1 bg-secondary text-foreground hover:bg-secondary/70 border border-border px-4 py-2.5 rounded-lg text-xs font-bold transition uppercase tracking-wider active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary-light px-4 py-2.5 rounded-lg text-xs font-black transition uppercase tracking-wider shadow-sm active:scale-95"
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
       </Modal>
     </AppLayout>
   );

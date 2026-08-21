@@ -98,24 +98,24 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="bg-card border border-border rounded-2xl p-4 shadow-md">
-          {/* Weekdays */}
-          <div className="grid grid-cols-7 text-center gap-2 mb-3 border-b border-border/60 pb-3">
+        {/* Table-like Calendar Grid */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-md">
+          {/* Weekdays Header */}
+          <div className="grid grid-cols-7 text-center border-b border-border bg-[#0b0f1a]/80 divide-x divide-border/60">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((w, idx) => (
               <span 
                 key={w} 
-                className={`text-2xs font-extrabold uppercase ${idx === 0 ? 'text-negative' : idx === 6 ? 'text-primary' : 'text-muted-foreground'}`}
+                className={`py-2.5 text-2xs font-extrabold uppercase ${idx === 0 ? 'text-negative' : idx === 6 ? 'text-primary' : 'text-muted-foreground'}`}
               >
                 {w}
               </span>
             ))}
           </div>
 
-          {/* Days */}
-          <div className="grid grid-cols-7 gap-3">
+          {/* Days Grid Cells */}
+          <div className="grid grid-cols-7">
             {calendarDays.map((cell, idx) => {
-              if (!cell) return <div key={`empty-${idx}`} className="min-h-[70px]"></div>;
+              if (!cell) return <div key={`empty-${idx}`} className="min-h-[75px] bg-muted/5 border-r border-b border-border/60"></div>;
               
               const isSelected = selectedDay === cell.day;
               const hasValues = cell.income > 0 || cell.expense > 0;
@@ -124,10 +124,10 @@ export default function CalendarPage() {
                 <div
                   key={`day-${cell.day}`}
                   onClick={() => setSelectedDay(cell.day)}
-                  className={`min-h-[75px] rounded-xl flex flex-col justify-between p-2 cursor-pointer border transition-all ${
+                  className={`min-h-[75px] flex flex-col justify-between p-2 cursor-pointer border-r border-b border-border/70 transition-all ${
                     isSelected 
-                      ? 'bg-primary/10 border-primary shadow-sm shadow-primary/10' 
-                      : 'border-border/60 hover:bg-muted/10'
+                      ? 'bg-primary/20 font-bold' 
+                      : 'bg-background/40 hover:bg-muted/20'
                   }`}
                 >
                   <span className={`text-xs font-black ${

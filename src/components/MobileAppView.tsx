@@ -951,10 +951,10 @@ export default function MobileAppView() {
         {/* 2. CALENDAR VIEW */}
         {activeTab === 'calendar' && (
           <div className="space-y-4">
-            {/* Calendar Grid Container */}
-            <div className="mx-4 bg-card border border-border rounded-xl p-3 shadow-sm">
+            {/* Table-like Calendar Grid Container */}
+            <div className="mx-4 bg-card border border-border rounded-xl overflow-hidden shadow-sm">
               {/* Weekday Headers */}
-              <div className="grid grid-cols-7 text-center gap-1 mb-2 border-b border-border pb-2">
+              <div className="grid grid-cols-7 text-center border-b border-border bg-[#0b0f1a]/80 divide-x divide-border/60 py-2">
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((w, idx) => (
                   <span 
                     key={w} 
@@ -965,9 +965,9 @@ export default function MobileAppView() {
                 ))}
               </div>
               {/* Calendar cells */}
-              <div className="grid grid-cols-7 gap-y-2 gap-x-1 select-none">
+              <div className="grid grid-cols-7 select-none">
                 {calendarDays.map((cell, idx) => {
-                  if (!cell) return <div key={`empty-${idx}`} className="h-10"></div>;
+                  if (!cell) return <div key={`empty-${idx}`} className="h-11 bg-muted/5 border-r border-b border-border/60"></div>;
                   
                   const isSelected = selectedCalendarDay === cell.day;
                   const hasValues = cell.income > 0 || cell.expense > 0;
@@ -976,10 +976,10 @@ export default function MobileAppView() {
                     <div
                       key={`day-${cell.day}`}
                       onClick={() => setSelectedCalendarDay(cell.day)}
-                      className={`h-11 rounded-lg flex flex-col justify-between p-1 cursor-pointer transition border-0 ${
+                      className={`h-11 border-r border-b border-border/70 flex flex-col justify-between p-1 cursor-pointer transition ${
                         isSelected 
                           ? 'bg-primary/20 text-primary font-bold' 
-                          : 'hover:bg-muted/10'
+                          : 'bg-background/40 hover:bg-muted/20'
                       }`}
                     >
                       <span className={`text-3xs font-extrabold ${

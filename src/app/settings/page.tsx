@@ -27,10 +27,10 @@ import { Edit2, Trash2, Archive, Eye, EyeOff, Plus, TrendingUp, TrendingDown, Ch
 import { CategorySettingsInner } from '@/app/categories/components/CategorySettingsInner';
 
 const ACCOUNT_TYPES: { value: Account['type']; label: string; icon: string; color: string }[] = [
-  { value: 'accounts', label: 'Main Account (Bank/Savings)', icon: '', color: '#3b82f6' },
-  { value: 'cash', label: 'Cash Account (Cash/Wallet)', icon: '', color: '#22c55e' },
-  { value: 'credit', label: 'Credit Card Account', icon: '', color: '#f97316' },
-  { value: 'loan', label: 'Loan Account (Liability)', icon: '', color: '#ef4444' },
+  { value: 'accounts', label: 'Bank Accounts', icon: '', color: '#3b82f6' },
+  { value: 'cash', label: 'Cash', icon: '', color: '#22c55e' },
+  { value: 'credit', label: 'Credit Cards', icon: '', color: '#f97316' },
+  { value: 'loan', label: 'Loans', icon: '', color: '#ef4444' },
 ];
 
 const PRESET_EMOJIS: string[] = [];
@@ -716,6 +716,7 @@ export default function SettingsPage() {
     const payload: Partial<Account> = {
       name: (accountForm.name || '').trim(),
       type: accountForm.type,
+      category: accountForm.type === 'accounts' ? 'Bank Accounts' : accountForm.type === 'cash' ? 'Cash' : accountForm.type === 'credit' ? 'Credit Cards' : 'Loans',
       balance: balanceVal,
       color: accountForm.color,
       visible: accountForm.visible,
@@ -1186,10 +1187,10 @@ export default function SettingsPage() {
                   className="w-full rounded-xl border border-border bg-[#0b0f1a] px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary transition font-medium"
                 >
                   <option value="all">All Types</option>
-                  <option value="accounts">Main Account</option>
-                  <option value="cash">Cash Account</option>
-                  <option value="credit">Credit Card</option>
-                  <option value="loan">Loan Account</option>
+                  <option value="accounts">Bank Accounts</option>
+                  <option value="cash">Cash</option>
+                  <option value="credit">Credit Cards</option>
+                  <option value="loan">Loans</option>
                 </select>
               </div>
 
@@ -1950,7 +1951,7 @@ export default function SettingsPage() {
                 >
                   <div className="flex-1 min-w-0 pr-2">
                     <h3 className="text-xs font-black text-foreground tracking-wider flex flex-wrap items-baseline gap-1.5 uppercase leading-tight">
-                      <span>MAIN ACCOUNTS</span>
+                      <span>BANK ACCOUNTS</span>
                       <span className="text-2xs font-extrabold text-primary font-mono whitespace-nowrap">
                         (₹{getCategoryAggregateTotal('accounts').toLocaleString('en-IN')})
                       </span>
@@ -2166,7 +2167,7 @@ export default function SettingsPage() {
                 >
                   <div className="flex-1 min-w-0 pr-2">
                     <h3 className="text-xs font-black text-foreground tracking-wider flex flex-wrap items-baseline gap-1.5 uppercase leading-tight">
-                      <span>CASH ACCOUNTS</span>
+                      <span>CASH</span>
                       <span className="text-2xs font-extrabold text-positive font-mono whitespace-nowrap">
                         (₹{getCategoryAggregateTotal('cash').toLocaleString('en-IN')})
                       </span>
@@ -2682,7 +2683,7 @@ export default function SettingsPage() {
                 >
                   <div className="flex-1 min-w-0 pr-2">
                     <h3 className="text-xs font-black text-foreground tracking-wider flex flex-wrap items-baseline gap-1.5 uppercase leading-tight">
-                      <span>LOAN ACCOUNTS</span>
+                      <span>LOANS</span>
                       <span className="text-2xs font-extrabold text-negative font-mono whitespace-nowrap">
                         (₹{getCategoryAggregateTotal('loan').toLocaleString('en-IN')} Outstanding)
                       </span>

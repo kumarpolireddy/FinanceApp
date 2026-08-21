@@ -514,12 +514,6 @@ function TransactionsPageContent() {
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
-    const rect = e.currentTarget.getBoundingClientRect();
-    const relativeX = touch.clientX - rect.left;
-    if (relativeX < 80) {
-      setTouchStart(null);
-      return;
-    }
     setTouchStart({ x: touch.clientX, y: touch.clientY });
   }, []);
 
@@ -531,23 +525,25 @@ function TransactionsPageContent() {
     const diffX = touch.clientX - touchStart.x;
     const diffY = touch.clientY - touchStart.y;
     
-    // We only trigger if the swipe is horizontal and exceeds threshold
-    const minSwipeDistance = 60;
+    // Trigger if swipe is horizontal and exceeds distance
+    const minSwipeDistance = 50;
     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
       if (activeTab === 'monthly') {
         if (diffX < 0) {
           // Swiped Left: show next year
-          updateDate(selectedMonth, selectedYear + 1);
+          const nextY = selectedYear + 1;
+          updateDate(selectedMonth, nextY);
         } else {
           // Swiped Right: show previous year
-          updateDate(selectedMonth, selectedYear - 1);
+          const prevY = selectedYear - 1;
+          updateDate(selectedMonth, prevY);
         }
       } else {
         if (diffX < 0) {
           // Swiped Left: show next month
           shiftMonth(1);
         } else {
-          // Swiped Right: show before month (previous month)
+          // Swiped Right: show previous month
           shiftMonth(-1);
         }
       }
@@ -1424,53 +1420,93 @@ function TransactionsPageContent() {
       <div className="px-3.5 md:px-0">
         <div className="flex items-center justify-between py-1 bg-transparent border-b border-border/40">
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => shiftMonth(-1)}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
-              aria-label="Previous Month"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            
-            {/* Month select dropdown */}
-            <div className="relative inline-block">
-              <select
-                value={selectedMonth}
-                onChange={(e) => updateDate(parseInt(e.target.value, 10), selectedYear)}
-                className="h-9 text-lg bg-transparent border-0 px-1 font-normal uppercase appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
-                aria-label="Select Month"
-              >
-                {MONTH_NAMES.map((m, i) => (
-                  <option key={m} value={i} className="bg-popover text-popover-foreground uppercase text-sm font-normal">
-                    {m.slice(0, 3)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {activeTab === 'monthly' ? (
+              <>
+                <button 
+                  onClick={() => updateDate(selectedMonth, selectedYear - 1)}
+                  className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
+                  aria-label="Previous Year"
+                  title="Previous Year"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                
+                {/* Year select dropdown only when monthly tab is active */}
+                <div className="relative inline-block">
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => updateDate(selectedMonth, parseInt(e.target.value, 10))}
+                    className="h-9 text-lg bg-transparent border-0 px-1 font-black appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
+                    aria-label="Select Year"
+                  >
+                    {availableYears.map((y) => (
+                      <option key={y} value={y} className="bg-popover text-popover-foreground text-sm font-normal">
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Year select dropdown */}
-            <div className="relative inline-block">
-              <select
-                value={selectedYear}
-                onChange={(e) => updateDate(selectedMonth, parseInt(e.target.value, 10))}
-                className="h-9 text-lg bg-transparent border-0 px-1 font-normal appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
-                aria-label="Select Year"
-              >
-                {availableYears.map((y) => (
-                  <option key={y} value={y} className="bg-popover text-popover-foreground text-sm font-normal">
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <button 
+                  onClick={() => updateDate(selectedMonth, selectedYear + 1)}
+                  className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
+                  aria-label="Next Year"
+                  title="Next Year"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => shiftMonth(-1)}
+                  className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
+                  aria-label="Previous Month"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                
+                {/* Month select dropdown */}
+                <div className="relative inline-block">
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => updateDate(parseInt(e.target.value, 10), selectedYear)}
+                    className="h-9 text-lg bg-transparent border-0 px-1 font-normal uppercase appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
+                    aria-label="Select Month"
+                  >
+                    {MONTH_NAMES.map((m, i) => (
+                      <option key={m} value={i} className="bg-popover text-popover-foreground uppercase text-sm font-normal">
+                        {m.slice(0, 3)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <button 
-              onClick={() => shiftMonth(1)}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
-              aria-label="Next Month"
-            >
-              <ChevronRight size={18} />
-            </button>
+                {/* Year select dropdown */}
+                <div className="relative inline-block">
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => updateDate(selectedMonth, parseInt(e.target.value, 10))}
+                    className="h-9 text-lg bg-transparent border-0 px-1 font-normal appearance-none cursor-pointer text-foreground hover:text-primary focus:outline-none transition-all duration-150"
+                    aria-label="Select Year"
+                  >
+                    {availableYears.map((y) => (
+                      <option key={y} value={y} className="bg-popover text-popover-foreground text-sm font-normal">
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button 
+                  onClick={() => shiftMonth(1)}
+                  className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
+                  aria-label="Next Month"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </>
+            )}
 
             <button
               onClick={goToToday}
@@ -1597,15 +1633,7 @@ function TransactionsPageContent() {
       {/* Account Bar Graph Collapsible Panel */}
       {showAccountChart && accountFilter !== 'all' && (
         <div className="bg-secondary p-4 rounded-lg border border-border/80 space-y-3.5 animate-slide-up">
-          <div className="flex items-center justify-between border-b border-border/40 pb-2">
-            <div>
-              <h3 className="text-xs font-black text-foreground uppercase tracking-wider">
-                📊 {getAccountName(accountFilter)} Activity
-              </h3>
-              <p className="text-3xs text-muted-foreground mt-0.5 font-medium">
-                Income vs Expense breakdown for the selected period
-              </p>
-            </div>
+          <div className="flex items-center justify-end border-b border-border/40 pb-2">
             <div className="flex items-center gap-3 text-3xs font-semibold">
               <div className="flex items-center gap-1">
                 <div className="w-2.5 h-2.5 rounded-sm bg-positive" />
@@ -1712,8 +1740,12 @@ function TransactionsPageContent() {
         </div>
       </div>
 
-      {/* 4. Tab Views Contents */}
-      <div className="space-y-3 min-h-[300px]">
+      {/* 4. Tab Views Contents (Supports Swipe left/right for Daily, Calendar, Monthly tabs) */}
+      <div 
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="space-y-3 min-h-[300px]"
+      >
         {isLoading ? (
           <div className="space-y-2.5 py-4">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -1879,16 +1911,21 @@ function TransactionsPageContent() {
             {/* CALENDAR TAB */}
             {activeTab === 'calendar' && (
               <div className="space-y-4 animate-slide-up">
-                {/* Calendar Grid */}
-                <div className="bg-secondary p-2.5 rounded-lg border border-border/80 flex flex-col h-[calc(100vh-270px)] min-h-[380px] md:h-[480px]">
-                  <div className="grid grid-cols-7 text-center border-b border-border/50 pb-1.5 mb-1.5 flex-shrink-0">
+                {/* Table-like Calendar Grid */}
+                <div className="bg-secondary rounded-xl border border-border overflow-hidden shadow-sm flex flex-col h-[calc(100vh-270px)] min-h-[380px] md:h-[480px]">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-7 text-center border-b border-border bg-[#0b0f1a] divide-x divide-border/60 flex-shrink-0">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <span key={day} className="text-xs font-bold text-muted-foreground uppercase">{day}</span>
+                      <span key={day} className="py-2 text-xs font-bold text-muted-foreground uppercase">{day}</span>
                     ))}
                   </div>
-                  <div className="grid grid-cols-7 gap-1 flex-1">
+
+                  {/* Table Body Cells */}
+                  <div className="grid grid-cols-7 flex-1">
                     {calendarDays.map((cell, idx) => {
-                      if (!cell) return <div key={`empty-${idx}`} className="h-full opacity-0" />;
+                      if (!cell) {
+                        return <div key={`empty-${idx}`} className="h-full bg-muted/5 border-r border-b border-border/60" />;
+                      }
                       
                       const isSelected = selectedCalendarDay === cell.day;
                       const hasActivity = cell.income > 0 || cell.expense > 0;
@@ -1897,19 +1934,19 @@ function TransactionsPageContent() {
                         <button
                           key={`day-${cell.day}`}
                           onClick={() => setSelectedCalendarDay(isSelected ? null : cell.day)}
-                          className={`h-full rounded-lg flex flex-col justify-between p-1.5 transition text-left border-0 relative ${
+                          className={`h-full border-r border-b border-border/80 flex flex-col justify-between p-1.5 transition text-left relative ${
                             isSelected 
                               ? 'bg-primary/20 text-primary font-bold' 
-                              : 'bg-transparent hover:bg-muted/20'
+                              : 'bg-background/40 hover:bg-muted/30'
                           }`}
                         >
-                          <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-300'}`}>
+                          <span className={`text-xs sm:text-sm font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                             {cell.day}
                           </span>
                           {hasActivity && (
-                            <div className="space-y-0.5 text-[11px] leading-tight font-mono text-right w-full mt-auto">
-                              {cell.income > 0 && <span className="text-positive block font-bold">+{cell.income >= 1000 ? `${(cell.income / 1000).toFixed(0)}k` : cell.income}</span>}
-                              {cell.expense > 0 && <span className="text-negative block font-bold">-{cell.expense >= 1000 ? `${(cell.expense / 1000).toFixed(0)}k` : cell.expense}</span>}
+                            <div className="space-y-0.5 text-[10px] sm:text-[11px] leading-tight font-mono text-right w-full mt-auto">
+                              {cell.income > 0 && <span className="text-positive block font-extrabold">+{cell.income >= 1000 ? `${(cell.income / 1000).toFixed(0)}k` : cell.income}</span>}
+                              {cell.expense > 0 && <span className="text-negative block font-extrabold">-{cell.expense >= 1000 ? `${(cell.expense / 1000).toFixed(0)}k` : cell.expense}</span>}
                             </div>
                           )}
                         </button>
@@ -1989,7 +2026,12 @@ function TransactionsPageContent() {
 
             {/* MONTHLY TAB */}
             {activeTab === 'monthly' && (
-              <div className="space-y-2 animate-slide-up font-mono text-sm font-bold">
+              <div 
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                className="space-y-2 animate-slide-up font-mono text-sm font-bold select-none"
+              >
+
                 <div className="grid grid-cols-4 bg-secondary p-2 rounded-lg text-muted-foreground uppercase text-xs font-bold tracking-wider text-center border border-border/60">
                   <span className="text-left pl-2">Month</span>
                   <span>Income</span>
@@ -2005,7 +2047,6 @@ function TransactionsPageContent() {
                         updateDate(row.monthIdx, selectedYear);
                         setActiveTab('daily');
                         setSelectedCalendarDay(null);
-                        toast.info(`Switched to ${row.name} ${selectedYear}`);
                       }}
                       className="w-full grid grid-cols-4 bg-secondary/35 border border-border/40 hover:bg-secondary/60 p-2.5 rounded hover:border-primary/40 transition text-center items-center cursor-pointer"
                     >

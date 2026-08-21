@@ -719,9 +719,9 @@ export default function BillsPage() {
               </button>
             </div>
 
-            {/* Calendar Grid Container */}
-            <div className="bg-card rounded-xl p-3 sm:p-4 border border-border/60 space-y-3">
-              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-muted-foreground uppercase pb-2 border-b border-border/40">
+            {/* Table-like Calendar Grid Container */}
+            <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+              <div className="grid grid-cols-7 text-center text-[10px] font-extrabold text-muted-foreground uppercase py-2 border-b border-border bg-[#0b0f1a]/80 divide-x divide-border/60">
                 <span>Sun</span>
                 <span>Mon</span>
                 <span>Tue</span>
@@ -731,10 +731,10 @@ export default function BillsPage() {
                 <span>Sat</span>
               </div>
 
-              <div className="grid grid-cols-7 gap-1.5">
+              <div className="grid grid-cols-7">
                 {calendarDays.map((cell, idx) => {
                   if (!cell.isCurrentMonth) {
-                    return <div key={`empty-${idx}`} className="h-16 sm:h-20 rounded-lg bg-muted/10 border border-transparent" />;
+                    return <div key={`empty-${idx}`} className="h-16 sm:h-20 bg-muted/5 border-r border-b border-border/60" />;
                   }
 
                   const todayStr = new Date().toISOString().slice(0, 10);
@@ -747,14 +747,14 @@ export default function BillsPage() {
                     <div
                       key={cell.dateStr}
                       onClick={() => hasBills && setSelectedCalendarDate(cell.dateStr)}
-                      className={`h-16 sm:h-20 p-1.5 rounded-lg border flex flex-col justify-between transition-all cursor-pointer ${
+                      className={`h-16 sm:h-20 p-1.5 border-r border-b border-border/70 flex flex-col justify-between transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-primary bg-primary/10 shadow-sm'
+                          ? 'bg-primary/20 font-bold'
                           : isToday
-                          ? 'border-primary/50 bg-secondary/80'
+                          ? 'bg-secondary/90 font-bold'
                           : hasBills
-                          ? 'border-border/80 bg-secondary/40 hover:border-primary/40'
-                          : 'border-border/30 bg-background/50'
+                          ? 'bg-secondary/40 hover:bg-muted/30'
+                          : 'bg-background/40 hover:bg-muted/20'
                       }`}
                     >
                       <div className="flex items-center justify-between">
