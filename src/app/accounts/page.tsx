@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { getAccounts, type Account, addAccount, updateAccount, getTransactions, type Transaction, calculateCreditCardBalances } from '@/lib/storage';
-import { Landmark, Wallet, CreditCard, ShieldAlert, ChevronDown, ChevronRight, Eye, EyeOff, Plus, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react';
+import { Landmark, Wallet, CreditCard, ShieldAlert, ChevronDown, ChevronRight, Eye, EyeOff, Plus, GripVertical, Pencil } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
 
@@ -111,8 +111,17 @@ export default function AccountsPage() {
   }, []);
 
   const [showHiddenAccounts, setShowHiddenAccounts] = useState(true);
+  // Retained for compatibility with the legacy account-list reorder view.
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+  const [isGroupReorderMode, setIsGroupReorderMode] = useState(false);
+  const [accountReorderGroupKey, setAccountReorderGroupKey] = useState<string | null>(null);
   const [reorderTab, setReorderTab] = useState<'groups' | 'accounts'>('groups');
+  const dragItemRef = useRef<{ type: 'group' | 'account'; id: string } | null>(null);
+  const dragTargetRef = useRef<string | null>(null);
+  const dragStartPointRef = useRef({ x: 0, y: 0 });
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragTargetId, setDragTargetId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const [groupOrder, setGroupOrder] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
@@ -150,14 +159,18 @@ export default function AccountsPage() {
 
   // Group Rename state & long press timer
   const [renameGroupTarget, setRenameGroupTarget] = useState<{ key: string; name: string } | null>(null);
+  const [groupActionTarget, setGroupActionTarget] = useState<{ key: string; name: string } | null>(null);
   const [renameGroupName, setRenameGroupName] = useState('');
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isGroupLongPressTriggered = useRef(false);
 
   const handlePressStart = (key: string, name: string) => {
+    if (isGroupReorderMode || accountReorderGroupKey) return;
+    isGroupLongPressTriggered.current = false;
     longPressTimerRef.current = setTimeout(() => {
-      setRenameGroupTarget({ key, name });
-      setRenameGroupName(name);
-      toast.info(`Rename group: "${name}"`);
+      isGroupLongPressTriggered.current = true;
+      setGroupActionTarget({ key, name });
+      window.navigator.vibrate?.(40);
     }, 500);
   };
 
@@ -166,6 +179,28 @@ export default function AccountsPage() {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+  };
+
+  const handleGroupClick = (key: string) => {
+    if (isGroupLongPressTriggered.current) {
+      isGroupLongPressTriggered.current = false;
+      return;
+    }
+    if (!isGroupReorderMode) toggleSection(key);
+  };
+
+  const handleChooseRenameGroup = () => {
+    if (!groupActionTarget) return;
+    setRenameGroupTarget(groupActionTarget);
+    setRenameGroupName(groupActionTarget.name);
+    setGroupActionTarget(null);
+  };
+
+  const handleChooseModifyOrder = () => {
+    setGroupActionTarget(null);
+    setIsGroupReorderMode(true);
+    setCollapsedSections({});
+    toast.info('Drag the handles to reorder account groups');
   };
 
   const handleRenameGroup = (e: React.FormEvent) => {
@@ -201,6 +236,10 @@ export default function AccountsPage() {
 
   // Edit Account state & long press timer
   const [editingAccountTarget, setEditingAccountTarget] = useState<Account | null>(null);
+  const [accountActionTarget, setAccountActionTarget] = useState<{
+    account: Account;
+    groupKey: string;
+  } | null>(null);
   const [editName, setEditName] = useState('');
   const [editType, setEditType] = useState<Account['type']>('accounts');
   const [editBalance, setEditBalance] = useState('0');
@@ -229,13 +268,33 @@ export default function AccountsPage() {
     setEditInterestRate(String(acc.interestRate || 8.5));
   };
 
-  const handleAccountPressStart = (acc: Account) => {
+  const handleAccountPressStart = (acc: Account, groupKey: string) => {
     isAccountLongPressTriggered.current = false;
     accountLongPressTimerRef.current = setTimeout(() => {
       isAccountLongPressTriggered.current = true;
-      openEditAccountModal(acc);
-      toast.info(`Editing account: "${acc.name}"`);
+      setAccountActionTarget({ account: acc, groupKey });
+      window.navigator.vibrate?.(40);
     }, 500);
+  };
+
+  const handleChooseModifySelectedAccountOrder = () => {
+    if (!accountActionTarget) return;
+    const { groupKey, account } = accountActionTarget;
+    setAccountActionTarget(null);
+    setAccountReorderGroupKey(groupKey);
+    setCollapsedSections((previous) => ({ ...previous, [groupKey]: false }));
+    toast.info(`Drag the handles to reorder accounts with ${account.name}`);
+  };
+
+  const handleChooseRenameAccount = () => {
+    if (!accountActionTarget) return;
+    const account = accountActionTarget.account;
+    setAccountActionTarget(null);
+    if (account.type === 'loan') {
+      router.push(`/loans?edit=${encodeURIComponent(account.id)}`);
+      return;
+    }
+    openEditAccountModal(account);
   };
 
   const handleAccountPressEnd = () => {
@@ -282,39 +341,86 @@ export default function AccountsPage() {
     setEditingAccountTarget(null);
   };
 
-  const moveGroup = (index: number, direction: 'up' | 'down') => {
-    const activeGroupKeys = Object.keys(groupedAccounts.groups);
-    const currentOrder = [...groupOrder];
-    activeGroupKeys.forEach((k) => {
-      if (!currentOrder.includes(k)) currentOrder.push(k);
-    });
-
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= currentOrder.length) return;
-
-    const updated = [...currentOrder];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(targetIndex, 0, moved);
-    saveGroupOrder(updated);
+  const handleDragStart = (
+    event: React.PointerEvent<HTMLButtonElement>,
+    type: 'group' | 'account',
+    id: string
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragItemRef.current = { type, id };
+    dragTargetRef.current = id;
+    dragStartPointRef.current = { x: event.clientX, y: event.clientY };
+    setDragOffset({ x: 0, y: 0 });
+    setDraggingId(id);
+    setDragTargetId(id);
+    window.navigator.vibrate?.(30);
   };
 
-  const moveAccount = (accId: string, direction: 'up' | 'down') => {
-    const allAccIds = accounts.map((a) => a.id);
-    const currentOrder = [...accountOrderMap];
-    allAccIds.forEach((id) => {
-      if (!currentOrder.includes(id)) currentOrder.push(id);
+  const handleDragMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const dragging = dragItemRef.current;
+    if (!dragging) return;
+
+    setDragOffset({
+      x: event.clientX - dragStartPointRef.current.x,
+      y: event.clientY - dragStartPointRef.current.y,
     });
 
-    const index = currentOrder.indexOf(accId);
-    if (index === -1) return;
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>(`[data-reorder-type="${dragging.type}"]`);
+    const targetId = target?.dataset.reorderId;
+    if (!targetId || targetId === dragTargetRef.current) return;
 
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= currentOrder.length) return;
+    dragTargetRef.current = targetId;
+    setDragTargetId(targetId);
+  };
 
-    const updated = [...currentOrder];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(targetIndex, 0, moved);
-    saveAccountOrder(updated);
+  const handleDragEnd = () => {
+    const dragging = dragItemRef.current;
+    const targetId = dragTargetRef.current;
+
+    if (dragging && targetId && dragging.id !== targetId) {
+      if (dragging.type === 'group') {
+        const visibleIds = Object.keys(groupedAccounts.groups);
+        const order = [...groupOrder];
+        visibleIds.forEach((id) => {
+          if (!order.includes(id)) order.push(id);
+        });
+        const sourceIndex = order.indexOf(dragging.id);
+        const targetIndex = order.indexOf(targetId);
+        if (sourceIndex !== -1 && targetIndex !== -1) {
+          const [moved] = order.splice(sourceIndex, 1);
+          order.splice(targetIndex, 0, moved);
+          saveGroupOrder(order);
+        }
+      } else {
+        const visibleIds = accounts.map((account) => account.id);
+        const order = [...accountOrderMap];
+        visibleIds.forEach((id) => {
+          if (!order.includes(id)) order.push(id);
+        });
+        const sourceIndex = order.indexOf(dragging.id);
+        const targetIndex = order.indexOf(targetId);
+        if (sourceIndex !== -1 && targetIndex !== -1) {
+          const [moved] = order.splice(sourceIndex, 1);
+          order.splice(targetIndex, 0, moved);
+          saveAccountOrder(order);
+        }
+      }
+    }
+
+    dragItemRef.current = null;
+    dragTargetRef.current = null;
+    setDraggingId(null);
+    setDragTargetId(null);
+    setDragOffset({ x: 0, y: 0 });
+    if (dragging?.type === 'group') {
+      setIsGroupReorderMode(false);
+    } else if (dragging?.type === 'account') {
+      setAccountReorderGroupKey(null);
+    }
   };
 
   const groupedAccounts = useMemo(() => {
@@ -411,6 +517,17 @@ export default function AccountsPage() {
     return { payable, outstanding };
   }, [accounts, allTransactions]);
 
+  const orderedAccounts = useMemo(() => {
+    return [...accounts].sort((a, b) => {
+      const indexA = accountOrderMap.indexOf(a.id);
+      const indexB = accountOrderMap.indexOf(b.id);
+      if (indexA === -1 && indexB === -1) return 0;
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  }, [accounts, accountOrderMap]);
+
   const formatVal = (val: number) => {
     return val.toLocaleString('en-IN', {
       style: 'currency',
@@ -440,13 +557,6 @@ export default function AccountsPage() {
               <h1 className="text-lg font-bold text-foreground">My Accounts</h1>
             </div>
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => setIsReorderModalOpen(true)}
-                className="w-9 h-9 rounded-xl transition border border-border text-muted-foreground hover:text-foreground hover:bg-secondary/70 active:scale-95 flex items-center justify-center"
-                title="Modify / Reorder Accounts & Groups"
-              >
-                <ArrowUpDown size={16} />
-              </button>
               <button
                 onClick={() => setIsAddModalOpen(true)}
                 className="w-9 h-9 rounded-xl transition border border-primary/25 bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 flex items-center justify-center"
@@ -494,108 +604,159 @@ export default function AccountsPage() {
           {Object.entries(groupedAccounts.groups).map(([key, group]) => {
             if (group.items.length === 0) return null;
             const Icon = group.icon;
+            const normalizedGroupName = group.name.toLowerCase();
+            const isCreditGroup =
+              (normalizedGroupName.includes('credit') || normalizedGroupName.includes('card')) &&
+              !normalizedGroupName.includes('bank');
 
             const isCollapsed = collapsedSections[key];
 
             return (
-              <div key={key} className="overflow-hidden text-xs space-y-2">
+              <div
+                key={key}
+                className={`overflow-hidden text-xs ${draggingId === key ? 'relative z-20 opacity-90 drop-shadow-xl' : ''}`}
+                style={
+                  draggingId === key
+                    ? {
+                        transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(1.02)`,
+                        transition: 'none',
+                        pointerEvents: 'none',
+                      }
+                    : undefined
+                }
+              >
                 
                 {/* Section Header (No grey background, borderless with long press & edit icon) */}
-                <div 
-                  onClick={() => toggleSection(key)}
+                <div
+                  data-reorder-type="group"
+                  data-reorder-id={key}
+                  onClick={() => handleGroupClick(key)}
                   onTouchStart={() => handlePressStart(key, group.name)}
                   onTouchEnd={handlePressEnd}
                   onTouchMove={handlePressEnd}
                   onMouseDown={() => handlePressStart(key, group.name)}
                   onMouseUp={handlePressEnd}
                   onMouseLeave={handlePressEnd}
-                  className={`flex justify-between items-center px-2 py-2 cursor-pointer hover:bg-muted/20 rounded-lg transition select-none ${!isCollapsed ? 'pb-1' : ''}`}
+                  className={`flex justify-between items-center px-3 py-2.5 cursor-pointer bg-secondary hover:bg-secondary/80 transition select-none ${
+                    dragTargetId === key && draggingId !== key
+                      ? 'ring-2 ring-inset ring-primary'
+                      : ''
+                  }`}
                 >
-                  <div className="flex items-center gap-1.5 flex-shrink-0 min-w-0">
-                    <Icon size={16} className={group.color} />
-                    <span className="font-extrabold text-foreground uppercase tracking-wider text-sm">{group.name}</span>
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <Icon size={16} className={`${group.color} shrink-0`} />
+                    <span className="font-normal text-foreground tracking-normal text-sm truncate">{group.name}</span>
                   </div>
-                  <div className="flex items-center gap-4 ml-auto">
-                    {showBalances && (
-                      key === 'credit' ? (
-                        <div className="flex gap-5 text-right select-none pr-1">
-                          <div>
-                            <div className="text-[9px] text-muted-foreground font-semibold uppercase tracking-tight leading-tight">
-                              Balance Payable
+                  <div className="flex items-center gap-1 sm:gap-3 ml-2 shrink-0">
+                    {isCreditGroup ? (
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4 text-right select-none">
+                          <div className="w-[62px] sm:w-[72px]">
+                            <div className="text-[9px] text-muted-foreground font-medium uppercase tracking-normal leading-relaxed">
+                              Payment Due
                             </div>
-                            <div className="text-sm font-bold text-foreground font-mono mt-0.5">
-                              {formatVal(creditCardTotals.payable)}
-                            </div>
+                            {showBalances && (
+                              <div className="text-xs sm:text-sm font-semibold text-foreground font-mono mt-0.5">
+                                {formatVal(creditCardTotals.payable)}
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <div className="text-[9px] text-muted-foreground font-semibold uppercase tracking-tight leading-tight">
-                              Outst. Balance
+                          <div className="w-[62px] sm:w-[72px]">
+                            <div className="text-[9px] text-muted-foreground font-medium uppercase tracking-normal leading-relaxed">
+                              Outstanding
                             </div>
-                            <div className="text-sm font-bold text-foreground font-mono mt-0.5">
-                              {formatVal(creditCardTotals.outstanding)}
-                            </div>
+                            {showBalances && (
+                              <div className="text-xs sm:text-sm font-semibold text-foreground font-mono mt-0.5">
+                                {formatVal(creditCardTotals.outstanding)}
+                              </div>
+                            )}
                           </div>
                         </div>
-                      ) : (
+                    ) : showBalances ? (
                         <span className={`font-mono text-sm font-bold ${group.total < 0 ? 'text-negative' : 'text-positive'}`}>
                           {formatVal(group.total)}
                         </span>
-                      )
+                    ) : null}
+                    {isGroupReorderMode && (
+                      <button
+                        type="button"
+                        onPointerDown={(event) => handleDragStart(event, 'group', key)}
+                        onPointerMove={handleDragMove}
+                        onPointerUp={handleDragEnd}
+                        onPointerCancel={handleDragEnd}
+                        onClick={(event) => event.stopPropagation()}
+                        className="p-2 -mr-2 text-muted-foreground hover:text-foreground touch-none cursor-grab active:cursor-grabbing"
+                        aria-label={`Drag ${group.name} to reorder`}
+                      >
+                        <GripVertical size={18} />
+                      </button>
                     )}
-                    <span className="text-muted-foreground/60 transition-transform duration-200">
-                      {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                    </span>
                   </div>
                 </div>
 
                 {/* Account Rows (Tripled left indentation under group header) */}
                 {!isCollapsed && (
-                  <div className="bg-secondary py-1.5 pl-10 sm:pl-12 pr-2 sm:pr-3 space-y-0.5">
+                  <div className="bg-secondary pl-10 sm:pl-12 pr-2 sm:pr-3">
                     {group.items.map((acc) => {
-                      const isCreditCard = key === 'credit';
+                      const isCreditCard = isCreditGroup && acc.type === 'credit';
+                      const creditBalances = isCreditCard
+                        ? calculateCreditCardBalances(acc, allTransactions)
+                        : null;
                       return (
-                        <div 
+                        <div
                           key={acc.id}
-                          onClick={() => handleAccountClick(acc.id)}
-                          onTouchStart={() => handleAccountPressStart(acc)}
+                          data-reorder-type={accountReorderGroupKey === key ? 'account' : undefined}
+                          data-reorder-id={accountReorderGroupKey === key ? acc.id : undefined}
+                          onClick={() => {
+                            if (!accountReorderGroupKey) handleAccountClick(acc.id);
+                          }}
+                          onTouchStart={() => {
+                            if (!accountReorderGroupKey) handleAccountPressStart(acc, key);
+                          }}
                           onTouchEnd={handleAccountPressEnd}
                           onTouchMove={handleAccountPressEnd}
-                          onMouseDown={() => handleAccountPressStart(acc)}
+                          onMouseDown={() => {
+                            if (!accountReorderGroupKey) handleAccountPressStart(acc, key);
+                          }}
                           onMouseUp={handleAccountPressEnd}
                           onMouseLeave={handleAccountPressEnd}
-                          className="flex justify-between items-center px-0.5 py-2.5 hover:bg-muted/30 transition cursor-pointer"
+                          className={`flex justify-between items-center px-1 py-3 hover:bg-secondary/60 active:bg-secondary/70 transition cursor-pointer ${
+                            draggingId === acc.id
+                              ? 'relative z-20 opacity-90 drop-shadow-xl'
+                              : dragTargetId === acc.id
+                                ? 'ring-2 ring-inset ring-primary'
+                                : ''
+                          }`}
+                          style={
+                            draggingId === acc.id
+                              ? {
+                                  transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) scale(1.02)`,
+                                  transition: 'none',
+                                  pointerEvents: 'none',
+                                }
+                              : undefined
+                          }
                         >
                           <div className="min-w-0 pr-4 space-y-1">
-                            <span className="text-sm font-semibold text-foreground truncate block">{acc.name}</span>
+                            <span className="text-sm font-normal text-foreground truncate block leading-relaxed">{acc.name}</span>
                             {acc.notes && <span className="text-[11px] text-muted-foreground/80 block truncate max-w-[200px]">{acc.notes}</span>}
-                            {isCreditCard && acc.dueDate && (
-                              <div className="flex flex-wrap gap-1 mt-1 select-none">
-                                <span className="inline-flex items-center gap-0.5 bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 text-[9px] font-bold">
-                                  📅 Due Day: {acc.dueDate}th
-                                </span>
-                              </div>
-                            )}
                           </div>
-                          <div className="shrink-0 flex gap-8 text-right font-mono select-none">
-                            {isCreditCard ? (
-                              (() => {
-                                const cc = calculateCreditCardBalances(acc, allTransactions);
-                                return (
-                                  <div className="flex gap-5 text-right items-center">
-                                    <div className="min-w-[70px]">
-                                      <span className="text-sm font-bold text-negative block">
-                                        {formatVal(cc.payable)}
-                                      </span>
-                                    </div>
-                                    <div className="min-w-[70px]">
-                                      <span className="text-sm font-bold text-muted-foreground block">
-                                        {formatVal(cc.outstanding)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              })()
-                            ) : (
+                          {isGroupReorderMode || accountReorderGroupKey ? null : creditBalances ? (
+                            <div className="shrink-0 flex items-center gap-1 sm:gap-3 font-mono select-none">
+                              <div className="grid grid-cols-2 gap-2 sm:gap-4 text-right">
+                                <div className="w-[62px] sm:w-[72px]">
+                                  <span className="block text-xs sm:text-sm font-semibold text-negative">
+                                    {formatVal(creditBalances.payable)}
+                                  </span>
+                                </div>
+                                <div className="w-[62px] sm:w-[72px]">
+                                  <span className="block text-xs sm:text-sm font-semibold text-foreground">
+                                    {formatVal(creditBalances.outstanding)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="shrink-0 flex gap-8 text-right font-mono select-none">
                               <div className="min-w-[80px]">
                                 <span className={`text-sm font-bold block ${acc.balance < 0 ? 'text-negative' : 'text-positive'}`}>
                                   {formatVal(acc.balance)}
@@ -606,8 +767,22 @@ export default function AccountsPage() {
                                   </span>
                                 )}
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
+                          {accountReorderGroupKey === key && (
+                            <button
+                              type="button"
+                              onPointerDown={(event) => handleDragStart(event, 'account', acc.id)}
+                              onPointerMove={handleDragMove}
+                              onPointerUp={handleDragEnd}
+                              onPointerCancel={handleDragEnd}
+                              onClick={(event) => event.stopPropagation()}
+                              className="p-2 -mr-1 ml-1 text-muted-foreground hover:text-foreground touch-none cursor-grab active:cursor-grabbing shrink-0"
+                              aria-label={`Drag ${acc.name} to reorder`}
+                            >
+                              <GripVertical size={18} />
+                            </button>
+                          )}
                         </div>
                       );
                     })}
@@ -790,7 +965,72 @@ export default function AccountsPage() {
         </form>
       </Modal>
 
-      {/* Reorder Accounts & Groups Modal */}
+      <Modal
+        isOpen={!!groupActionTarget}
+        onClose={() => setGroupActionTarget(null)}
+        title={groupActionTarget?.name || 'Account Group'}
+      >
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={handleChooseModifyOrder}
+            className="w-full flex items-center gap-3 px-3 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
+          >
+            <GripVertical size={18} className="text-primary" />
+            <div>
+              <span className="block text-sm">Modify group order</span>
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                Drag groups directly on the Accounts page
+              </span>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={handleChooseRenameGroup}
+            className="w-full flex items-center gap-3 px-3 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
+          >
+            <Pencil size={18} className="text-primary" />
+            <div>
+              <span className="block text-sm">Rename group</span>
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                Change this group name for all linked accounts
+              </span>
+            </div>
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!accountActionTarget}
+        onClose={() => setAccountActionTarget(null)}
+        title={accountActionTarget?.account.name || 'Account'}
+        presentation="dialog"
+      >
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={handleChooseModifySelectedAccountOrder}
+            className="w-full flex items-center gap-3 px-3 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
+          >
+            <GripVertical size={18} className="text-primary" />
+            <div>
+              <span className="block text-sm">Modify account order</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={handleChooseRenameAccount}
+            className="w-full flex items-center gap-3 px-3 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
+          >
+            <Pencil size={18} className="text-primary" />
+            <div>
+              <span className="block text-sm">Edit account</span>
+            </div>
+          </button>
+        </div>
+      </Modal>
+
+      {/* Legacy account-list reorder modal (not opened from the Accounts header) */}
       <Modal
         isOpen={isReorderModalOpen}
         onClose={() => setIsReorderModalOpen(false)}
@@ -825,35 +1065,37 @@ export default function AccountsPage() {
           {/* Groups Reorder Tab */}
           {reorderTab === 'groups' && (
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1 select-scrollbar">
-              {Object.entries(groupedAccounts.groups).map(([key, group], idx, arr) => {
+              {Object.entries(groupedAccounts.groups).map(([key, group]) => {
                 const GroupIcon = group.icon;
                 return (
                   <div
                     key={key}
-                    className="flex items-center justify-between p-3 bg-secondary/60 border border-border/40 rounded-xl"
+                    data-reorder-type="group"
+                    data-reorder-id={key}
+                    className={`flex items-center justify-between p-3 border rounded-xl transition ${
+                      draggingId === key
+                        ? 'bg-primary/10 border-primary/40 opacity-70'
+                        : dragTargetId === key
+                          ? 'bg-primary/10 border-primary'
+                          : 'bg-secondary/60 border-border/40'
+                    }`}
                   >
                     <div className="flex items-center gap-2">
                       <GroupIcon size={16} className={group.color} />
                       <span className="text-sm font-bold text-foreground">{group.name}</span>
                     </div>
-                  <div className="flex items-center gap-1">
                     <button
-                      disabled={idx === 0}
-                      onClick={() => moveGroup(idx, 'up')}
-                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted/40 disabled:opacity-30 disabled:pointer-events-none transition"
-                      title="Move Up"
+                      type="button"
+                      onPointerDown={(event) => handleDragStart(event, 'group', key)}
+                      onPointerMove={handleDragMove}
+                      onPointerUp={handleDragEnd}
+                      onPointerCancel={handleDragEnd}
+                      className="p-2 -mr-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 touch-none cursor-grab active:cursor-grabbing"
+                      title="Drag to reorder"
+                      aria-label={`Drag ${group.name} to reorder`}
                     >
-                      <ArrowUp size={14} />
+                      <GripVertical size={18} />
                     </button>
-                    <button
-                      disabled={idx === arr.length - 1}
-                      onClick={() => moveGroup(idx, 'down')}
-                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted/40 disabled:opacity-30 disabled:pointer-events-none transition"
-                      title="Move Down"
-                    >
-                      <ArrowDown size={14} />
-                    </button>
-                  </div>
                 </div>
               );
             })}
@@ -863,10 +1105,18 @@ export default function AccountsPage() {
           {/* Individual Accounts Reorder Tab */}
           {reorderTab === 'accounts' && (
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1 select-scrollbar">
-              {accounts.map((acc, idx) => (
+              {orderedAccounts.map((acc) => (
                 <div
                   key={acc.id}
-                  className="flex items-center justify-between p-3 bg-secondary/60 border border-border/40 rounded-xl"
+                  data-reorder-type="account"
+                  data-reorder-id={acc.id}
+                  className={`flex items-center justify-between p-3 border rounded-xl transition ${
+                    draggingId === acc.id
+                      ? 'bg-primary/10 border-primary/40 opacity-70'
+                      : dragTargetId === acc.id
+                        ? 'bg-primary/10 border-primary'
+                        : 'bg-secondary/60 border-border/40'
+                  }`}
                 >
                   <div className="min-w-0 pr-2">
                     <div className="text-sm font-bold text-foreground truncate">{acc.name}</div>
@@ -874,24 +1124,18 @@ export default function AccountsPage() {
                       {acc.category || acc.type} • ₹{acc.balance.toLocaleString('en-IN')}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
                     <button
-                      disabled={idx === 0}
-                      onClick={() => moveAccount(acc.id, 'up')}
-                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted/40 disabled:opacity-30 disabled:pointer-events-none transition"
-                      title="Move Up"
+                      type="button"
+                      onPointerDown={(event) => handleDragStart(event, 'account', acc.id)}
+                      onPointerMove={handleDragMove}
+                      onPointerUp={handleDragEnd}
+                      onPointerCancel={handleDragEnd}
+                      className="p-2 -mr-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 touch-none cursor-grab active:cursor-grabbing shrink-0"
+                      title="Drag to reorder"
+                      aria-label={`Drag ${acc.name} to reorder`}
                     >
-                      <ArrowUp size={14} />
+                      <GripVertical size={18} />
                     </button>
-                    <button
-                      disabled={idx === accounts.length - 1}
-                      onClick={() => moveAccount(acc.id, 'down')}
-                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted/40 disabled:opacity-30 disabled:pointer-events-none transition"
-                      title="Move Down"
-                    >
-                      <ArrowDown size={14} />
-                    </button>
-                  </div>
                 </div>
               ))}
             </div>

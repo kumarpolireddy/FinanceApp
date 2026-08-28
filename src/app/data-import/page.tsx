@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
+import { createLocalId } from '@/lib/ids';
 import DropZone from './components/DropZone';
 import ColumnMapper, { ColumnMapping } from './components/ColumnMapper';
 import ImportPreview, { PreviewRow } from './components/ImportPreview';
@@ -249,7 +250,7 @@ export default function DataImportPage() {
     categories: 0,
     accounts: 0,
   });
-  const [sqliteReport, setSqliteReport] = useState<any>(null);
+  const [importedAccounts, setImportedAccounts] = useState<Account[]>([]);
 
   const stepIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -414,12 +415,7 @@ export default function DataImportPage() {
         categories: newCategories.length,
         accounts: newAccounts.length,
       });
-
-      if (result.phase1Report) {
-        setSqliteReport(result.phase1Report);
-      } else if (result.report) {
-        setSqliteReport(result.report);
-      }
+      setImportedAccounts(newAccounts);
 
       setImportDone(true);
       toast.success(
@@ -592,7 +588,7 @@ export default function DataImportPage() {
           '';
 
         return {
-          id: `catmap-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          id: createLocalId('catmap', 4),
           sourceCategory: srcCat,
           transactionCount: count,
           selectedTarget: suggested,
@@ -650,7 +646,7 @@ export default function DataImportPage() {
               '';
 
             return {
-              id: `catmap-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              id: createLocalId('catmap', 4),
               sourceCategory: srcCat,
               transactionCount: count,
               selectedTarget: suggested,
@@ -683,7 +679,7 @@ export default function DataImportPage() {
 
     if (!exists) {
       const newCat = {
-        id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: createLocalId('cat', 4),
         name: cleanCat,
         type: 'expense' as const,
         color: `#${Math.floor(Math.random() * 16777215)
@@ -759,7 +755,7 @@ export default function DataImportPage() {
         const color = colors[accType];
 
         acc = {
-          id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          id: createLocalId('acc', 4),
           name: cleanName,
           type: accType,
           balance: 0,
@@ -788,7 +784,7 @@ export default function DataImportPage() {
       let cat = newCategories.find((c) => c.name.toLowerCase() === cleanName.toLowerCase());
       if (!cat) {
         cat = {
-          id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          id: createLocalId('cat', 4),
           name: cleanName,
           type: type === 'income' ? 'income' : 'expense',
           color: `#${Math.floor(Math.random() * 16777215)
@@ -927,9 +923,9 @@ export default function DataImportPage() {
 
   return (
     <AppLayout>
-      <div className="px-6 py-6 xl:px-10 max-w-screen-2xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 font-medium">
+      <div className="px-3 py-3 sm:px-6 sm:py-6 xl:px-10 max-w-5xl mx-auto pb-28">
+        <div>
+          <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground mb-2 font-medium">
             <Link href="/" className="hover:text-foreground">
               Dashboard
             </Link>
@@ -937,10 +933,10 @@ export default function DataImportPage() {
             <span className="text-foreground">Import Data</span>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-6 py-4 border-b border-border bg-muted/10 flex items-center justify-between">
+          <div className="overflow-hidden">
+            <div className="px-1 sm:px-4 py-3 border-b border-border flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="text-base sm:text-lg font-semibold text-foreground">
                   {currentStep === 'upload' && 'Upload Your Money Manager File'}
                   {currentStep === 'map-columns' && 'Map Source Columns'}
                   {currentStep === 'map-categories' && 'Map Spending Categories'}
@@ -948,9 +944,9 @@ export default function DataImportPage() {
                   {currentStep === 'importing' &&
                     (importDone ? 'Import Complete' : 'Importing Data…')}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-2xl">
                   {currentStep === 'upload' &&
-                    'Select or drag & drop your Money Manager SQLite backup file (.sqlite / .db) or spreadsheet'}
+                    'drop your Money Manager SQLite backup file (.sqlite / .db) or spreadsheet'}
                   {currentStep === 'map-columns' &&
                     'Confirm how your spreadsheet columns map to WealthIQ fields'}
                   {currentStep === 'map-categories' &&
@@ -963,8 +959,8 @@ export default function DataImportPage() {
                       : 'Processing your historical transaction data…')}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground font-medium">
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-medium whitespace-nowrap">
                   Step {stepIndex + 1} of {WIZARD_STEPS.length}
                 </span>
                 <div className="flex items-center gap-1">
@@ -984,84 +980,56 @@ export default function DataImportPage() {
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="py-4 sm:p-5">
               {currentStep === 'upload' && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Import Mode Selector */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 border-b border-border">
                     <button
                       type="button"
                       onClick={() => setImportMode('sqlite')}
-                      className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                      className={`px-3 py-3 border-b-2 text-left transition cursor-pointer ${
                         importMode === 'sqlite'
-                          ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20'
-                          : 'border-border bg-card hover:bg-muted/10'
+                          ? 'border-primary text-foreground'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-                          <Database className="w-5 h-5" />
-                        </div>
-                        <span className="px-2.5 py-0.5 rounded-full text-3xs font-extrabold bg-primary/10 text-primary border border-primary/20">
-                          Option 1 • Money Manager Backup
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-base text-foreground mb-1">
-                          Money Manager SQLite Backup
-                        </h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Upload your Money Manager <code className="text-primary font-bold">.sqlite</code> or <code className="text-primary font-bold">.db</code> database file. Direct 1-click import!
-                        </p>
-                      </div>
+                      <h3 className="text-xs sm:text-sm font-semibold">Money Manager Backup</h3>
+                      <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">SQLite or DB</p>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setImportMode('spreadsheet')}
-                      className={`p-5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                      className={`px-3 py-3 border-b-2 text-left transition cursor-pointer ${
                         importMode === 'spreadsheet'
-                          ? 'border-primary bg-primary/5 shadow-md ring-2 ring-primary/20'
-                          : 'border-border bg-card hover:bg-muted/10'
+                          ? 'border-primary text-foreground'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center font-bold">
-                          <Upload className="w-5 h-5" />
-                        </div>
-                        <span className="px-2.5 py-0.5 rounded-full text-3xs font-bold bg-muted text-muted-foreground border border-border">
-                          Option 2 • Spreadsheets
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-base text-foreground mb-1">
-                          Excel / CSV Spreadsheets
-                        </h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Upload <code className="font-bold">.xlsx</code> or <code className="font-bold">.csv</code> files and map columns manually via wizard.
-                        </p>
-                      </div>
+                      <h3 className="text-xs sm:text-sm font-semibold">Spreadsheet</h3>
+                      <p className="mt-1 text-[10px] sm:text-xs text-muted-foreground">Excel or CSV</p>
                     </button>
                   </div>
 
                   {importMode === 'sqlite' ? (
-                    <div className="border-2 border-dashed border-primary/40 rounded-2xl p-10 bg-card/40 text-center space-y-4 shadow-sm">
-                      <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center mx-auto shadow-inner">
-                        <Database className="w-8 h-8" />
+                    <div className="border border-dashed border-border py-7 px-4 text-center space-y-3 bg-secondary/20">
+                      <div className="text-muted-foreground flex items-center justify-center mx-auto">
+                        <Database className="w-6 h-6" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-lg font-extrabold text-foreground">
-                          Upload Money Manager SQLite Database
+                        <h3 className="text-sm font-semibold text-foreground">
+                          Select Money Manager database
                         </h3>
                         <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                          Select your Money Manager database file (<span className="text-primary font-bold">.sqlite</span> or <span className="text-primary font-bold">.db</span>). All accounts, categories, income, expenses, and transfers will be extracted automatically.
+                          Import accounts, categories and transactions from a .sqlite or .db backup.
                         </p>
                       </div>
 
-                      <div className="pt-2">
-                        <label className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground font-bold text-xs hover:opacity-95 transition shadow-lg shadow-primary/25 cursor-pointer active:scale-95">
+                      <div>
+                        <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:opacity-95 transition cursor-pointer active:scale-95">
                           <Upload className="w-4 h-4" />
-                          Choose Money Manager SQLite File (.sqlite / .db)
+                          Choose file
                           <input
                             type="file"
                             accept=".sqlite,.db,application/x-sqlite3,application/octet-stream,*/*"
@@ -1082,16 +1050,11 @@ export default function DataImportPage() {
                     />
                   )}
 
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-info-subtle border border-info-subtle">
-                    <Database size={16} className="text-info flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 py-3 border-y border-border">
                     <div>
-                      <p className="text-sm font-semibold text-foreground mb-1">
-                        Importing historical data?
-                      </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         WealthIQ handles 10+ years of transaction history without performance
-                        issues. Files up to 50MB are processed entirely in memory — your data never
-                        leaves your browser during upload.
+                        issues. Files up to 50MB are processed entirely in memory.
                       </p>
                     </div>
                   </div>
@@ -1165,116 +1128,38 @@ export default function DataImportPage() {
                         ))}
                       </div>
 
-                      {sqliteReport && (sqliteReport.groups || sqliteReport.totalSourceGroups) && (
-                        <div className="max-w-xl mx-auto mb-6 p-4 bg-[#0b0f1a] border border-border rounded-xl text-left space-y-3 font-mono text-xs">
-                          <div className="flex items-center justify-between border-b border-border pb-2">
-                            <span className="font-bold text-primary tracking-wide">REQUIRED VALIDATION REPORT (PHASE 1)</span>
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">Phase 1 Verified</span>
+                      {importedAccounts.length > 0 && (
+                        <div className="max-w-xl mx-auto mb-6 text-left">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-semibold text-foreground">Account Summary</h4>
+                            <span className="text-xs text-muted-foreground">
+                              {importedAccounts.length} active accounts
+                            </span>
                           </div>
-
-                          {/* Account Group Validation */}
-                          <div className="space-y-1">
-                            <p className="font-bold text-slate-200">ACCOUNT GROUP VALIDATION</p>
-                            <div className="bg-muted/10 p-2.5 rounded-lg border border-border space-y-1 text-muted-foreground">
-                              <div>Source groups: <strong className="text-foreground">{sqliteReport.groups?.totalSourceGroups ?? sqliteReport.totalSourceGroups ?? 0}</strong></div>
-                              <div>Active groups (IS_DEL = 0): <strong className="text-emerald-400">{sqliteReport.groups?.activeGroupsCount ?? sqliteReport.activeAccountGroups ?? 0}</strong></div>
-                              <div>Deleted/inactive groups (IS_DEL != 0): <strong className="text-slate-400">{sqliteReport.groups?.deletedGroupsCount ?? sqliteReport.deletedAccountGroups ?? 0}</strong></div>
-                              <div>Imported groups: <strong className="text-emerald-400">{sqliteReport.groups?.importedGroupsCount ?? sqliteReport.activeAccountGroups ?? 0}</strong></div>
-                            </div>
+                          <div className="border border-border divide-y divide-border rounded-xl overflow-hidden">
+                            {importedAccounts.map((account) => (
+                              <div
+                                key={account.id}
+                                className="flex items-center justify-between gap-3 px-3 py-2.5 bg-muted/10"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    {account.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {account.category || account.type}
+                                    {!account.visible && ' · Hidden'}
+                                  </p>
+                                </div>
+                                <span className="text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">
+                                  ₹{account.balance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            ))}
                           </div>
-
-                          {/* Account Validation */}
-                          <div className="space-y-1">
-                            <p className="font-bold text-slate-200">ACCOUNT VALIDATION</p>
-                            <div className="bg-muted/10 p-2.5 rounded-lg border border-border space-y-1 text-muted-foreground">
-                              <div>Total source accounts: <strong className="text-foreground">{sqliteReport.accounts?.totalSourceAccounts ?? sqliteReport.totalSourceAssets ?? 0}</strong></div>
-                              <div>Deleted accounts (ZDATA = 2): <strong className="text-amber-400">{sqliteReport.accounts?.deletedAccountsCount ?? sqliteReport.deletedAccountsExcluded ?? 0}</strong></div>
-                              <div>Active visible accounts (ZDATA = 0): <strong className="text-emerald-400">{sqliteReport.accounts?.activeVisibleAccountsCount ?? 0}</strong></div>
-                              <div>Active hidden accounts (ZDATA = 3): <strong className="text-sky-400">{sqliteReport.accounts?.activeHiddenAccountsCount ?? 0}</strong></div>
-                              <div>Imported active accounts: <strong className="text-emerald-400">{sqliteReport.accounts?.importedActiveAccountsCount ?? sqliteReport.activeAccountsImported ?? 0}</strong></div>
-                              <div>Skipped deleted accounts: <strong className="text-slate-400">{sqliteReport.accounts?.skippedDeletedAccountsCount ?? sqliteReport.deletedAccountsExcluded ?? 0}</strong></div>
-                            </div>
-                          </div>
-
-                          {/* Mappings */}
-                          <div className="space-y-1">
-                            <p className="font-bold text-slate-200">ACCOUNT → GROUP MAPPINGS</p>
-                            <div className="bg-muted/10 p-2.5 rounded-lg border border-border space-y-1 text-muted-foreground">
-                              <div>Valid: <strong className="text-emerald-400">{sqliteReport.mappings?.validCount ?? 0}</strong></div>
-                              <div>Invalid (Active Acc → Deleted Group): <strong className={sqliteReport.mappings?.invalidCount ? 'text-amber-400' : 'text-slate-400'}>{sqliteReport.mappings?.invalidCount ?? 0}</strong></div>
-                              <div>Unresolved: <strong className="text-slate-400">{sqliteReport.mappings?.unresolvedCount ?? 0}</strong></div>
-                            </div>
-                          </div>
-
-                          {/* Accounts in Deleted Groups alert if any */}
-                          {sqliteReport.mappings?.accountsInDeletedGroups && sqliteReport.mappings.accountsInDeletedGroups.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="font-bold text-amber-400">ACTIVE ACCOUNT → DELETED GROUP (FLAGGED):</p>
-                              <div className="max-h-24 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-amber-500/30 text-[11px]">
-                                {sqliteReport.mappings.accountsInDeletedGroups.map((a: any) => (
-                                  <div key={a.accountUid} className="text-amber-300">
-                                    Account "{a.accountName}" (ID: {a.accountId}, UID: {a.accountUid}) → Deleted Group "{a.groupName}" (UID: {a.groupUid})
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Duplicate Account Names list if any */}
-                          {sqliteReport.mappings?.duplicateAccountNames && sqliteReport.mappings.duplicateAccountNames.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="font-bold text-sky-400">DUPLICATE ACCOUNT NAMES DETECTED:</p>
-                              <div className="max-h-24 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-border text-[11px]">
-                                {sqliteReport.mappings.duplicateAccountNames.map((d: any) => (
-                                  <div key={d.name} className="text-muted-foreground">
-                                    "{d.name}" ({d.count} instances: {d.instances.map((i: any) => `ID ${i.id} ZDATA ${i.zdata}`).join(', ')})
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Detailed Mapped Active Accounts List (Section 17 Requirement) */}
-                          {sqliteReport.accounts && ((sqliteReport.accounts.activeVisibleAccountsList && sqliteReport.accounts.activeVisibleAccountsList.length > 0) || (sqliteReport.accounts.activeHiddenAccountsList && sqliteReport.accounts.activeHiddenAccountsList.length > 0)) && (
-                            <div className="space-y-1">
-                              <p className="font-bold text-emerald-400">IMPORTED ACTIVE ACCOUNTS MAPPINGS:</p>
-                              <div className="max-h-48 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-border text-[11px]">
-                                {[...(sqliteReport.accounts.activeVisibleAccountsList || []), ...(sqliteReport.accounts.activeHiddenAccountsList || [])].map((a: any) => (
-                                  <div key={a.uid} className="p-1.5 border-b border-border/50 space-y-0.5 text-muted-foreground">
-                                    <div className="flex items-center justify-between text-foreground font-semibold">
-                                      <span>"{a.name}" (ID: {a.id}, UID: {a.uid})</span>
-                                      <span className={a.zdata === 0 ? 'text-emerald-400 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10' : 'text-sky-400 text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10'}>
-                                        {a.zdata === 0 ? 'ACTIVE + VISIBLE' : 'ACTIVE + HIDDEN'}
-                                      </span>
-                                    </div>
-                                    <div className="text-[10px] text-slate-400">
-                                      Category: <strong className="text-slate-200">{a.groupName}</strong> (Group UID: {a.groupUid})
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-mono">
-                                      WealthIQ Acc ID: {a.wealthiqAccountId || `mm-acc-${a.uid}`} | WealthIQ Cat ID: {a.wealthiqCategoryId || `acc-cat-${a.groupUid}`}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Excluded Deleted Accounts List */}
-                          {sqliteReport.accounts?.deletedAccountsList && sqliteReport.accounts.deletedAccountsList.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="font-bold text-amber-400">EXCLUDED DELETED ACCOUNTS (ZDATA = 2):</p>
-                              <div className="max-h-28 overflow-y-auto space-y-1 bg-black/40 p-2 rounded border border-border text-[11px]">
-                                {sqliteReport.accounts.deletedAccountsList.map((a: any) => (
-                                  <div key={a.uid} className="flex items-center justify-between text-muted-foreground">
-                                    <span>"{a.name}" (ID: {a.id}, UID: {a.uid})</span>
-                                    <span className="text-amber-400 font-bold">ZDATA = {a.zdata}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       )}
+
                       <Link
                         href="/"
                         className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all duration-150 active:scale-95"
@@ -1295,20 +1180,20 @@ export default function DataImportPage() {
             </div>
 
             {currentStep !== 'importing' && (
-              <div className="px-6 py-4 border-t border-border bg-muted/10 flex items-center justify-between">
+              <div className="px-1 sm:px-4 py-3 border-t border-border flex items-center justify-between gap-2">
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 'upload'}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border rounded-lg hover:border-primary/30 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                  className="px-3 py-2 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                 >
                   ← Back
                 </button>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {currentStep === 'preview' ? (
                     <button
                       onClick={handleStartImport}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all duration-150 active:scale-95"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-primary/90 transition active:scale-95"
                     >
                       <Play size={14} />
                       Start Import ({importedRows.length.toLocaleString('en-IN')} rows)
@@ -1317,7 +1202,7 @@ export default function DataImportPage() {
                     <button
                       onClick={handleNext}
                       disabled={!canProceed()}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                     >
                       Continue
                       <ChevronRight size={14} />

@@ -85,6 +85,8 @@ interface ChartFilterBarProps {
   setSelectedMonth: (month: number) => void;
   selectedYear: number;
   setSelectedYear: (year: number) => void;
+  isChartExpanded?: boolean;
+  onToggleChart?: () => void;
 }
 
 export default function ChartFilterBar({
@@ -98,6 +100,8 @@ export default function ChartFilterBar({
   setSelectedMonth,
   selectedYear,
   setSelectedYear,
+  isChartExpanded,
+  onToggleChart,
 }: ChartFilterBarProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -156,7 +160,6 @@ export default function ChartFilterBar({
             {useMonthFilter ? `${MONTH_NAMES[selectedMonth]} ${selectedYear}` : 'Specific Month'}
           </option>
         </select>
-        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
       </div>
 
       {/* Account Selector */}
@@ -175,8 +178,20 @@ export default function ChartFilterBar({
             </option>
           ))}
         </select>
-        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
       </div>
+
+      {onToggleChart && (
+        <button
+          type="button"
+          onClick={onToggleChart}
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-border/60 bg-[#0b0f1a] text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+          aria-label={isChartExpanded ? 'Hide graph' : 'Show graph'}
+          aria-expanded={isChartExpanded}
+        >
+          {isChartExpanded ? <ChevronDown size={15} /> : <ChevronDown size={15} className="-rotate-90" />}
+        </button>
+      )}
+
     </div>
   );
 }

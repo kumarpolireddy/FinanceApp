@@ -33,7 +33,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                   }
                   
-                  const classesToRemove = ['light', 'dark', 'theme-midnight-blue', 'theme-emerald-green', 'theme-royal-purple', 'theme-sunset-orange'];
+                  const classesToRemove = ['light', 'dark', 'theme-midnight-blue', 'theme-emerald-green', 'theme-royal-purple', 'theme-sunset-orange', 'theme-slate-teal', 'theme-navy-cyan', 'theme-clean-light'];
                   document.documentElement.classList.remove(...classesToRemove);
                   
                   if (resolved === 'light') {

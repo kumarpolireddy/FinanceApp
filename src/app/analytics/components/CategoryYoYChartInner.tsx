@@ -1,28 +1,15 @@
 'use client';
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Backend integration point: fetch /api/analytics/category-comparison
 import { type Transaction, getAccounts, type Account } from '@/lib/storage';
 import { type DateRange } from './AnalyticsFilters';
 import ChartFilterBar, { filterTransactions } from './ChartFilterBar';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+import { ChevronDown, ChevronRight, X } from 'lucide-react';
 
 const CATEGORY_COLORS = [
   '#3B82F6',
@@ -227,6 +214,8 @@ export default function CategoryYoYChartInner({
 }: {
   allTransactions: Transaction[];
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedRange, setSelectedRange] = useState<DateRange>('This Month');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -261,9 +250,16 @@ export default function CategoryYoYChartInner({
 
   const [txnType, setTxnType] = useState<'expense' | 'income'>('expense');
   const [compare, setCompare] = useState(false);
+  const [isMainCategoryChartExpanded, setIsMainCategoryChartExpanded] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedCategoryForList, setSelectedCategoryForList] = useState<string | null>(null);
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(true);
+  const [detailMonth, setDetailMonth] = useState(selectedMonth);
+  const [detailYear, setDetailYear] = useState(selectedYear);
+  const detailTouchStartX = useRef<number | null>(null);
+  const [detailTransactions, setDetailTransactions] = useState(allTransactions);
+  const restoredCategoryDetailRef = useRef(false);
+  const [isCategoryHistoryExpanded, setIsCategoryHistoryExpanded] = useState(false);
 
   useEffect(() => {
     setAccounts(getAccounts());
@@ -295,14 +291,146 @@ export default function CategoryYoYChartInner({
     return acc ? acc.name : id;
   };
 
-  const handleBarClick = (category: string | null) => {
+  const handleBarClick = (category: string) => {
+    restoredCategoryDetailRef.current = true;
+    setDetailMonth(selectedMonth);
+    setDetailYear(selectedYear);
     setSelectedCategoryForList(category);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('categoryDetail', category);
+    params.set('detailMonth', String(selectedMonth + 1));
+    params.set('detailYear', String(selectedYear));
+    params.set('detailType', txnType);
+    router.push(`/analytics?${params.toString()}`, { scroll: false });
   };
+
+  const closeCategoryDetails = () => {
+    setSelectedCategoryForList(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('categoryDetail');
+    params.delete('detailMonth');
+    params.delete('detailYear');
+    params.delete('detailType');
+    const query = params.toString();
+    router.replace(query ? `/analytics?${query}` : '/analytics', { scroll: false });
+  };
+
+  useEffect(() => {
+    const category = searchParams.get('categoryDetail');
+    if (!category) {
+      setSelectedCategoryForList(null);
+      restoredCategoryDetailRef.current = false;
+      return;
+    }
+    if (restoredCategoryDetailRef.current) return;
+    const month = Number(searchParams.get('detailMonth'));
+    const year = Number(searchParams.get('detailYear'));
+    const type = searchParams.get('detailType');
+    setSelectedCategoryForList(category);
+    if (month >= 1 && month <= 12) setDetailMonth(month - 1);
+    if (Number.isFinite(year) && year > 0) setDetailYear(year);
+    if (type === 'income' || type === 'expense') setTxnType(type);
+    setDetailTransactions(allTransactions);
+    restoredCategoryDetailRef.current = true;
+  }, [allTransactions, searchParams]);
+
+  useEffect(() => {
+    if (!selectedCategoryForList || !restoredCategoryDetailRef.current) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('detailMonth', String(detailMonth + 1));
+    params.set('detailYear', String(detailYear));
+    const nextQuery = params.toString();
+    if (nextQuery !== searchParams.toString()) {
+      router.replace(`/analytics?${nextQuery}`, { scroll: false });
+    }
+  }, [detailMonth, detailYear, router, searchParams, selectedCategoryForList]);
 
   const categoryTransactions = useMemo(() => {
     if (!selectedCategoryForList) return [];
-    return transactions.filter(t => t.category === selectedCategoryForList && t.type === txnType);
-  }, [transactions, selectedCategoryForList, txnType]);
+    return detailTransactions
+      .filter((t) => {
+        const date = new Date(t.date);
+        return (
+          t.category === selectedCategoryForList &&
+          t.type === txnType &&
+          date.getMonth() === detailMonth &&
+          date.getFullYear() === detailYear &&
+          (!selectedAccountId || t.account === selectedAccountId)
+        );
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [detailTransactions, selectedCategoryForList, txnType, detailMonth, detailYear, selectedAccountId]);
+
+  const categoryHistory = useMemo(() => {
+    if (!selectedCategoryForList) return [];
+    return Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(detailYear, detailMonth - (5 - index), 1);
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      const amount = detailTransactions
+        .filter((t) => {
+          const transactionDate = new Date(t.date);
+          return (
+            t.category === selectedCategoryForList &&
+            t.type === txnType &&
+            transactionDate.getMonth() === month &&
+            transactionDate.getFullYear() === year &&
+            (!selectedAccountId || t.account === selectedAccountId)
+          );
+        })
+        .reduce((sum, transaction) => sum + transaction.amount, 0);
+
+      return {
+        label: date.toLocaleDateString('en-IN', { month: 'short' }),
+        amount,
+      };
+    });
+  }, [detailTransactions, selectedCategoryForList, txnType, detailMonth, detailYear, selectedAccountId]);
+
+  const shiftDetailMonth = (delta: number) => {
+    const date = new Date(detailYear, detailMonth + delta, 1);
+    setDetailMonth(date.getMonth());
+    setDetailYear(date.getFullYear());
+  };
+
+  const detailTotal = categoryTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+
+  const openTransactionEditor = (transaction: Transaction) => {
+    const date = new Date(transaction.date);
+    const returnParams = new URLSearchParams(searchParams.toString());
+    returnParams.set('categoryDetail', selectedCategoryForList || transaction.category || 'Other');
+    returnParams.set('detailMonth', String(detailMonth + 1));
+    returnParams.set('detailYear', String(detailYear));
+    returnParams.set('detailType', txnType);
+    const returnTo = `/analytics?${returnParams.toString()}`;
+    const params = new URLSearchParams({
+      edit: transaction.id,
+      year: String(date.getFullYear()),
+      month: String(date.getMonth() + 1).padStart(2, '0'),
+      source: 'analytics',
+      returnTo,
+    });
+    router.push(`/transactions?${params.toString()}`);
+  };
+
+  const subcategoryBreakdown = useMemo(() => {
+    const totals: Record<string, number> = {};
+    categoryTransactions.forEach((transaction) => {
+      const subcategory = transaction.subcategory || 'Uncategorized';
+      totals[subcategory] = (totals[subcategory] || 0) + transaction.amount;
+    });
+    return Object.entries(totals)
+      .map(([subcategory, amount]) => ({ subcategory, amount }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [categoryTransactions]);
+
+  useEffect(() => {
+    if (!selectedCategoryForList) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedCategoryForList]);
 
   const [compareMode, setCompareMode] = useState<CompareMode>('prev-month');
 
@@ -369,7 +497,7 @@ export default function CategoryYoYChartInner({
         </h3>
         
         {/* Expenses / Income Tab Switcher */}
-        <div className="flex items-center p-0.5 bg-secondary/80 rounded-lg border border-border/50">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => {
               setTxnType('expense');
@@ -399,14 +527,19 @@ export default function CategoryYoYChartInner({
         </div>
       </div>
 
-      {/* Month Selector & Compare Toggle Controls Row */}
+      {/* Total & Compare Toggle Controls Row */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-t border-border/20 pt-3">
-        {/* Left: Active Month Display */}
-        <div className="text-xs font-bold text-foreground select-none uppercase tracking-wider py-1.5">
-          📅 {MONTH_NAMES[selectedMonth].slice(0, 3)} {selectedYear}
+        <div className="text-xs font-semibold text-muted-foreground">
+          Total {txnType === 'expense' ? 'spending' : 'income'}:{' '}
+          <span
+            className={`font-bold tabular-nums ${
+              txnType === 'income' ? 'text-positive' : 'text-negative'
+            }`}
+          >
+            ₹{totalSpend.toLocaleString('en-IN')}
+          </span>
         </div>
 
-        {/* Right: Compare Toggle & Dropdown */}
         <div className="flex flex-wrap items-center gap-3.5 flex-shrink-0">
           <label className="flex items-center gap-2 cursor-pointer hover:text-foreground transition select-none text-xs text-muted-foreground font-semibold">
             <input
@@ -461,10 +594,12 @@ export default function CategoryYoYChartInner({
           setSelectedMonth={setSelectedMonth}
           selectedYear={selectedYear}
           setSelectedYear={setSelectedYear}
+          isChartExpanded={isMainCategoryChartExpanded}
+          onToggleChart={() => setIsMainCategoryChartExpanded((expanded) => !expanded)}
         />
       </div>
 
-      {compare ? (
+      {isMainCategoryChartExpanded && (compare ? (
         data.length === 0 ? (
           <div className="h-[240px] flex items-center justify-center text-xs text-muted-foreground">
             Not enough transaction data for this comparison yet.
@@ -550,10 +685,10 @@ export default function CategoryYoYChartInner({
             />
           </BarChart>
         </ResponsiveContainer>
-      )}
+      ))}
 
       {/* Footer Callouts */}
-      {compare ? (
+      {compare && (
         <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-negative" />
@@ -570,21 +705,6 @@ export default function CategoryYoYChartInner({
             <span className="text-xs font-semibold text-positive">
               {bestReduction ? `${bestReduction.category} ${bestReduction.pct.toFixed(1)}%` : '—'}
             </span>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${txnType === 'income' ? 'bg-positive' : 'bg-primary'}`} />
-            <span className="text-xs text-muted-foreground font-medium">
-              Total {txnType === 'expense' ? 'category spending' : 'category income'}:
-            </span>
-            <span className={`text-xs font-bold ${txnType === 'income' ? 'text-positive' : 'text-negative'}`}>
-              ₹{totalSpend.toLocaleString('en-IN')}
-            </span>
-          </div>
-          <div className="text-xs text-muted-foreground font-medium">
-            {currentPeriodData.length} active categories
           </div>
         </div>
       )}
@@ -618,7 +738,7 @@ export default function CategoryYoYChartInner({
                   <div key={item.category} className="py-0.5">
                     {/* Category Row */}
                     <div 
-                      onClick={() => handleBarClick(isSelected ? null : item.category)}
+                      onClick={() => handleBarClick(item.category)}
                       className={`group cursor-pointer py-2.5 px-2 rounded-lg transition-all flex items-center justify-between text-sm ${
                         isSelected
                           ? 'bg-primary/10 border-l-2 border-primary font-semibold'
@@ -639,40 +759,6 @@ export default function CategoryYoYChartInner({
                       </div>
                     </div>
 
-                    {/* Inline Transactions List for this Category */}
-                    {isSelected && (
-                      <div className="mt-1 mb-2 ml-2 pl-3 border-l-2 border-primary/40 divide-y divide-border/20 animate-slide-up">
-                        {categoryTransactions.length === 0 ? (
-                          <p className="text-center text-xs text-muted-foreground py-3 font-normal">
-                            No transactions recorded for {item.category}.
-                          </p>
-                        ) : (
-                          categoryTransactions.map((txn) => {
-                            const isIncome = txn.type === 'income';
-                            const isTransfer = txn.type === 'transfer';
-                            
-                            return (
-                              <div 
-                                key={txn.id}
-                                className="flex items-center justify-between py-2 px-2 hover:bg-secondary/30 rounded transition"
-                              >
-                                <div className="min-w-0 pr-3">
-                                  <div className="text-xs font-semibold text-foreground truncate">
-                                    {txn.description || txn.category || 'Transaction'}
-                                  </div>
-                                  <div className="text-[10px] text-muted-foreground/80 mt-0.5">
-                                    {new Date(txn.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} • {getAccountName(txn.account)}
-                                  </div>
-                                </div>
-                                <span className={`font-mono text-xs font-bold shrink-0 ${isTransfer ? 'text-info' : isIncome ? 'text-positive' : 'text-negative'}`}>
-                                  {isTransfer ? '' : isIncome ? '+' : '-'}{txn.amount.toLocaleString('en-IN')}
-                                </span>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    )}
                   </div>
                 );
               })
@@ -680,6 +766,141 @@ export default function CategoryYoYChartInner({
           </div>
         )}
       </div>
+
+      {selectedCategoryForList && createPortal(
+        <div
+          className="fixed inset-0 z-[100] flex h-[100dvh] w-screen flex-col overflow-hidden bg-background text-foreground"
+          onTouchStart={(event) => {
+            event.stopPropagation();
+            detailTouchStartX.current = event.touches[0].clientX;
+          }}
+          onTouchEnd={(event) => {
+            event.stopPropagation();
+            if (detailTouchStartX.current === null) return;
+            const distance = detailTouchStartX.current - event.changedTouches[0].clientX;
+            if (Math.abs(distance) > 50) shiftDetailMonth(distance > 0 ? 1 : -1);
+            detailTouchStartX.current = null;
+          }}
+        >
+          <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3 sm:px-6">
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-semibold">
+                {selectedCategoryForList}
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  {new Date(detailYear, detailMonth, 1).toLocaleDateString('en-IN', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {txnType === 'expense' ? 'Spending' : 'Income'} history
+              </p>
+            </div>
+            <button
+              onClick={closeCategoryDetails}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              aria-label="Close category details"
+            >
+              <X size={20} />
+            </button>
+          </header>
+
+          <main className="flex-1 overflow-y-auto px-4 pb-8 pt-4 sm:px-6">
+            <div className="mx-auto w-full max-w-4xl space-y-5">
+              <section className="rounded-xl border border-border bg-muted/80 px-4 py-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="mt-0.5 text-sm font-semibold">
+                      {txnType === 'expense' ? 'Subcategory spending' : 'Subcategory income'}
+                    </h3>
+                  </div>
+                  <span className={`text-sm font-bold ${txnType === 'income' ? 'text-positive' : 'text-negative'}`}>
+                    ₹{detailTotal.toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                {subcategoryBreakdown.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-muted-foreground">
+                    No subcategory activity for this month.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border/30">
+                    {subcategoryBreakdown.map((item) => {
+                      return (
+                        <div key={item.subcategory} className="py-3">
+                          <div className="flex items-center justify-between gap-3 text-xs">
+                            <span className="truncate font-medium">{item.subcategory}</span>
+                            <span className="shrink-0 font-mono font-semibold">
+                              ₹{item.amount.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              <section>
+                {categoryTransactions.length === 0 ? (
+                  <p className="py-12 text-center text-sm text-muted-foreground">No transactions recorded for this month.</p>
+                ) : (
+                  <div className="divide-y divide-border/30 px-3">
+                    {categoryTransactions.map((txn) => (
+                      <button
+                        key={txn.id}
+                        type="button"
+                        onClick={() => openTransactionEditor(txn)}
+                        className="flex w-full items-center justify-between gap-4 px-1 py-3 text-left hover:bg-secondary/20"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold">{txn.description || txn.category || 'Transaction'}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {new Date(txn.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • {getAccountName(txn.account)}
+                          </div>
+                        </div>
+                        <span className={`shrink-0 font-mono text-sm font-bold ${txn.type === 'income' ? 'text-positive' : 'text-negative'}`}>
+                          {txn.type === 'income' ? '+' : '-'}₹{txn.amount.toLocaleString('en-IN')}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="px-1 py-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryHistoryExpanded((expanded) => !expanded)}
+                  className="flex w-full items-center justify-between border-b border-border/40 py-3 text-left text-sm font-semibold"
+                  aria-expanded={isCategoryHistoryExpanded}
+                >
+                  <span>{txnType === 'expense' ? 'Spending graph' : 'Income graph'}</span>
+                  {isCategoryHistoryExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </button>
+                {isCategoryHistoryExpanded && (
+                  <div className="pt-3">
+                    <ResponsiveContainer width="100%" height={210}>
+                      <BarChart data={categoryHistory} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
+                        <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} axisLine={false} tickLine={false} width={44} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
+                        <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                        <Bar dataKey="amount" fill={txnType === 'income' ? 'var(--positive)' : 'var(--primary)'} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </section>
+
+              <p className="text-center text-xs text-muted-foreground">Swipe left or right to change month</p>
+            </div>
+          </main>
+
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

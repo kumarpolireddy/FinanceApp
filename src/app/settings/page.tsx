@@ -23,8 +23,24 @@ import {
 } from '@/lib/storage';
 import { toast } from 'sonner';
 import Modal from '@/components/ui/Modal';
-import { Edit2, Trash2, Archive, Eye, EyeOff, Plus, TrendingUp, TrendingDown, ChevronRight, ChevronDown } from 'lucide-react';
+import {
+  Edit2,
+  Trash2,
+  Archive,
+  Eye,
+  EyeOff,
+  Plus,
+  TrendingUp,
+  TrendingDown,
+  ChevronRight,
+  ChevronDown,
+} from 'lucide-react';
 import { CategorySettingsInner } from '@/app/categories/components/CategorySettingsInner';
+import {
+  calculateNewEMI,
+  calculateRemainingTenure,
+  getNextEmiDateStr,
+} from '@/lib/loanCalculations';
 
 const ACCOUNT_TYPES: { value: Account['type']; label: string; icon: string; color: string }[] = [
   { value: 'accounts', label: 'Bank Accounts', icon: '', color: '#3b82f6' },
@@ -73,37 +89,6 @@ const EMPTY_FORM = {
   interestStartDate: '',
   expectedRepaymentDate: '',
   compoundingFrequency: 'monthly',
-};
-
-function calculateRemainingTenure(outstanding: number, annualRate: number, emi: number): number {
-  if (outstanding <= 0) return 0;
-  if (annualRate <= 0 || emi <= 0) return Math.ceil(outstanding / (emi || 1));
-  const r = annualRate / 12 / 100;
-  const pv = outstanding;
-  const pmt = emi;
-  if (pmt <= pv * r) {
-    return 120; // fallback if EMI is not enough to cover interest
-  }
-  const n = -Math.log(1 - (pv * r) / pmt) / Math.log(1 + r);
-  return Math.ceil(n);
-}
-
-function calculateNewEMI(outstanding: number, annualRate: number, remainingMonths: number): number {
-  if (outstanding <= 0 || remainingMonths <= 0) return 0;
-  if (annualRate <= 0) return Math.ceil(outstanding / remainingMonths);
-  const r = annualRate / 12 / 100;
-  const n = remainingMonths;
-  const emi = (outstanding * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  return Math.ceil(emi);
-}
-
-const getNextEmiDateStr = (currentDueStr: string, dueDay: number) => {
-  if (!currentDueStr || !/^\d{4}-\d{2}-\d{2}$/.test(currentDueStr)) return '';
-  const parts = currentDueStr.split('-');
-  const y = parseInt(parts[0]);
-  const m = parseInt(parts[1]) - 1; // 0-indexed month
-  const d = new Date(y, m + 1, dueDay || 5);
-  return d.toISOString().slice(0, 10);
 };
 
 export default function SettingsPage() {
@@ -436,14 +421,24 @@ export default function SettingsPage() {
     localStorage.setItem(key, value);
     if (key === 'wealthiq_theme') {
       const root = document.documentElement;
-      const classesToRemove = ['light', 'dark', 'theme-midnight-blue', 'theme-emerald-green', 'theme-royal-purple', 'theme-sunset-orange'];
+      const classesToRemove = [
+        'light',
+        'dark',
+        'theme-midnight-blue',
+        'theme-emerald-green',
+        'theme-royal-purple',
+        'theme-sunset-orange',
+        'theme-slate-teal',
+        'theme-navy-cyan',
+        'theme-clean-light',
+      ];
       root.classList.remove(...classesToRemove);
-      
+
       let resolved = value;
       if (value === 'system') {
         resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
-      
+
       if (resolved === 'light') {
         root.classList.add('light');
       } else {
@@ -452,17 +447,20 @@ export default function SettingsPage() {
           root.classList.add(resolved);
         }
       }
-      
+
       const readableNames: Record<string, string> = {
-        'dark': 'Default Dark',
-        'light': 'Light Mode',
-        'system': 'System Default',
+        dark: 'Default Dark',
+        light: 'Light Mode',
+        system: 'System Default',
         'theme-midnight-blue': 'Midnight Blue',
         'theme-emerald-green': 'Emerald Green',
         'theme-royal-purple': 'Royal Purple',
-        'theme-sunset-orange': 'Sunset Orange'
+        'theme-sunset-orange': 'Sunset Orange',
+        'theme-slate-teal': 'Slate Teal',
+        'theme-navy-cyan': 'Navy Cyan',
+        'theme-clean-light': 'Clean Light',
       };
-      
+
       toast.success(`Theme updated to ${readableNames[value] || value}.`);
     }
   };
@@ -716,7 +714,14 @@ export default function SettingsPage() {
     const payload: Partial<Account> = {
       name: (accountForm.name || '').trim(),
       type: accountForm.type,
-      category: accountForm.type === 'accounts' ? 'Bank Accounts' : accountForm.type === 'cash' ? 'Cash' : accountForm.type === 'credit' ? 'Credit Cards' : 'Loans',
+      category:
+        accountForm.type === 'accounts'
+          ? 'Bank Accounts'
+          : accountForm.type === 'cash'
+            ? 'Cash'
+            : accountForm.type === 'credit'
+              ? 'Credit Cards'
+              : 'Loans',
       balance: balanceVal,
       color: accountForm.color,
       visible: accountForm.visible,
@@ -1957,18 +1962,25 @@ export default function SettingsPage() {
                       </span>
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-2.5 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => openAddForm('accounts')}
                       className="px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/10 text-primary text-2xs font-bold hover:bg-primary/20 transition flex items-center gap-1"
                     >
                       <span>Add</span>
                     </button>
-                    <span 
+                    <span
                       onClick={() => toggleCategoryCollapse('accounts')}
                       className="text-muted-foreground/60 transition-transform duration-200 cursor-pointer p-1"
                     >
-                      {collapsedCategories.accounts ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                      {collapsedCategories.accounts ? (
+                        <ChevronRight size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      )}
                     </span>
                   </div>
                 </div>
@@ -2173,18 +2185,25 @@ export default function SettingsPage() {
                       </span>
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-2.5 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => openAddForm('cash')}
                       className="px-2.5 py-1 rounded-lg border border-positive/20 bg-positive/10 text-positive text-2xs font-bold hover:bg-positive/20 transition flex items-center gap-1"
                     >
                       <span>Add</span>
                     </button>
-                    <span 
+                    <span
                       onClick={() => toggleCategoryCollapse('cash')}
                       className="text-muted-foreground/60 transition-transform duration-200 cursor-pointer p-1"
                     >
-                      {collapsedCategories.cash ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                      {collapsedCategories.cash ? (
+                        <ChevronRight size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      )}
                     </span>
                   </div>
                 </div>
@@ -2401,18 +2420,25 @@ export default function SettingsPage() {
                       </span>
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-2.5 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => openAddForm('credit')}
                       className="px-2.5 py-1 rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500 text-2xs font-bold hover:bg-amber-500/20 transition flex items-center gap-1"
                     >
                       <span>Add</span>
                     </button>
-                    <span 
+                    <span
                       onClick={() => toggleCategoryCollapse('credit')}
                       className="text-muted-foreground/60 transition-transform duration-200 cursor-pointer p-1"
                     >
-                      {collapsedCategories.credit ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                      {collapsedCategories.credit ? (
+                        <ChevronRight size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      )}
                     </span>
                   </div>
                 </div>
@@ -2689,18 +2715,25 @@ export default function SettingsPage() {
                       </span>
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-2.5 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => openAddForm('loan')}
                       className="px-2.5 py-1 rounded-lg border border-negative/20 bg-negative/10 text-negative text-2xs font-bold hover:bg-negative/20 transition flex items-center gap-1"
                     >
                       <span>Add</span>
                     </button>
-                    <span 
+                    <span
                       onClick={() => toggleCategoryCollapse('loan')}
                       className="text-muted-foreground/60 transition-transform duration-200 cursor-pointer p-1"
                     >
-                      {collapsedCategories.loan ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                      {collapsedCategories.loan ? (
+                        <ChevronRight size={14} />
+                      ) : (
+                        <ChevronDown size={14} />
+                      )}
                     </span>
                   </div>
                 </div>
@@ -3073,6 +3106,9 @@ export default function SettingsPage() {
                   <option value="theme-emerald-green">Emerald Green</option>
                   <option value="theme-royal-purple">Royal Purple</option>
                   <option value="theme-sunset-orange">Sunset Orange</option>
+                  <option value="theme-slate-teal">Slate Teal</option>
+                  <option value="theme-navy-cyan">Navy Cyan</option>
+                  <option value="theme-clean-light">Clean Light</option>
                 </select>
               </div>
 
@@ -3082,7 +3118,8 @@ export default function SettingsPage() {
                   Trip Transactions Background Color
                 </label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Choose the highlight background color for trip-related transactions across the application.
+                  Choose the highlight background color for trip-related transactions across the
+                  application.
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
                   {[
@@ -3127,7 +3164,9 @@ export default function SettingsPage() {
                       className="w-9 h-9 rounded-lg cursor-pointer bg-transparent border-0 p-0"
                       title="Custom Trip Color"
                     />
-                    <span className="text-xs font-mono font-medium text-slate-300 uppercase">{tripBgColor}</span>
+                    <span className="text-xs font-mono font-medium text-slate-300 uppercase">
+                      {tripBgColor}
+                    </span>
                   </div>
                 </div>
               </div>

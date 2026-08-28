@@ -1,5 +1,8 @@
 'use client';
 
+import { safeGetItem, safeSetItem } from './browserStorage';
+import { createLocalId } from './ids';
+
 export interface FinanceAlarm {
   id: string;
   title: string;
@@ -73,24 +76,6 @@ export const INITIAL_DEFAULT_ALARMS: FinanceAlarm[] = [
   },
 ];
 
-function safeGetItem(key: string): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeSetItem(key: string, value: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, value);
-  } catch (e) {
-    console.error('Failed to set localStorage item', key, e);
-  }
-}
-
 export function getStoredAlarms(): FinanceAlarm[] {
   const data = safeGetItem(ALARMS_STORAGE_KEY);
   let alarms: FinanceAlarm[] = [];
@@ -124,12 +109,14 @@ export function saveStoredAlarms(alarms: FinanceAlarm[]): void {
   }
 }
 
-export function addAlarm(alarmData: Omit<FinanceAlarm, 'id' | 'createdAt' | 'updatedAt'>): FinanceAlarm {
+export function addAlarm(
+  alarmData: Omit<FinanceAlarm, 'id' | 'createdAt' | 'updatedAt'>
+): FinanceAlarm {
   const alarms = getStoredAlarms();
   const now = new Date().toISOString();
   const newAlarm: FinanceAlarm = {
     ...alarmData,
-    id: 'alarm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    id: createLocalId('alarm', 5, '_'),
     createdAt: now,
     updatedAt: now,
   };
@@ -198,7 +185,7 @@ export function addAlarmLog(entry: Omit<AlarmLogEntry, 'id'>): void {
   const logs = getAlarmLogs();
   const newLog: AlarmLogEntry = {
     ...entry,
-    id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    id: createLocalId('log', 4, '_'),
   };
   const updated = [newLog, ...logs].slice(0, 100);
   safeSetItem(ALARM_LOGS_STORAGE_KEY, JSON.stringify(updated));

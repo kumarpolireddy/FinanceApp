@@ -38,7 +38,13 @@ export default function AccountBalancesInner({
   const [accounts, setAccounts] = useState<Account[]>([]);
 
   useEffect(() => {
-    setAccounts(getAccounts());
+    setAccounts(
+      getAccounts(true).filter((account) => {
+        const isBankAccount =
+          account.type === 'accounts' || account.category?.toLowerCase().includes('bank');
+        return account.visible !== false || isBankAccount;
+      })
+    );
   }, []);
 
   const handleAccountClick = (id: string) => {
@@ -61,7 +67,12 @@ export default function AccountBalancesInner({
     }));
 
   const totalAssets = accounts
-    .filter((a) => a.type === 'accounts' || a.type === 'cash')
+    .filter(
+      (a) =>
+        a.type !== 'credit' &&
+        a.type !== 'loan' &&
+        (a.type === 'accounts' || a.type === 'cash' || a.category?.toLowerCase().includes('bank'))
+    )
     .reduce((s, a) => s + Math.max(0, a.balance), 0);
   const totalLiabilities = accounts
     .filter((a) => a.type === 'credit' || a.type === 'loan')

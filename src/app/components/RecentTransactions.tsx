@@ -105,10 +105,10 @@ export default function RecentTransactions({
         <div className="text-center py-8">
           <p className="text-sm text-muted-foreground">No transactions yet</p>
           <Link
-            href="/add-expense"
+            href="/transactions"
             className="text-xs text-primary hover:underline mt-1 inline-block"
           >
-            Add your first expense →
+            Open transactions →
           </Link>
         </div>
       ) : (

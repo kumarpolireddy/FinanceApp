@@ -16,7 +16,14 @@ import {
   ChevronLeft,
   LayoutDashboard,
   Plus,
-  Plane
+  Plane,
+  Receipt,
+  Settings,
+  Wrench,
+  FileText,
+  Sparkles,
+  Users,
+  Briefcase
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -34,7 +41,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname() || '';
   const router = useRouter();
   
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  const [hideMobileBottomNav, setHideMobileBottomNav] = useState(false);
+  const [hideAddTransaction, setHideAddTransaction] = useState(false);
+  const [isSpecificAccountTransactions, setIsSpecificAccountTransactions] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
 
   // Trip Mode States & Handlers for Header
@@ -59,6 +69,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
       };
     }
   }, [refreshActiveTrip, pathname]);
+
+  useEffect(() => {
+    const accountId = new URLSearchParams(window.location.search).get('account');
+    setIsSpecificAccountTransactions(pathname === '/transactions' && Boolean(accountId));
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleBottomNavVisibility = (event: Event) => {
+      const detail = (event as CustomEvent<{ hidden?: boolean; hideAddTransaction?: boolean }>).detail;
+      const hidden = detail?.hidden === true;
+      setHideMobileBottomNav(hidden);
+      setHideAddTransaction(detail?.hideAddTransaction === true);
+    };
+
+    window.addEventListener('app-bottom-nav-visibility', handleBottomNavVisibility);
+    return () => window.removeEventListener('app-bottom-nav-visibility', handleBottomNavVisibility);
+  }, []);
 
   const handleTripButtonClick = () => {
     const current = getActiveTrip();
@@ -94,28 +121,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
     toast.success(`Trip "${created.name}" started`);
   };
 
+  const handleBackNavigation = () => {
+    const backEvent = new CustomEvent('app-back', { cancelable: true });
+    window.dispatchEvent(backEvent);
+    if (!backEvent.defaultPrevented) router.back();
+  };
+
   const handleSwipeBack = () => {
-    const params = new URLSearchParams(window.location.search);
-    const accountParam = params.get('account');
-    const categoryParam = params.get('category');
-
-    if (pathname === '/transactions') {
-      if (accountParam) {
-        router.push('/accounts');
-        return;
-      }
-      if (categoryParam) {
-        router.push('/analytics');
-        return;
-      }
-    }
-
-    if (pathname === '/add-expense') {
-      router.push('/transactions');
-      return;
-    }
-
-    router.back();
+    handleBackNavigation();
   };
 
   const handleGlobalTouchStart = (e: React.TouchEvent) => {
@@ -161,31 +174,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const init = async () => {
       const { App } = await import('@capacitor/app');
       handler = await App.addListener('backButton', () => {
-        const params = new URLSearchParams(window.location.search);
-        const accountParam = params.get('account');
-        const categoryParam = params.get('category');
-
-        if (pathname === '/transactions') {
-          if (accountParam) {
-            router.push('/accounts');
-            return;
-          }
-          if (categoryParam) {
-            router.push('/analytics');
-            return;
-          }
-        }
-
-        if (pathname === '/add-expense') {
-          router.push('/transactions');
-          return;
-        }
-
-        if (pathname !== '/' && pathname !== '/dashboard') {
-          router.back();
-        } else {
-          router.back();
-        }
+        handleBackNavigation();
       });
     };
     init();
@@ -208,25 +197,61 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   // Page title calculation based on route
   const pageTitle = (() => {
-    if (pathname.startsWith('/ai-advisor')) return 'WealthIQ Gemini AI Advisor';
+    if (pathname.startsWith('/ai-advisor')) return 'AI Advisor';
     if (pathname === '/' || pathname.startsWith('/dashboard')) return 'Dashboard';
     if (pathname.startsWith('/transactions')) return 'Transactions';
-    if (pathname.startsWith('/analytics')) return '📊 Spending Intelligence';
+    if (pathname.startsWith('/analytics')) return 'Statistics';
     if (pathname.startsWith('/accounts')) return 'Accounts';
     if (pathname.startsWith('/budgets')) return 'Budgets';
     if (pathname.startsWith('/loans')) return 'Loans & Debts';
     if (pathname.startsWith('/goals')) return 'Goals';
     if (pathname.startsWith('/reports')) return 'Reports';
-    if (pathname.startsWith('/tools')) return 'Financial Tools';
+    if (pathname.startsWith('/tools')) return 'Tools';
     if (pathname.startsWith('/settings')) return 'Settings';
     if (pathname.startsWith('/data-import')) return 'Data Import';
     if (pathname.startsWith('/split-expenses')) return 'Split Expenses';
-    if (pathname.startsWith('/more')) return 'More Options';
+    if (pathname.startsWith('/bills')) return 'Bills & Payments';
+    if (pathname.startsWith('/trips')) return 'Trips';
+    if (pathname.startsWith('/more')) return 'More';
     return 'WealthIQ';
   })();
 
+  const PageIcon = pathname.startsWith('/transactions')
+    ? List
+    : pathname.startsWith('/analytics')
+      ? BarChart3
+      : pathname.startsWith('/accounts')
+        ? Wallet
+        : pathname.startsWith('/more')
+          ? Menu
+          : pathname.startsWith('/trips')
+            ? Plane
+            : pathname.startsWith('/bills')
+              ? Receipt
+              : pathname.startsWith('/settings')
+                ? Settings
+                : pathname.startsWith('/tools')
+                  ? Wrench
+                  : pathname.startsWith('/reports')
+                    ? FileText
+                    : pathname.startsWith('/ai-advisor')
+                      ? Sparkles
+                      : pathname.startsWith('/split-expenses')
+                        ? Users
+                        : pathname.startsWith('/budgets')
+                          ? Briefcase
+                          : LayoutDashboard;
+
   const isMainTab = pathname === '/dashboard' || pathname === '/transactions' || pathname === '/analytics' || pathname === '/accounts' || pathname === '/more';
-  const showFAB = !pathname.startsWith('/add-expense') && !pathname.startsWith('/ai-advisor') && !pathname.startsWith('/login');
+  const showFAB = pathname === '/transactions';
+  const handleTabNavigation = (path: string) => {
+    if (pathname === path && !window.location.search) return;
+    router.push(path);
+  };
+
+  if (isMobile === null) {
+    return <div className="min-h-screen bg-background" />;
+  }
 
   if (isMobile) {
     return (
@@ -242,26 +267,26 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center gap-1.5 shrink-0">
             {!isMainTab && pathname !== '/' ? (
               <button 
-                onClick={() => router.back()}
+                onClick={handleBackNavigation}
                 className="p-1 rounded-lg hover:bg-muted/50 transition flex items-center gap-0.5 text-primary text-xs font-black uppercase"
               >
                 <ChevronLeft size={16} />
                 <span>Back</span>
               </button>
             ) : (
-              <div className="flex items-center gap-1">
-                <span className="text-sm">📊</span>
-                <span className="font-extrabold tracking-tighter text-foreground text-xs uppercase">WealthIQ</span>
-              </div>
+              <div className="w-8" aria-hidden="true" />
             )}
           </div>
           
-          <h2 className="text-sm font-extrabold uppercase tracking-wider text-foreground text-center truncate px-1 shrink">
-            {pageTitle}
-          </h2>
+          <div className="min-w-0 flex-1 flex items-center justify-center gap-2 px-2">
+            <PageIcon size={18} className="shrink-0 text-primary" aria-hidden="true" />
+            <h1 className="truncate text-lg font-semibold leading-tight text-foreground">
+              {pageTitle}
+            </h1>
+          </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {pathname.startsWith('/transactions') && (
+            {pathname.startsWith('/transactions') && !isSpecificAccountTransactions && (
               <>
                 <button
                   onClick={handleTripButtonClick}
@@ -306,10 +331,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </main>
 
         {/* Floating Add Button */}
-        {showFAB && (
+        {showFAB && !hideAddTransaction && (
           <button
             onClick={() => router.push('/add-expense')}
-            className="fixed bottom-20 right-6 w-12 h-12 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 transition-all active:scale-95 z-40 cursor-pointer hover:brightness-110"
+            className="fixed bottom-20 right-24 w-12 h-12 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 transition-all active:scale-95 z-40 cursor-pointer hover:brightness-110"
             aria-label="Add transaction"
           >
             <Plus size={24} />
@@ -332,7 +357,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   type="text"
                   value={newTripName}
                   onChange={(e) => setNewTripName(e.target.value)}
-                  placeholder="e.g. Goa Trip, Ladakh 2026"
                   className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
                   required
                   autoFocus
@@ -346,7 +370,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   type="text"
                   value={newTripDestination}
                   onChange={(e) => setNewTripDestination(e.target.value)}
-                  placeholder="e.g. Goa, India"
                   className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
@@ -358,7 +381,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   type="number"
                   value={newTripBudget}
                   onChange={(e) => setNewTripBudget(e.target.value)}
-                  placeholder="e.g. 25000"
                   className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
@@ -382,7 +404,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         )}
 
         {/* Mobile Bottom Tab Bar */}
-        {!pathname.startsWith('/add-expense') && !pathname.startsWith('/ai-advisor') && (
+        {!hideMobileBottomNav && !pathname.startsWith('/add-expense') && !pathname.startsWith('/ai-advisor') && (
           <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card/95 backdrop-blur-xl border-t border-border/80 flex justify-around items-center z-50 pb-safe shadow-2xl">
             {TABS.map((tab) => {
               const IconComponent = tab.icon;
@@ -391,7 +413,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => router.push(tab.path)}
+                  onClick={() => handleTabNavigation(tab.path)}
                   className={`flex-1 h-full flex flex-col justify-center items-center gap-1 transition-all ${
                     isActive ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
                   }`}
@@ -416,10 +438,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-auto relative bg-gradient-to-b from-transparent to-black/5">
         {children}
-        {showFAB && (
+        {showFAB && !hideAddTransaction && (
           <button
             onClick={() => router.push('/add-expense')}
-            className="fixed bottom-8 right-8 w-14 h-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xl shadow-primary/25 transition-all active:scale-95 hover:scale-105 hover:brightness-110 z-40 cursor-pointer"
+            className="fixed bottom-8 right-28 w-14 h-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xl shadow-primary/25 transition-all active:scale-95 hover:scale-105 hover:brightness-110 z-40 cursor-pointer"
             aria-label="Add transaction"
           >
             <Plus size={28} />

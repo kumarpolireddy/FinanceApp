@@ -18,7 +18,6 @@ import {
   Bell,
   HelpCircle,
   Sparkles,
-  PlusCircle,
   LogOut,
   Landmark,
   Wrench,
@@ -64,14 +63,6 @@ const NAV_GROUPS: NavGroup[] = [
     id: 'group-data',
     label: 'DATA',
     items: [
-      {
-        id: 'nav-add-expense',
-        label: 'Add Expense',
-        href: '/add-expense',
-        icon: PlusCircle,
-        badge: 'Daily',
-        badgeVariant: 'primary' as const,
-      },
       {
         id: 'nav-import',
         label: 'Data Import',

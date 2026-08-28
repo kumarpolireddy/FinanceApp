@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, X, Send, Bot, RefreshCw } from 'lucide-react';
+import { X, Send, Bot, RefreshCw } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -14,9 +14,6 @@ export default function FloatingAiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
 
-  if (pathname?.startsWith('/ai-advisor')) {
-    return null;
-  }
   const STORAGE_KEY = 'wealthiq_ai_chat_history';
 
   const [messages, setMessages] = useState<Array<{ id?: string; role: 'user' | 'assistant'; content: string; timestamp?: string }>>(() => {
@@ -84,26 +81,30 @@ export default function FloatingAiAssistant() {
     }
   };
 
+  if (pathname?.startsWith('/ai-advisor')) {
+    return null;
+  }
+
   return (
     <>
       {/* Floating Trigger Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-20 md:bottom-6 left-4 sm:left-6 z-40 w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all duration-200"
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40 w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all duration-200"
         title="Gemini AI Financial Assistant"
         aria-label="Open AI Assistant"
       >
-        <Sparkles size={22} className="animate-pulse" />
+        <Bot size={24} strokeWidth={2} />
       </button>
 
       {/* Quick Drawer / Popup Modal */}
       {isOpen && (
-        <div className="fixed bottom-36 md:bottom-20 left-3 sm:left-6 z-50 w-[calc(100vw-24px)] sm:w-96 h-[420px] sm:h-[440px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+        <div className="fixed bottom-36 md:bottom-20 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-96 h-[420px] sm:h-[440px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
           {/* Header */}
           <div className="p-3 bg-muted/60 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
-                <Sparkles size={16} />
+                <Bot size={16} />
               </div>
               <div>
                 <h4 className="text-xs font-bold text-foreground">WealthIQ AI Assistant</h4>

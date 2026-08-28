@@ -272,21 +272,21 @@ export default function DashboardHeader({
   const hasAlerts = notifications.some((n) => n.includes('Exceeded') || n.includes('Approaching'));
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-4 border-b border-border/70 pb-5 md:flex-row md:items-end md:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-3 sm:gap-5">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Financial Dashboard</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Financial Dashboard</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefresh}
-              className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all duration-150"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
               title="Refresh data"
             >
               <RefreshCw size={13} />
             </button>
             <button
               onClick={handleExport}
-              className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all duration-150"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
               title="Export report"
             >
               <Download size={13} />
@@ -294,7 +294,7 @@ export default function DashboardHeader({
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all duration-150"
+                className="relative flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
                 title="Notifications"
               >
                 <Bell size={13} />
@@ -355,7 +355,7 @@ export default function DashboardHeader({
           <select
             value={selectedAccountId || ''}
             onChange={(e) => setSelectedAccountId && setSelectedAccountId(e.target.value)}
-            className="h-12 w-full sm:w-auto text-sm bg-[#0b0f1a] border border-border rounded-xl px-4 py-2.5 text-slate-200 appearance-none cursor-pointer pr-10 hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150 font-semibold"
+            className="h-10 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2 pr-9 text-sm font-medium text-foreground transition-colors hover:border-primary/40 focus:border-primary focus:outline-none sm:w-auto"
             aria-label="Select Account"
           >
             <option value="" className="bg-[#0b0f1a] text-slate-200 text-sm">
@@ -378,10 +378,10 @@ export default function DashboardHeader({
         </div>
 
         {/* Unified Date Picker */}
-        <div className="flex items-center gap-1.5 bg-[#0b0f1a] border border-border rounded-xl p-1 relative h-12">
+        <div className="relative flex h-10 items-center gap-1 rounded-lg border border-border bg-card p-0.5">
           <button
             onClick={() => shiftMonth(-1)}
-            className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label="Previous month"
           >
             <ChevronLeft size={18} />
@@ -389,7 +389,7 @@ export default function DashboardHeader({
 
           <button
             onClick={() => setIsPickerOpen(!isPickerOpen)}
-            className="px-4 text-sm font-semibold text-foreground flex items-center gap-1.5 transition-all h-10 hover:bg-muted/80 rounded-lg"
+            className="flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
           >
             {MONTH_NAMES[selectedMonth].slice(0, 3)} {selectedYear}
             <ChevronDown size={14} className="text-muted-foreground" />
@@ -397,7 +397,7 @@ export default function DashboardHeader({
 
           <button
             onClick={() => shiftMonth(1)}
-            className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label="Next month"
           >
             <ChevronRight size={18} />

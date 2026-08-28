@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -190,46 +190,9 @@ export default function SavingsTrendChartInner() {
   const [showPrevious, setShowPrevious] = useState(true);
 
   // Granularity & Drill-down states
-  const [granularity, setGranularity] = useState<'monthly' | 'daily' | 'transaction'>('monthly');
+  const [granularity, setGranularity] = useState<'monthly' | 'transaction'>('monthly');
   const [drillMonth, setDrillMonth] = useState<number | null>(null);
   const [drillDate, setDrillDate] = useState<Date | null>(null);
-
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [isPinching, setIsPinching] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const initialDist = useRef<number | null>(null);
-  const initialZoom = useRef<number>(1);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      initialDist.current = dist;
-      initialZoom.current = zoomLevel;
-      setIsPinching(true);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && initialDist.current !== null) {
-      e.preventDefault();
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const factor = dist / initialDist.current;
-      const newZoom = Math.min(Math.max(initialZoom.current * factor, 1), 3);
-      setZoomLevel(newZoom);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    initialDist.current = null;
-    setIsPinching(false);
-  };
 
   useEffect(() => {
     setAccounts(getAccounts());
@@ -275,9 +238,8 @@ export default function SavingsTrendChartInner() {
   const isSingleMonth = useMemo(() => {
     if (drillDate !== null) return true;
     if (drillMonth !== null) return true;
-    if (useMonthFilter || selectedRange === 'This Month') return true;
     return false;
-  }, [selectedRange, useMonthFilter, drillMonth, drillDate]);
+  }, [drillMonth, drillDate]);
 
   useEffect(() => {
     // 1. Determine date ranges
@@ -392,7 +354,9 @@ export default function SavingsTrendChartInner() {
     // Filter transactions
     let txns = getTransactions();
     if (selectedAccountId) {
-      txns = txns.filter((t) => t.account === selectedAccountId);
+      txns = txns.filter(
+        (t) => t.account === selectedAccountId || (t.type === 'transfer' && t.toAccount === selectedAccountId)
+      );
     }
     if (selectedCategories && selectedCategories.length > 0) {
       txns = txns.filter((t) => selectedCategories.includes(t.category));
@@ -427,6 +391,10 @@ export default function SavingsTrendChartInner() {
         } else if (trendType === 'balance') {
           if (t.type === 'income') runningBal += amt;
           else if (t.type === 'expense') runningBal -= amt;
+          else if (t.type === 'transfer' && selectedAccountId) {
+            if (t.account === selectedAccountId) runningBal -= amt;
+            if (t.toAccount === selectedAccountId) runningBal += amt;
+          }
           val = runningBal;
         }
 
@@ -450,7 +418,7 @@ export default function SavingsTrendChartInner() {
       });
 
       setData(points);
-    } else if (granularity === 'monthly' && drillMonth === null && !useMonthFilter) {
+    } else if (granularity === 'monthly' && drillMonth === null) {
       // 2b. Monthly view respecting start and end bounds of selectedRange
       const startYear = start.getFullYear();
       const startMonth = start.getMonth();
@@ -529,6 +497,7 @@ export default function SavingsTrendChartInner() {
           month: label,
           savings,
           prevSavings,
+          dateObj: curDate,
           monthIndex: m,
           isMonthlyPoint: true,
         });
@@ -649,6 +618,12 @@ export default function SavingsTrendChartInner() {
   ]);
 
   const totalSaved = data.reduce((s, d) => s + d.savings, 0);
+  const endingBalance = data.length > 0 ? data[data.length - 1].savings : 0;
+  const balanceChange = useMemo(() => {
+    if (trendType !== 'balance' || data.length === 0 || !data[0].dateObj) return 0;
+    const openingTime = new Date(data[0].dateObj.getTime() - 1).toISOString();
+    return endingBalance - getBalanceAtDate(openingTime, selectedAccountId);
+  }, [data, endingBalance, selectedAccountId, trendType]);
 
   const bestPoint = useMemo(() => {
     if (data.length === 0) return null;
@@ -707,7 +682,7 @@ export default function SavingsTrendChartInner() {
         <p className="text-xs text-muted-foreground py-1.5">
           {granularity === 'transaction' || drillDate !== null
             ? 'Transaction timeline flow'
-            : 'Daily trend — current vs previous period'}
+            : 'Monthly trend — current vs previous period'}
         </p>
       </div>
 
@@ -752,20 +727,6 @@ export default function SavingsTrendChartInner() {
               }`}
             >
               Monthly
-            </button>
-            <button
-              onClick={() => {
-                setGranularity('daily');
-                setDrillMonth(null);
-                setDrillDate(null);
-              }}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                granularity === 'daily'
-                  ? 'bg-primary/20 text-primary shadow-xs border border-primary/30'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Daily
             </button>
           </div>
         </div>
@@ -826,37 +787,6 @@ export default function SavingsTrendChartInner() {
             </button>
           </div>
 
-          {/* Zoom controls */}
-          <div className="flex items-center gap-1.5 bg-muted/20 border border-border/40 rounded-lg p-0.5 select-none">
-            <button
-              onClick={() => setZoomLevel((prev) => Math.max(prev - 0.25, 1))}
-              disabled={zoomLevel <= 1}
-              className="w-5 h-5 flex items-center justify-center text-3xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition bg-secondary/40 hover:bg-secondary rounded font-mono"
-              title="Zoom Out"
-            >
-              -
-            </button>
-            <span className="text-[10px] font-mono font-bold text-primary px-1 select-none">
-              {zoomLevel.toFixed(2)}x
-            </span>
-            <button
-              onClick={() => setZoomLevel((prev) => Math.min(prev + 0.25, 3))}
-              disabled={zoomLevel >= 3}
-              className="w-5 h-5 flex items-center justify-center text-3xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none transition bg-secondary/40 hover:bg-secondary rounded font-mono"
-              title="Zoom In"
-            >
-              +
-            </button>
-            {zoomLevel > 1 && (
-              <button
-                onClick={() => setZoomLevel(1)}
-                className="px-1.5 py-0.5 text-[9px] font-bold bg-primary/20 hover:bg-primary/30 text-primary rounded transition"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-
           <ChartFilterBar
             selectedRange={selectedRange}
             setSelectedRange={setSelectedRange}
@@ -913,14 +843,8 @@ export default function SavingsTrendChartInner() {
           <p className="text-sm text-muted-foreground">No data for this selection yet</p>
         </div>
       ) : (
-        <div 
-          ref={containerRef}
-          className="w-full overflow-x-auto select-none select-scrollbar"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div style={{ width: `${zoomLevel * 100}%`, minWidth: '100%' }}>
+        <div className="w-full select-none">
+          <div className="w-full">
             <ResponsiveContainer width="100%" height={220}>
               <LineChart
                 data={data}
@@ -993,14 +917,28 @@ export default function SavingsTrendChartInner() {
 
       <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
         <div className="text-center">
-          <p className="text-sm font-bold tabular-nums text-positive">{fmt(totalSaved)}</p>
-          <p className="text-2xs text-muted-foreground font-semibold">Total Volume</p>
+          <p className="text-sm font-bold tabular-nums text-positive">
+            {fmt(trendType === 'balance' ? endingBalance : totalSaved)}
+          </p>
+          <p className="text-2xs text-muted-foreground font-semibold">
+            {trendType === 'balance' ? 'Ending Balance' : 'Total Volume'}
+          </p>
         </div>
         <div className="text-center">
-          <p className="text-sm font-bold tabular-nums text-primary">
-            {data.length > 0 ? fmt(totalSaved / data.length) : '₹0'}
+          <p
+            className={`text-sm font-bold tabular-nums ${
+              trendType === 'balance' && balanceChange < 0 ? 'text-negative' : 'text-primary'
+            }`}
+          >
+            {trendType === 'balance'
+              ? fmt(balanceChange)
+              : data.length > 0
+                ? fmt(totalSaved / data.length)
+                : '₹0'}
           </p>
-          <p className="text-2xs text-muted-foreground font-semibold">Avg / Point</p>
+          <p className="text-2xs text-muted-foreground font-semibold">
+            {trendType === 'balance' ? 'Period Change' : 'Avg / Point'}
+          </p>
         </div>
         <div className="text-center">
           <p className="text-sm font-bold tabular-nums text-foreground">
@@ -1008,7 +946,9 @@ export default function SavingsTrendChartInner() {
               ? `${isSingleMonth ? `Day ${bestPoint.month}` : bestPoint.month} — ${fmt(bestPoint.savings)}`
               : '—'}
           </p>
-          <p className="text-2xs text-muted-foreground font-semibold">Best Point</p>
+          <p className="text-2xs text-muted-foreground font-semibold">
+            {trendType === 'balance' ? 'Highest Balance' : 'Best Point'}
+          </p>
         </div>
       </div>
     </div>

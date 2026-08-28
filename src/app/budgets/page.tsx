@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
+import { createLocalId } from '@/lib/ids';
 import Modal from '@/components/ui/Modal';
 import {
   getBudgets,
@@ -92,7 +93,7 @@ export default function BudgetsPage() {
         const newBudgets: Budget[] = defaultTemplates
           .filter((t) => t.enabled)
           .map((t) => ({
-            id: `bud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            id: createLocalId('bud', 4),
             name: t.category,
             category: t.category,
             allocated: t.defaultAmount,
@@ -161,7 +162,7 @@ export default function BudgetsPage() {
     const newBudgets: Budget[] = templates
       .filter((t) => t.enabled)
       .map((t) => ({
-        id: `bud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: createLocalId('bud', 4),
         name: t.category,
         category: t.category,
         allocated: t.defaultAmount,
@@ -196,7 +197,7 @@ export default function BudgetsPage() {
     }
 
     const newBudgets: Budget[] = prevBudgets.map((b) => ({
-      id: `bud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: createLocalId('bud', 4),
       name: b.category,
       category: b.category,
       allocated: b.allocated,
@@ -223,7 +224,7 @@ export default function BudgetsPage() {
       const newBudgets: Budget[] = templates
         .filter((t) => t.enabled)
         .map((t) => ({
-          id: `bud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          id: createLocalId('bud', 4),
           name: t.category,
           category: t.category,
           allocated: t.defaultAmount,
@@ -261,7 +262,7 @@ export default function BudgetsPage() {
 
       const otherBudgets = allBudgets.filter((b) => b.month !== activeMonthStr);
       const newBudgets: Budget[] = prevBudgets.map((b) => ({
-        id: `bud-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: createLocalId('bud', 4),
         name: b.category,
         category: b.category,
         allocated: b.allocated,

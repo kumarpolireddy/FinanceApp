@@ -221,7 +221,7 @@ export default function TripsPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 pb-12">
+      <div className="min-h-full space-y-6 bg-background pb-12 text-foreground">
         {/* Top Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-3">
@@ -230,9 +230,6 @@ export default function TripsPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">Trips & Travel Expenses</h1>
-              <p className="text-sm text-muted-foreground">
-                Track travel budgets, live trip spending, and categorized vacation expenses.
-              </p>
             </div>
           </div>
           <button
@@ -330,7 +327,7 @@ export default function TripsPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-muted/40 border border-border rounded-lg text-sm focus:outline-none focus:border-primary text-foreground"
+                  className="w-full pl-9 pr-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:border-primary text-foreground"
                 />
               </div>
 
@@ -356,12 +353,7 @@ export default function TripsPage() {
               <div className="bg-card border border-border rounded-xl p-8 text-center space-y-3">
                 <Plane size={32} className="mx-auto text-muted-foreground opacity-50" />
                 <p className="text-sm font-medium text-muted-foreground">No trips found</p>
-                <button
-                  onClick={handleOpenCreateModal}
-                  className="text-xs font-bold text-primary hover:underline"
-                >
-                  Create your first trip
-                </button>
+                
               </div>
             ) : (
               <div className="space-y-3">
@@ -650,15 +642,7 @@ export default function TripsPage() {
                   )}
                 </div>
               </div>
-            ) : (
-              <div className="bg-card border border-border rounded-xl p-12 text-center space-y-3">
-                <Plane size={40} className="mx-auto text-muted-foreground opacity-30" />
-                <p className="text-sm font-bold text-foreground">Select a trip to view details</p>
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Click on any trip from the list on the left to see category breakdowns, expenses, and budgets.
-                </p>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -688,7 +672,7 @@ export default function TripsPage() {
                 type="text"
                 value={tripDestination}
                 onChange={(e) => setTripDestination(e.target.value)}
-                className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
@@ -717,7 +701,7 @@ export default function TripsPage() {
                 type="date"
                 value={tripStartDate}
                 onChange={(e) => setTripStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
@@ -726,7 +710,7 @@ export default function TripsPage() {
                 type="date"
                 value={tripEndDate}
                 onChange={(e) => setTripEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -738,7 +722,7 @@ export default function TripsPage() {
                 type="number"
                 value={tripBudget}
                 onChange={(e) => setTripBudget(e.target.value)}
-                className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
@@ -761,7 +745,7 @@ export default function TripsPage() {
               value={tripDescription}
               onChange={(e) => setTripDescription(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
             />
           </div>
 
@@ -831,7 +815,7 @@ export default function TripsPage() {
                 setExpenseCategory(e.target.value);
                 setExpenseSubcategory('');
               }}
-              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary text-xs"
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary text-xs"
             >
               <option value="">Select Category</option>
               {categories.map((cat) => (
@@ -847,7 +831,7 @@ export default function TripsPage() {
             <select
               value={expenseAccount}
               onChange={(e) => setExpenseAccount(e.target.value)}
-              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
             >
               {accounts.map((acc) => (
                 <option key={acc.id} value={acc.id}>

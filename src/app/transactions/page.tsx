@@ -2,7 +2,22 @@
 
 import React, { useEffect, useMemo, useState, useRef, Suspense, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { ChevronDown, Edit3, ChevronLeft, ChevronRight, Filter, BarChart3, Plus, ArrowLeft, Trash2, Copy, Star, Camera, Plane, Check, Users, ReceiptText, X } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  BarChart3,
+  Plus,
+  ArrowLeft,
+  Trash2,
+  Camera,
+  Plane,
+  Check,
+  Users,
+  ReceiptText,
+  X,
+} from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import Modal from '@/components/ui/Modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -18,6 +33,7 @@ import {
   saveRepayments,
   recalculateLoanTimeline,
   getTransactionImpact,
+  getTransactionAccountAmount,
   getActiveTrip,
   setActiveTrip,
   addTrip,
@@ -47,7 +63,7 @@ const MONTH_NAMES = [
   'December',
 ];
 
-const CustomBarTooltip = ({ active, payload, label }: any) => {
+const CustomBarTooltip = ({ active, payload, label, logarithmic = false }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-[#0b0f1a] border border-border/80 p-2.5 rounded shadow-2xl text-xs space-y-1">
@@ -57,11 +73,29 @@ const CustomBarTooltip = ({ active, payload, label }: any) => {
         {payload.map((p: any) => (
           <div key={p.name} className="flex justify-between items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-sm ${p.name === 'Income' ? 'bg-positive' : 'bg-negative'}`} />
+              <div
+                className={`w-2 h-2 rounded-sm ${
+                  p.name === 'Income'
+                    ? 'bg-positive'
+                    : p.name === 'Transfers'
+                      ? 'bg-info'
+                      : 'bg-negative'
+                }`}
+              />
               <span className="text-muted-foreground text-3xs">{p.name}:</span>
             </div>
-            <span className={`font-mono font-bold ${p.name === 'Income' ? 'text-positive' : 'text-negative'}`}>
-              ₹{p.value.toLocaleString('en-IN')}
+            <span
+              className={`font-mono font-bold ${
+                p.name === 'Income'
+                  ? 'text-positive'
+                  : p.name === 'Transfers'
+                    ? 'text-info'
+                    : 'text-negative'
+              }`}
+            >
+              ₹{(
+                logarithmic ? (p.payload?.[`${p.dataKey}Raw`] ?? 0) : p.value
+              ).toLocaleString('en-IN')}
             </span>
           </div>
         ))}
@@ -94,12 +128,10 @@ function TransactionsPageContent() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense' | 'transfer' | 'cash-in' | 'cash-out'>(
-    (searchParams?.get('type') as any) || 'all'
-  );
-  const [accountFilter, setAccountFilter] = useState<string>(
-    searchParams?.get('account') || 'all'
-  );
+  const [typeFilter, setTypeFilter] = useState<
+    'all' | 'income' | 'expense' | 'transfer' | 'cash-in' | 'cash-out'
+  >((searchParams?.get('type') as any) || 'all');
+  const [accountFilter, setAccountFilter] = useState<string>(searchParams?.get('account') || 'all');
   const [categoryFilter, setCategoryFilter] = useState<string>(
     searchParams?.get('category') || 'all'
   );
@@ -116,6 +148,7 @@ function TransactionsPageContent() {
 
   // Editing transaction state
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const handledEditIdRef = useRef<string | null>(null);
   const [editForm, setEditForm] = useState<{
     type: Transaction['type'];
     date: string;
@@ -195,10 +228,13 @@ function TransactionsPageContent() {
     return true;
   });
 
-  const [activeTab, setActiveTab] = useState<'daily' | 'calendar' | 'monthly' | 'total' | 'note'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'calendar' | 'monthly' | 'total' | 'note'>(
+    'daily'
+  );
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(null);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [showAccountChart, setShowAccountChart] = useState(false);
+  const [accountChartView, setAccountChartView] = useState<'daily' | 'monthly'>('daily');
   const [tripBgColor, setTripBgColorState] = useState('#f59e0b');
 
   const tripsMap = useMemo(() => {
@@ -238,7 +274,9 @@ function TransactionsPageContent() {
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedTxnIds, setSelectedTxnIds] = useState<string[]>([]);
-  const [editPickerMode, setEditPickerMode] = useState<'category' | 'account'>('category');
+  const [editPickerMode, setEditPickerMode] = useState<
+    'category' | 'subcategory' | 'account'
+  >('category');
   const [isEditAmountFocused, setIsEditAmountFocused] = useState(false);
   const [isEditNoteFocused, setIsEditNoteFocused] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -250,9 +288,7 @@ function TransactionsPageContent() {
     longPressTimerRef.current = setTimeout(() => {
       isLongPressActiveRef.current = true;
       setIsSelectionMode(true);
-      setSelectedTxnIds((prev) =>
-        prev.includes(txnId) ? prev : [...prev, txnId]
-      );
+      setSelectedTxnIds((prev) => (prev.includes(txnId) ? prev : [...prev, txnId]));
       if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
         window.navigator.vibrate(50);
       }
@@ -291,7 +327,9 @@ function TransactionsPageContent() {
 
   const handleBulkDelete = () => {
     if (selectedTxnIds.length === 0) return;
-    if (confirm(`Are you sure you want to delete ${selectedTxnIds.length} selected transaction(s)?`)) {
+    if (
+      confirm(`Are you sure you want to delete ${selectedTxnIds.length} selected transaction(s)?`)
+    ) {
       selectedTxnIds.forEach((id) => {
         deleteTransaction(id);
       });
@@ -343,8 +381,8 @@ function TransactionsPageContent() {
     }
 
     if (editingGeneralNote) {
-      const updatedNotes = generalNotes.map(n => 
-        n.id === editingGeneralNote.id 
+      const updatedNotes = generalNotes.map((n) =>
+        n.id === editingGeneralNote.id
           ? { ...n, title: noteTitle, content: noteContent, updatedAt: new Date().toISOString() }
           : n
       );
@@ -375,6 +413,35 @@ function TransactionsPageContent() {
 
   // Edit Account state and logic
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false);
+
+  useEffect(() => {
+    const handleAppBack = (event: Event) => {
+      if (!editingTransaction) return;
+      event.preventDefault();
+      setEditingTransaction(null);
+      setEditForm(null);
+    };
+
+    window.addEventListener('app-back', handleAppBack);
+    return () => window.removeEventListener('app-back', handleAppBack);
+  }, [editingTransaction]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('app-bottom-nav-visibility', {
+        detail: {
+          hidden: Boolean(editingTransaction),
+          hideAddTransaction: Boolean(editingTransaction),
+        },
+      })
+    );
+
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent('app-bottom-nav-visibility', { detail: { hidden: false } })
+      );
+    };
+  }, [editingTransaction]);
   const [editAccName, setEditAccName] = useState('');
   const [editAccBalance, setEditAccBalance] = useState('0');
   const [editAccLimit, setEditAccLimit] = useState('100000');
@@ -397,7 +464,13 @@ function TransactionsPageContent() {
     setEditAccDueDay(activeAccount.dueDate || '25');
     setEditAccMinPayment(String(activeAccount.minPayment || '0'));
     setEditAccBillingCycle(activeAccount.billingCycle || '4');
-    setEditAccNotifyDays(String(activeAccount.notificationDaysBefore !== undefined ? activeAccount.notificationDaysBefore : '3'));
+    setEditAccNotifyDays(
+      String(
+        activeAccount.notificationDaysBefore !== undefined
+          ? activeAccount.notificationDaysBefore
+          : '3'
+      )
+    );
     setEditAccNotes(activeAccount.notes || '');
     setEditAccInterest(String(activeAccount.interestRate || '8.5'));
     setIsEditAccountOpen(true);
@@ -425,7 +498,7 @@ function TransactionsPageContent() {
 
     updateAccount(activeAccount.id, updates);
     toast.success('Account updated successfully');
-    
+
     // Refresh states
     setAccounts(getAccounts(true));
     setIsEditAccountOpen(false);
@@ -513,43 +586,48 @@ function TransactionsPageContent() {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
     const touch = e.touches[0];
     setTouchStart({ x: touch.clientX, y: touch.clientY });
   }, []);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!touchStart) return;
-    if (editingTransaction || editingRepayment) return;
-    
-    const touch = e.changedTouches[0];
-    const diffX = touch.clientX - touchStart.x;
-    const diffY = touch.clientY - touchStart.y;
-    
-    // Trigger if swipe is horizontal and exceeds distance
-    const minSwipeDistance = 50;
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
-      if (activeTab === 'monthly') {
-        if (diffX < 0) {
-          // Swiped Left: show next year
-          const nextY = selectedYear + 1;
-          updateDate(selectedMonth, nextY);
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      e.stopPropagation();
+      if (!touchStart) return;
+      if (editingTransaction || editingRepayment) return;
+
+      const touch = e.changedTouches[0];
+      const diffX = touch.clientX - touchStart.x;
+      const diffY = touch.clientY - touchStart.y;
+
+      // Trigger if swipe is horizontal and exceeds distance
+      const minSwipeDistance = 50;
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
+        if (activeTab === 'monthly') {
+          if (diffX < 0) {
+            // Swiped Left: show next year
+            const nextY = selectedYear + 1;
+            updateDate(selectedMonth, nextY);
+          } else {
+            // Swiped Right: show previous year
+            const prevY = selectedYear - 1;
+            updateDate(selectedMonth, prevY);
+          }
         } else {
-          // Swiped Right: show previous year
-          const prevY = selectedYear - 1;
-          updateDate(selectedMonth, prevY);
-        }
-      } else {
-        if (diffX < 0) {
-          // Swiped Left: show next month
-          shiftMonth(1);
-        } else {
-          // Swiped Right: show previous month
-          shiftMonth(-1);
+          if (diffX < 0) {
+            // Swiped Left: show next month
+            shiftMonth(1);
+          } else {
+            // Swiped Right: show previous month
+            shiftMonth(-1);
+          }
         }
       }
-    }
-    setTouchStart(null);
-  }, [touchStart, selectedMonth, selectedYear, activeTab, editingTransaction, editingRepayment]);
+      setTouchStart(null);
+    },
+    [touchStart, selectedMonth, selectedYear, activeTab, editingTransaction, editingRepayment]
+  );
 
   // Years dropdown includes current year + any year that actually has data
   const availableYears = useMemo(() => {
@@ -567,7 +645,9 @@ function TransactionsPageContent() {
   const getAccountName = useCallback(
     (accountId: string) => {
       if (!accountId) return 'Unknown Account';
-      const found = accounts.find((a) => a.id === accountId || (a.sourceUid && a.sourceUid === accountId));
+      const found = accounts.find(
+        (a) => a.id === accountId || (a.sourceUid && a.sourceUid === accountId)
+      );
       if (found) return found.name;
       if (!accountId.startsWith('acc-') && !accountId.startsWith('mm-acc-')) return accountId;
       return 'Deleted / Historical Account';
@@ -731,55 +811,57 @@ function TransactionsPageContent() {
 
   const accountChartData = useMemo(() => {
     if (accountFilter === 'all' || filtered.length === 0) return [];
-    
+
     let minDate = new Date();
     let maxDate = new Date(0);
-    
-    filtered.forEach(t => {
+
+    filtered.forEach((t) => {
       const d = new Date(t.date);
       if (d < minDate) minDate = d;
       if (d > maxDate) maxDate = d;
     });
-    
+
     const diffMs = maxDate.getTime() - minDate.getTime();
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    
+
     if (diffDays > 35) {
       // Group by Month
-      const monthlyData: Record<string, { monthStr: string, income: number, expense: number, dateObj: Date }> = {};
-      filtered.forEach(t => {
+      const monthlyData: Record<
+        string,
+        { monthStr: string; income: number; expense: number; transfer: number; dateObj: Date }
+      > = {};
+      filtered.forEach((t) => {
         const d = new Date(t.date);
         const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const mName = d.toLocaleString('default', { month: 'short' });
-        
+
         if (!monthlyData[mKey]) {
           monthlyData[mKey] = {
             monthStr: `${mName} ${d.getFullYear()}`,
             income: 0,
             expense: 0,
-            dateObj: d
+            transfer: 0,
+            dateObj: d,
           };
         }
-        
+
         if (t.type === 'income') {
           monthlyData[mKey].income += t.amount;
         } else if (t.type === 'expense') {
           monthlyData[mKey].expense += t.amount;
         } else if (t.type === 'transfer') {
-          if (t.account === accountFilter) {
-            monthlyData[mKey].expense += t.amount;
-          } else if (t.toAccount === accountFilter) {
-            monthlyData[mKey].income += t.amount;
-          }
+          monthlyData[mKey].transfer += t.amount;
         }
       });
-      
-      return Object.values(monthlyData)
-        .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+
+      return Object.values(monthlyData).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
     } else {
       // Group by Day
-      const dailyData: Record<number, { day: number, dayStr: string, income: number, expense: number }> = {};
-      
+      const dailyData: Record<
+        number,
+        { day: number; dayStr: string; income: number; expense: number; transfer: number }
+      > = {};
+
       let year = selectedYear;
       let month = selectedMonth;
       if (filtered.length > 0) {
@@ -787,18 +869,19 @@ function TransactionsPageContent() {
         year = first.getFullYear();
         month = first.getMonth();
       }
-      
+
       const numDays = new Date(year, month + 1, 0).getDate();
       for (let i = 1; i <= numDays; i++) {
         dailyData[i] = {
           day: i,
           dayStr: String(i),
           income: 0,
-          expense: 0
+          expense: 0,
+          transfer: 0,
         };
       }
-      
-      filtered.forEach(t => {
+
+      filtered.forEach((t) => {
         const d = new Date(t.date);
         const dayNum = d.getDate();
         if (dailyData[dayNum]) {
@@ -807,15 +890,11 @@ function TransactionsPageContent() {
           } else if (t.type === 'expense') {
             dailyData[dayNum].expense += t.amount;
           } else if (t.type === 'transfer') {
-            if (t.account === accountFilter) {
-              dailyData[dayNum].expense += t.amount;
-            } else if (t.toAccount === accountFilter) {
-              dailyData[dayNum].income += t.amount;
-            }
+            dailyData[dayNum].transfer += t.amount;
           }
         }
       });
-      
+
       return Object.values(dailyData).sort((a, b) => a.day - b.day);
     }
   }, [filtered, accountFilter, selectedYear, selectedMonth]);
@@ -826,6 +905,84 @@ function TransactionsPageContent() {
     }
     return 'monthStr';
   }, [accountChartData]);
+
+  const accountChartScale = useMemo(() => {
+    const values = accountChartData.flatMap((item) =>
+      [item.income, item.expense, item.transfer].filter((value) => value > 0)
+    );
+    if (values.length < 2) return { logarithmic: false, minimum: 0 };
+
+    const smallest = Math.min(...values);
+    const largest = Math.max(...values);
+    return {
+      logarithmic: largest / smallest >= 100,
+      minimum: smallest,
+    };
+  }, [accountChartData]);
+
+  const accountChartPlotData = useMemo(() => {
+    if (!accountChartScale.logarithmic) return accountChartData;
+
+    return accountChartData.map((item) => ({
+      ...item,
+      incomeRaw: item.income,
+      expenseRaw: item.expense,
+      transferRaw: item.transfer,
+      income: Math.log10(item.income + 1),
+      expense: Math.log10(item.expense + 1),
+      transfer: Math.log10(item.transfer + 1),
+    }));
+  }, [accountChartData, accountChartScale.logarithmic]);
+
+  const yearlyAccountChartData = useMemo(() => {
+    if (accountFilter === 'all') return [];
+
+    const months = MONTH_NAMES.map((month, index) => ({
+      month,
+      monthIndex: index,
+      income: 0,
+      expense: 0,
+      transfer: 0,
+    }));
+
+    transactions.forEach((transaction) => {
+      if (!transaction?.date?.startsWith(`${selectedYear}-`)) return;
+      if (transaction.account !== accountFilter && transaction.toAccount !== accountFilter) return;
+
+      const monthIndex = Number(transaction.date.slice(5, 7)) - 1;
+      const month = months[monthIndex];
+      if (!month) return;
+
+      if (transaction.type === 'income') month.income += transaction.amount;
+      else if (transaction.type === 'expense') month.expense += transaction.amount;
+      else if (transaction.type === 'transfer') month.transfer += transaction.amount;
+    });
+
+    return months;
+  }, [transactions, accountFilter, selectedYear]);
+
+  const yearlyAccountChartScale = useMemo(() => {
+    const values = yearlyAccountChartData.flatMap((item) =>
+      [item.income, item.expense, item.transfer].filter((value) => value > 0)
+    );
+    if (values.length < 2) return { logarithmic: false };
+
+    return { logarithmic: Math.max(...values) / Math.min(...values) >= 100 };
+  }, [yearlyAccountChartData]);
+
+  const yearlyAccountChartPlotData = useMemo(() => {
+    if (!yearlyAccountChartScale.logarithmic) return yearlyAccountChartData;
+
+    return yearlyAccountChartData.map((item) => ({
+      ...item,
+      incomeRaw: item.income,
+      expenseRaw: item.expense,
+      transferRaw: item.transfer,
+      income: Math.log10(item.income + 1),
+      expense: Math.log10(item.expense + 1),
+      transfer: Math.log10(item.transfer + 1),
+    }));
+  }, [yearlyAccountChartData, yearlyAccountChartScale.logarithmic]);
 
   const totals = useMemo(() => {
     let income = 0;
@@ -854,10 +1011,13 @@ function TransactionsPageContent() {
     const resolveAccId = (txnAccId?: string, txnAccUid?: string): string | undefined => {
       if (!txnAccId && !txnAccUid) return undefined;
       const found = accounts.find(
-        (a) => (txnAccId && (String(a.id) === String(txnAccId) || a.name.trim().toLowerCase() === txnAccId.trim().toLowerCase())) ||
-               (a.sourceUid && txnAccUid && String(a.sourceUid) === String(txnAccUid))
+        (a) =>
+          (txnAccId &&
+            (String(a.id) === String(txnAccId) ||
+              a.name.trim().toLowerCase() === txnAccId.trim().toLowerCase())) ||
+          (a.sourceUid && txnAccUid && String(a.sourceUid) === String(txnAccUid))
       );
-      return found ? found.id : (txnAccId || txnAccUid);
+      return found ? found.id : txnAccId || txnAccUid;
     };
 
     // Sort chronologically (ascending) to compute the running balance after each transaction
@@ -869,7 +1029,10 @@ function TransactionsPageContent() {
 
     sorted.forEach((txn) => {
       if (txn.isHistoricalAccountOnly) return;
-      const amount = Number(txn.amount) || 0;
+      const amount =
+        txn.type === 'expense'
+          ? getTransactionAccountAmount(txn)
+          : Number(txn.amount) || 0;
       const type = txn.type;
 
       const srcAccId = resolveAccId(txn.account, txn.accountUid);
@@ -920,13 +1083,19 @@ function TransactionsPageContent() {
 
   const activeCategorySubcategories = useMemo(() => {
     if (!editForm || editForm.type === 'transfer' || !editForm.category) return [];
-    const cat = categories.find((c) => c && c.name && c.name.toLowerCase() === editForm.category.toLowerCase());
+    const cat = categories.find(
+      (c) => c && c.name && c.name.toLowerCase() === editForm.category.toLowerCase()
+    );
     return cat?.subcategories || [];
   }, [categories, editForm]);
 
   const currentCategoryObj = useMemo(() => {
     if (!editForm || !categories || !editForm.category) return null;
-    return categories.find((c) => c && c.name && c.name.toLowerCase() === editForm.category.toLowerCase()) || null;
+    return (
+      categories.find(
+        (c) => c && c.name && c.name.toLowerCase() === editForm.category.toLowerCase()
+      ) || null
+    );
   }, [editForm, categories]);
 
   const currencySymbol = useMemo(() => {
@@ -985,6 +1154,15 @@ function TransactionsPageContent() {
     });
   };
 
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (!editId || isLoading || handledEditIdRef.current === editId) return;
+    const transaction = transactions.find((item) => item.id === editId);
+    if (!transaction) return;
+    handledEditIdRef.current = editId;
+    startEditing(transaction);
+  }, [isLoading, searchParams, transactions]);
+
   const handleTypeChange = (newType: 'income' | 'expense' | 'transfer') => {
     if (!editForm) return;
     let newCategory = editForm.category;
@@ -1010,6 +1188,15 @@ function TransactionsPageContent() {
       subcategory: '',
       toAccount: toAcc,
     });
+  };
+
+  const closeTransactionEditor = () => {
+    setEditingTransaction(null);
+    setEditForm(null);
+    if (searchParams.get('source') === 'analytics') {
+      const returnTo = searchParams.get('returnTo');
+      router.replace(returnTo?.startsWith('/analytics') ? returnTo : '/analytics');
+    }
   };
 
   const handleSaveEdit = (e: React.FormEvent) => {
@@ -1041,12 +1228,13 @@ function TransactionsPageContent() {
       account: editForm.account,
       toAccount: editForm.type === 'transfer' ? editForm.toAccount : undefined,
       amount,
-      description: editForm.description.trim() || (editForm.type === 'transfer' ? 'Transfer' : (editForm.category || 'Expense')),
+      description:
+        editForm.description.trim() ||
+        (editForm.type === 'transfer' ? 'Transfer' : editForm.category || 'Expense'),
       notes: editForm.notes.trim(),
     });
 
-    setEditingTransaction(null);
-    setEditForm(null);
+    closeTransactionEditor();
     setTransactions(getTransactions(true));
     toast.success('Transaction updated successfully');
   };
@@ -1068,64 +1256,6 @@ function TransactionsPageContent() {
   const handleSaveClick = (e: React.MouseEvent) => {
     e.preventDefault();
     handleSaveEdit({ preventDefault: () => {} } as React.FormEvent);
-  };
-
-  const handleCopyTransaction = () => {
-    if (!editingTransaction || !editForm) return;
-    const amount = Math.abs(Number(editForm.amount || 0));
-    if (!amount || !editForm.account) {
-      toast.error('Please fill in all required fields to copy.');
-      return;
-    }
-    const duplicated: Transaction = {
-      id: 'txn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-      date: new Date().toISOString(),
-      type: editForm.type,
-      category: editForm.type === 'transfer' ? 'Transfer' : editForm.category,
-      subcategory: editForm.type === 'transfer' ? undefined : editForm.subcategory || undefined,
-      account: editForm.account,
-      toAccount: editForm.type === 'transfer' ? editForm.toAccount : undefined,
-      amount,
-      description: editForm.description.trim(),
-      notes: editForm.notes.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    const allTxns = getTransactions();
-    allTxns.push(duplicated);
-    localStorage.setItem('wealthiq_transactions', JSON.stringify(allTxns));
-    setEditingTransaction(null);
-    setEditForm(null);
-    setTransactions(getTransactions(true));
-    toast.success('Transaction copied successfully');
-  };
-
-  const handleBookmarkTransaction = () => {
-    if (!editingTransaction || !editForm) return;
-    const amount = Math.abs(Number(editForm.amount || 0));
-    if (!amount || !editForm.account) {
-      toast.error('Please fill in all required fields to bookmark.');
-      return;
-    }
-    const notePrefix = '[Bookmarked] ';
-    const notesContent = editForm.notes.trim();
-    const updatedNotes = notesContent.startsWith(notePrefix) ? notesContent : `${notePrefix}${notesContent}`;
-    
-    updateTransaction(editingTransaction.id, {
-      date: editForm.date,
-      type: editForm.type,
-      category: editForm.type === 'transfer' ? 'Transfer' : editForm.category,
-      subcategory: editForm.type === 'transfer' ? undefined : editForm.subcategory || undefined,
-      account: editForm.account,
-      toAccount: editForm.type === 'transfer' ? editForm.toAccount : undefined,
-      amount,
-      description: editForm.description.trim(),
-      notes: updatedNotes,
-    });
-
-    setEditingTransaction(null);
-    setEditForm(null);
-    setTransactions(getTransactions(true));
-    toast.success('Transaction bookmarked');
   };
 
   const handleSaveEditedRepayment = (e: React.FormEvent) => {
@@ -1203,10 +1333,12 @@ function TransactionsPageContent() {
     }
   };
 
-
   // Group transactions for Daily Tab
   const groupedDailyTransactions = useMemo(() => {
-    const groups: Record<string, { date: Date; items: Transaction[]; incomeSum: number; expenseSum: number }> = {};
+    const groups: Record<
+      string,
+      { date: Date; items: Transaction[]; incomeSum: number; expenseSum: number }
+    > = {};
     filtered.forEach((txn) => {
       if (!txn || !txn.date) return;
       const dateStr = txn.date.split('T')[0];
@@ -1214,7 +1346,7 @@ function TransactionsPageContent() {
         groups[dateStr] = { date: new Date(dateStr), items: [], incomeSum: 0, expenseSum: 0 };
       }
       groups[dateStr].items.push(txn);
-      
+
       const impact = getTransactionImpact(txn);
       groups[dateStr].incomeSum += impact.income;
       groups[dateStr].expenseSum += impact.expense;
@@ -1226,12 +1358,12 @@ function TransactionsPageContent() {
   const calendarDays = useMemo(() => {
     const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-    
+
     // Day-wise credit/debit aggregates
     const dayTotals: Record<number, { income: number; expense: number; items: Transaction[] }> = {};
-    const rawTxns = filtered.filter(t => t.date && t.date.startsWith(monthKey));
-    
-    rawTxns.forEach(t => {
+    const rawTxns = filtered.filter((t) => t.date && t.date.startsWith(monthKey));
+
+    rawTxns.forEach((t) => {
       const day = new Date(t.date).getDate();
       if (!dayTotals[day]) {
         dayTotals[day] = { income: 0, expense: 0, items: [] };
@@ -1251,7 +1383,7 @@ function TransactionsPageContent() {
         day: d,
         income: dayTotals[d]?.income || 0,
         expense: dayTotals[d]?.expense || 0,
-        items: dayTotals[d]?.items || []
+        items: dayTotals[d]?.items || [],
       });
     }
     return grid;
@@ -1261,7 +1393,7 @@ function TransactionsPageContent() {
   const selectedDayTransactions = useMemo(() => {
     if (selectedCalendarDay === null) return [];
     const targetPrefix = `${monthKey}-${String(selectedCalendarDay).padStart(2, '0')}`;
-    return filtered.filter(t => t.date && t.date.startsWith(targetPrefix));
+    return filtered.filter((t) => t.date && t.date.startsWith(targetPrefix));
   }, [filtered, monthKey, selectedCalendarDay]);
 
   // Monthly breakdown for current selected year
@@ -1284,20 +1416,24 @@ function TransactionsPageContent() {
 
       if (typeFilter === 'transfer') {
         const matchSource = accountFilter === 'all' || t.account === accountFilter;
-        const matchDest = destinationAccountFilter === 'all' || t.toAccount === destinationAccountFilter;
+        const matchDest =
+          destinationAccountFilter === 'all' || t.toAccount === destinationAccountFilter;
         if (!matchSource || !matchDest) return false;
       } else if (typeFilter === 'cash-in') {
         if (accountFilter !== 'all') {
-          const matched = t.type === 'transfer' ? t.toAccount === accountFilter : t.account === accountFilter;
+          const matched =
+            t.type === 'transfer' ? t.toAccount === accountFilter : t.account === accountFilter;
           if (!matched) return false;
         }
       } else if (typeFilter === 'cash-out') {
         if (accountFilter !== 'all') {
-          const matched = t.type === 'transfer' ? t.account === accountFilter : t.account === accountFilter;
+          const matched =
+            t.type === 'transfer' ? t.account === accountFilter : t.account === accountFilter;
           if (!matched) return false;
         }
       } else {
-        const matched = accountFilter === 'all' || t.account === accountFilter || t.toAccount === accountFilter;
+        const matched =
+          accountFilter === 'all' || t.account === accountFilter || t.toAccount === accountFilter;
         if (!matched) return false;
       }
 
@@ -1310,7 +1446,7 @@ function TransactionsPageContent() {
         const accName = getAccountName(t.account).toLowerCase();
         const toAccName = t.toAccount ? getAccountName(t.toAccount).toLowerCase() : '';
         const note = (t.notes || '').toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           t.description.toLowerCase().includes(q) ||
           (t.category || '').toLowerCase().includes(q) ||
           accName.includes(q) ||
@@ -1350,7 +1486,7 @@ function TransactionsPageContent() {
     destinationAccountFilter,
     search,
     accounts,
-    getAccountName
+    getAccountName,
   ]);
 
   // Totals view aggregates by Category
@@ -1361,17 +1497,26 @@ function TransactionsPageContent() {
     let totalIncomeSum = 0;
 
     filtered.forEach((t) => {
-      const catKey = typeof t.category === 'string' && t.category.trim() ? t.category.trim() : 'Other';
+      const catKey =
+        typeof t.category === 'string' && t.category.trim() ? t.category.trim() : 'Other';
       const amt = typeof t.amount === 'number' && !isNaN(t.amount) ? t.amount : 0;
       if (t.type === 'expense') {
-        if (!expenses[catKey] || typeof expenses[catKey] !== 'object' || !('amount' in expenses[catKey])) {
+        if (
+          !expenses[catKey] ||
+          typeof expenses[catKey] !== 'object' ||
+          !('amount' in expenses[catKey])
+        ) {
           expenses[catKey] = { amount: 0, count: 0 };
         }
         expenses[catKey].amount += amt;
         expenses[catKey].count += 1;
         totalExpenseSum += amt;
       } else if (t.type === 'income') {
-        if (!incomes[catKey] || typeof incomes[catKey] !== 'object' || !('amount' in incomes[catKey])) {
+        if (
+          !incomes[catKey] ||
+          typeof incomes[catKey] !== 'object' ||
+          !('amount' in incomes[catKey])
+        ) {
           incomes[catKey] = { amount: 0, count: 0 };
         }
         incomes[catKey].amount += amt;
@@ -1381,18 +1526,26 @@ function TransactionsPageContent() {
     });
 
     const expenseList = Object.entries(expenses)
-      .map(([name, data]) => ({ name, ...data, percentage: totalExpenseSum > 0 ? Math.round((data.amount / totalExpenseSum) * 100) : 0 }))
+      .map(([name, data]) => ({
+        name,
+        ...data,
+        percentage: totalExpenseSum > 0 ? Math.round((data.amount / totalExpenseSum) * 100) : 0,
+      }))
       .sort((a, b) => b.amount - a.amount);
 
     const incomeList = Object.entries(incomes)
-      .map(([name, data]) => ({ name, ...data, percentage: totalIncomeSum > 0 ? Math.round((data.amount / totalIncomeSum) * 100) : 0 }))
+      .map(([name, data]) => ({
+        name,
+        ...data,
+        percentage: totalIncomeSum > 0 ? Math.round((data.amount / totalIncomeSum) * 100) : 0,
+      }))
       .sort((a, b) => b.amount - a.amount);
 
     return {
       expenseList,
       incomeList,
       totalExpenseSum,
-      totalIncomeSum
+      totalIncomeSum,
     };
   }, [filtered]);
 
@@ -1400,7 +1553,7 @@ function TransactionsPageContent() {
     return val.toLocaleString('en-IN', {
       style: 'currency',
       currency: 'INR',
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     });
   };
 
@@ -1410,19 +1563,14 @@ function TransactionsPageContent() {
   };
 
   return (
-    <div 
-      className="max-w-2xl mx-auto px-0 md:px-3.5 pt-2 pb-32 space-y-2.5 bg-background min-h-[90vh]"
-    >
-      
-
-
+    <div className="max-w-2xl mx-auto px-0 md:px-3.5 pt-2 pb-32 space-y-2.5 bg-background min-h-[90vh]">
       {/* 1. Header Navigation: Month Selector, Search/Filter buttons */}
       <div className="px-3.5 md:px-0">
         <div className="flex items-center justify-between py-1 bg-transparent border-b border-border/40">
           <div className="flex items-center gap-2">
             {activeTab === 'monthly' ? (
               <>
-                <button 
+                <button
                   onClick={() => updateDate(selectedMonth, selectedYear - 1)}
                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
                   aria-label="Previous Year"
@@ -1430,7 +1578,7 @@ function TransactionsPageContent() {
                 >
                   <ChevronLeft size={18} />
                 </button>
-                
+
                 {/* Year select dropdown only when monthly tab is active */}
                 <div className="relative inline-block">
                   <select
@@ -1440,14 +1588,18 @@ function TransactionsPageContent() {
                     aria-label="Select Year"
                   >
                     {availableYears.map((y) => (
-                      <option key={y} value={y} className="bg-popover text-popover-foreground text-sm font-normal">
+                      <option
+                        key={y}
+                        value={y}
+                        className="bg-popover text-popover-foreground text-sm font-normal"
+                      >
                         {y}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <button 
+                <button
                   onClick={() => updateDate(selectedMonth, selectedYear + 1)}
                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
                   aria-label="Next Year"
@@ -1458,14 +1610,14 @@ function TransactionsPageContent() {
               </>
             ) : (
               <>
-                <button 
+                <button
                   onClick={() => shiftMonth(-1)}
                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
                   aria-label="Previous Month"
                 >
                   <ChevronLeft size={18} />
                 </button>
-                
+
                 {/* Month select dropdown */}
                 <div className="relative inline-block">
                   <select
@@ -1475,7 +1627,11 @@ function TransactionsPageContent() {
                     aria-label="Select Month"
                   >
                     {MONTH_NAMES.map((m, i) => (
-                      <option key={m} value={i} className="bg-popover text-popover-foreground uppercase text-sm font-normal">
+                      <option
+                        key={m}
+                        value={i}
+                        className="bg-popover text-popover-foreground uppercase text-sm font-normal"
+                      >
                         {m.slice(0, 3)}
                       </option>
                     ))}
@@ -1491,14 +1647,18 @@ function TransactionsPageContent() {
                     aria-label="Select Year"
                   >
                     {availableYears.map((y) => (
-                      <option key={y} value={y} className="bg-popover text-popover-foreground text-sm font-normal">
+                      <option
+                        key={y}
+                        value={y}
+                        className="bg-popover text-popover-foreground text-sm font-normal"
+                      >
                         {y}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <button 
+                <button
                   onClick={() => shiftMonth(1)}
                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
                   aria-label="Next Month"
@@ -1519,34 +1679,24 @@ function TransactionsPageContent() {
 
           <div className="flex items-center gap-1">
             {accountFilter !== 'all' && (
-              <>
-                <button 
-                  onClick={handleOpenEditAccount}
-                  className="p-1.5 rounded-md transition border border-transparent text-primary hover:bg-primary/10 active:scale-95 flex items-center gap-1 text-xs font-bold"
-                  title="Edit Account Details"
-                >
-                  <Edit3 size={14} />
-                  <span>Edit</span>
-                </button>
-                <button 
-                  onClick={() => setShowAccountChart(!showAccountChart)}
-                  className={`p-1.5 rounded-md transition border ${
-                    showAccountChart 
-                      ? 'bg-primary/10 border-primary text-primary shadow-sm' 
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'
-                  }`}
-                  title="Show Account Graph"
-                >
-                  <BarChart3 size={16} />
-                </button>
-              </>
+              <button
+                onClick={() => setShowAccountChart(!showAccountChart)}
+                className={`p-1.5 rounded-md transition border ${
+                  showAccountChart
+                    ? 'bg-primary/10 border-primary text-primary shadow-sm'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'
+                }`}
+                title="Show Account Graph"
+              >
+                <BarChart3 size={16} />
+              </button>
             )}
 
-            <button 
+            <button
               onClick={() => setShowFiltersPanel(!showFiltersPanel)}
               className={`p-1.5 rounded-md transition border ${
-                showFiltersPanel 
-                  ? 'bg-primary/10 border-primary text-primary shadow-sm' 
+                showFiltersPanel
+                  ? 'bg-primary/10 border-primary text-primary shadow-sm'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'
               }`}
               title="Toggle Filters"
@@ -1562,7 +1712,9 @@ function TransactionsPageContent() {
         <div className="bg-secondary p-3 rounded-lg border border-border space-y-2.5 animate-slide-up">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Search description</label>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                Search description
+              </label>
               <input
                 type="text"
                 value={search}
@@ -1571,28 +1723,36 @@ function TransactionsPageContent() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Account</label>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                Account
+              </label>
               <select
                 value={accountFilter}
                 onChange={(e) => setAccountFilter(e.target.value)}
                 className="w-full text-sm bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="all">All Accounts</option>
-                {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Category</label>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                Category
+              </label>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="w-full text-sm bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="all">All Categories</option>
-                {filterCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {filterCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
             </div>
@@ -1600,7 +1760,7 @@ function TransactionsPageContent() {
 
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border/60">
             <div className="flex gap-1">
-              {(['all', 'income', 'expense', 'transfer'] as const).map(t => (
+              {(['all', 'income', 'expense', 'transfer'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => handleTypeFilterChange(t)}
@@ -1633,7 +1793,31 @@ function TransactionsPageContent() {
       {/* Account Bar Graph Collapsible Panel */}
       {showAccountChart && accountFilter !== 'all' && (
         <div className="bg-secondary p-4 rounded-lg border border-border/80 space-y-3.5 animate-slide-up">
-          <div className="flex items-center justify-end border-b border-border/40 pb-2">
+          <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
+            <div className="flex items-center rounded-md bg-background/60 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setAccountChartView('daily')}
+                className={`px-2.5 py-1 rounded transition ${
+                  accountChartView === 'daily'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountChartView('monthly')}
+                className={`px-2.5 py-1 rounded transition ${
+                  accountChartView === 'monthly'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                Monthly
+              </button>
+            </div>
             <div className="flex items-center gap-3 text-3xs font-semibold">
               <div className="flex items-center gap-1">
                 <div className="w-2.5 h-2.5 rounded-sm bg-positive" />
@@ -1643,19 +1827,28 @@ function TransactionsPageContent() {
                 <div className="w-2.5 h-2.5 rounded-sm bg-negative" />
                 <span className="text-muted-foreground">Expenses</span>
               </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded-sm bg-info" />
+                <span className="text-muted-foreground">Transfers</span>
+              </div>
             </div>
           </div>
 
-          {accountChartData.length === 0 ? (
-            <div className="h-44 flex items-center justify-center text-xs text-muted-foreground">
-              No transactions to display on graph.
+          <div className={accountChartView === 'daily' ? 'space-y-2' : 'hidden'}>
+            <div className="text-xs text-foreground">
+              Daily details · {MONTH_NAMES[selectedMonth]} {selectedYear}
             </div>
-          ) : (
-            <div className="w-full select-none select-scrollbar overflow-x-auto">
-              <div style={{ minWidth: '100%' }}>
+
+            {accountChartData.length === 0 ? (
+              <div className="h-44 flex items-center justify-center text-xs text-muted-foreground">
+                No transactions to display on graph.
+              </div>
+            ) : (
+              <div className="w-full select-none overflow-hidden">
+                <div style={{ minWidth: '100%' }}>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart
-                    data={accountChartData}
+                    data={accountChartPlotData}
                     margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -1666,7 +1859,14 @@ function TransactionsPageContent() {
                       tickLine={false}
                     />
                     <YAxis
-                      tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                      scale="linear"
+                      domain={[0, 'auto']}
+                      tickFormatter={(value) => {
+                        const amount = accountChartScale.logarithmic
+                          ? Math.max(0, Math.round(10 ** value - 1))
+                          : value;
+                        return `₹${amount >= 1000 ? `${(amount / 1000).toFixed(0)}k` : amount}`;
+                      }}
                       tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
                       axisLine={false}
                       tickLine={false}
@@ -1674,29 +1874,109 @@ function TransactionsPageContent() {
                     />
                     <Tooltip
                       content={
-                        <CustomBarTooltip />
+                        <CustomBarTooltip logarithmic={accountChartScale.logarithmic} />
                       }
                       cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                     />
                     <Bar
                       dataKey="income"
+                      stackId="account-flow"
+                      barSize={7}
                       fill="var(--positive)"
                       opacity={0.8}
-                      radius={[3, 3, 0, 0]}
                       name="Income"
                     />
                     <Bar
                       dataKey="expense"
+                      stackId="account-flow"
+                      barSize={7}
                       fill="var(--negative)"
                       opacity={0.8}
-                      radius={[3, 3, 0, 0]}
                       name="Expenses"
+                    />
+                    <Bar
+                      dataKey="transfer"
+                      stackId="account-flow"
+                      barSize={7}
+                      fill="var(--info)"
+                      opacity={0.8}
+                      radius={[3, 3, 0, 0]}
+                      name="Transfers"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={accountChartView === 'monthly' ? 'space-y-2' : 'hidden'}>
+            <div className="text-xs text-foreground">Monthly details · {selectedYear}</div>
+            <div className="w-full select-none overflow-hidden">
+              <div className="w-full">
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart
+                    data={yearlyAccountChartPlotData}
+                    margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickFormatter={(month) => month.slice(0, 3)}
+                      tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      scale="linear"
+                      domain={[0, 'auto']}
+                      tickFormatter={(value) => {
+                        const amount = yearlyAccountChartScale.logarithmic
+                          ? Math.max(0, Math.round(10 ** value - 1))
+                          : value;
+                        return `₹${amount >= 1000 ? `${(amount / 1000).toFixed(0)}k` : amount}`;
+                      }}
+                      tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={35}
+                    />
+                    <Tooltip
+                      content={
+                        <CustomBarTooltip logarithmic={yearlyAccountChartScale.logarithmic} />
+                      }
+                      cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                    />
+                    <Bar
+                      dataKey="income"
+                      stackId="yearly-account-flow"
+                      barSize={12}
+                      fill="var(--positive)"
+                      opacity={0.8}
+                      name="Income"
+                    />
+                    <Bar
+                      dataKey="expense"
+                      stackId="yearly-account-flow"
+                      barSize={12}
+                      fill="var(--negative)"
+                      opacity={0.8}
+                      name="Expenses"
+                    />
+                    <Bar
+                      dataKey="transfer"
+                      stackId="yearly-account-flow"
+                      barSize={12}
+                      fill="var(--info)"
+                      opacity={0.8}
+                      radius={[3, 3, 0, 0]}
+                      name="Transfers"
                     />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -1711,8 +1991,8 @@ function TransactionsPageContent() {
                 if (tab !== 'calendar') setSelectedCalendarDay(null);
               }}
               className={`flex-1 min-w-[70px] text-center py-2 text-sm font-bold uppercase tracking-wider transition border-b-2 shrink-0 ${
-                activeTab === tab 
-                  ? 'border-white text-white font-black' 
+                activeTab === tab
+                  ? 'border-white text-white font-black'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -1725,23 +2005,34 @@ function TransactionsPageContent() {
       {/* 3. Transaction Summary Banner */}
       <div className="grid grid-cols-3 bg-secondary/35 py-2 rounded-md border border-border/30 text-center font-mono tabular-nums text-sm">
         <div>
-          <span className="text-xs font-semibold text-muted-foreground uppercase block">Income</span>
-          <span className="text-base font-bold text-positive block mt-0.5">{formatVal(totals.income)}</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase block">
+            Income
+          </span>
+          <span className="text-base font-bold text-positive block mt-0.5">
+            {formatVal(totals.income)}
+          </span>
         </div>
         <div className="border-x border-border/30">
-          <span className="text-xs font-semibold text-muted-foreground uppercase block">Expenses</span>
-          <span className="text-base font-bold text-negative block mt-0.5">{formatVal(totals.expense)}</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase block">
+            Expenses
+          </span>
+          <span className="text-base font-bold text-negative block mt-0.5">
+            {formatVal(totals.expense)}
+          </span>
         </div>
         <div>
           <span className="text-xs font-semibold text-muted-foreground uppercase block">Net</span>
-          <span className={`text-base font-bold block mt-0.5 ${totals.net >= 0 ? 'text-positive' : 'text-negative'}`}>
-            {totals.net >= 0 ? '+' : ''}{formatVal(totals.net)}
+          <span
+            className={`text-base font-bold block mt-0.5 ${totals.net >= 0 ? 'text-positive' : 'text-negative'}`}
+          >
+            {totals.net >= 0 ? '+' : ''}
+            {formatVal(totals.net)}
           </span>
         </div>
       </div>
 
       {/* 4. Tab Views Contents (Supports Swipe left/right for Daily, Calendar, Monthly tabs) */}
-      <div 
+      <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         className="space-y-3 min-h-[300px]"
@@ -1749,7 +2040,10 @@ function TransactionsPageContent() {
         {isLoading ? (
           <div className="space-y-2.5 py-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={`loader-${i}`} className="animate-pulse bg-secondary/30 h-10 border border-border/40 rounded flex items-center justify-between px-3">
+              <div
+                key={`loader-${i}`}
+                className="animate-pulse bg-secondary/30 h-10 border border-border/40 rounded flex items-center justify-between px-3"
+              >
                 <div className="h-3 w-16 bg-muted/65 rounded" />
                 <div className="h-3 w-28 bg-muted/40 rounded" />
                 <div className="h-3 w-14 bg-muted/50 rounded" />
@@ -1762,149 +2056,193 @@ function TransactionsPageContent() {
             {activeTab === 'daily' && (
               <div className="space-y-4">
                 {groupedDailyTransactions.length === 0 ? (
-                  <p className="text-center text-sm text-muted-foreground py-10 font-medium">No records found for this period.</p>
-                ) : (() => {
-                  const seenTripIds = new Set<string>();
-                  return groupedDailyTransactions.map((group) => {
-                    const day = group.date.getDate();
-                    const weekday = getDayName(group.date.toISOString().slice(0, 10));
-                    
-                    return (
-                      <div key={group.date.toISOString()} className="bg-secondary border border-border/80 rounded-xl p-3.5 space-y-2 shadow-xs">
-                        {/* Day Group Header */}
-                        <div className="flex items-center justify-between pb-2 border-b border-border/40">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-bold text-white leading-none">{day}</span>
-                            <span className="text-xs font-semibold uppercase text-white/80">{weekday}</span>
-                            <span className="text-sm text-muted-foreground font-normal">
-                              {group.date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
-                            </span>
+                  <p className="text-center text-sm text-muted-foreground py-10 font-medium">
+                    No records found for this period.
+                  </p>
+                ) : (
+                  (() => {
+                    const seenTripIds = new Set<string>();
+                    return groupedDailyTransactions.map((group) => {
+                      const day = group.date.getDate();
+                      const weekday = getDayName(group.date.toISOString().slice(0, 10));
+
+                      return (
+                        <div
+                          key={group.date.toISOString()}
+                          className="bg-secondary border border-border/80 rounded-xl p-3.5 space-y-2 shadow-xs"
+                        >
+                          {/* Day Group Header */}
+                          <div className="flex items-center justify-between pb-2 border-b border-border/40">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-xl font-bold text-white leading-none">
+                                {day}
+                              </span>
+                              <span className="text-xs font-semibold uppercase text-white/80">
+                                {weekday}
+                              </span>
+                              <span className="text-sm text-muted-foreground font-normal">
+                                {group.date.toLocaleDateString('en-IN', {
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm font-semibold font-mono text-right">
+                              {group.incomeSum > 0 && (
+                                <span className="text-positive">{formatVal(group.incomeSum)}</span>
+                              )}
+                              {group.expenseSum > 0 && (
+                                <span className="text-negative">{formatVal(group.expenseSum)}</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-sm font-semibold font-mono text-right">
-                            {group.incomeSum > 0 && <span className="text-positive">{formatVal(group.incomeSum)}</span>}
-                            {group.expenseSum > 0 && <span className="text-negative">{formatVal(group.expenseSum)}</span>}
-                          </div>
-                        </div>
 
-                        {/* Transaction Rows */}
-                        <div>
-                          {group.items.map((txn) => {
-                            const isIncome = txn.type === 'income';
-                            const isTransfer = txn.type === 'transfer';
-                            
-                            const title = txn.notes?.trim() || txn.category || 'Transaction';
-                            
-                            const accName = txn.historicalAccountName || getAccountName(txn.account);
-                            const toAccName = txn.historicalToAccountName || (txn.toAccount ? getAccountName(txn.toAccount) : '');
-                            
-                            let metadata = '';
-                            if (isTransfer) {
-                              metadata = `${accName} → ${toAccName || 'Unknown'}`;
-                            } else {
-                              metadata = `${txn.category}  •  ${accName}`;
-                            }
-                            
-                            const isTrip = Boolean(txn.tripId);
-                            const isFirstTripStartTxn = isTrip && firstTripTxnMap[txn.tripId!] === txn.id;
+                          {/* Transaction Rows */}
+                          <div>
+                            {group.items.map((txn) => {
+                              const isIncome = txn.type === 'income';
+                              const isTransfer = txn.type === 'transfer';
 
-                            const tripBgColor = isTrip ? getTripBgColor() : '';
-                            const activeTrip = getActiveTrip();
-                            const tripName = isTrip ? (tripsMap[txn.tripId!] || activeTrip?.name || 'Trip') : '';
+                              const title = txn.notes?.trim() || txn.category || 'Transaction';
 
-                            const isSelected = selectedTxnIds.includes(txn.id);
+                              const accName =
+                                txn.historicalAccountName || getAccountName(txn.account);
+                              const toAccName =
+                                txn.historicalToAccountName ||
+                                (txn.toAccount ? getAccountName(txn.toAccount) : '');
 
-                            return (
-                              <div 
-                                key={txn.id}
-                                onTouchStart={() => handleItemTouchStart(txn.id)}
-                                onTouchEnd={handleTouchEndOrCancel}
-                                onTouchMove={handleTouchEndOrCancel}
-                                onMouseDown={() => handleItemTouchStart(txn.id)}
-                                onMouseUp={handleTouchEndOrCancel}
-                                onMouseLeave={handleTouchEndOrCancel}
-                                onClick={() => handleTxnClick(txn)}
-                                className={`flex items-center justify-between py-2 ${isSelectionMode ? 'pl-5' : 'pl-10'} pr-2 transition cursor-pointer group relative ${
-                                  isSelected
-                                    ? 'bg-primary/20 border-l-4 border-l-primary'
-                                    : isTrip
-                                      ? 'border-l-4'
-                                      : 'hover:bg-secondary/45 active:bg-secondary/65'
-                                }`}
-                                style={isSelected ? undefined : (isTrip ? {
-                                  backgroundColor: `${tripBgColor}22`,
-                                  borderLeftColor: tripBgColor,
-                                } : undefined)}
-                              >
-                                {isSelectionMode && (
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => {}}
-                                    className="w-4 h-4 rounded accent-primary mr-3 cursor-pointer shrink-0"
-                                  />
-                                )}
+                              let metadata = '';
+                              if (isTransfer) {
+                                metadata = `${accName} → ${toAccName || 'Unknown'}`;
+                              } else {
+                                metadata = `${txn.category}  •  ${accName}`;
+                              }
 
-                                {/* Left: Notes / Category & Metadata */}
-                                <div className="flex-1 min-w-0 pr-2">
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="text-base font-normal text-foreground truncate">
-                                      {title}
-                                    </span>
-                                    {txn.isSplit && (
-                                      <span className="text-xs font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase shrink-0 max-w-[180px] truncate">
-                                        Split{txn.splitDetails?.members ? `: ${txn.splitDetails.members.map(m => m.name).filter(Boolean).join(', ')}` : ''}
+                              const isTrip = Boolean(txn.tripId);
+                              const isFirstTripStartTxn =
+                                isTrip && firstTripTxnMap[txn.tripId!] === txn.id;
+
+                              const tripBgColor = isTrip ? getTripBgColor() : '';
+                              const activeTrip = getActiveTrip();
+                              const tripName = isTrip
+                                ? tripsMap[txn.tripId!] || activeTrip?.name || 'Trip'
+                                : '';
+
+                              const isSelected = selectedTxnIds.includes(txn.id);
+
+                              return (
+                                <div
+                                  key={txn.id}
+                                  onTouchStart={() => handleItemTouchStart(txn.id)}
+                                  onTouchEnd={handleTouchEndOrCancel}
+                                  onTouchMove={handleTouchEndOrCancel}
+                                  onMouseDown={() => handleItemTouchStart(txn.id)}
+                                  onMouseUp={handleTouchEndOrCancel}
+                                  onMouseLeave={handleTouchEndOrCancel}
+                                  onClick={() => handleTxnClick(txn)}
+                                  className={`flex items-center justify-between py-2 ${isSelectionMode ? 'pl-5' : 'pl-10'} pr-2 transition cursor-pointer group relative ${
+                                    isSelected
+                                      ? 'bg-primary/20 border-l-4 border-l-primary'
+                                      : isTrip
+                                        ? 'border-l-4'
+                                        : 'hover:bg-secondary/45 active:bg-secondary/65'
+                                  }`}
+                                  style={
+                                    isSelected
+                                      ? undefined
+                                      : isTrip
+                                        ? {
+                                            backgroundColor: `${tripBgColor}22`,
+                                            borderLeftColor: tripBgColor,
+                                          }
+                                        : undefined
+                                  }
+                                >
+                                  {isSelectionMode && (
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => {}}
+                                      className="w-4 h-4 rounded accent-primary mr-3 cursor-pointer shrink-0"
+                                    />
+                                  )}
+
+                                  {/* Left: Notes / Category & Metadata */}
+                                  <div className="flex-1 min-w-0 pr-2">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <span className="text-sm font-normal text-foreground truncate">
+                                        {title}
                                       </span>
-                                    )}
+                                      {txn.isSplit && (
+                                        <span className="text-xs font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase shrink-0 max-w-[180px] truncate">
+                                          Split
+                                          {txn.splitDetails?.members
+                                            ? `: ${txn.splitDetails.members
+                                                .map((m) => m.name)
+                                                .filter(Boolean)
+                                                .join(', ')}`
+                                            : ''}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs font-normal text-muted-foreground truncate mt-0.5">
+                                      {metadata}
+                                    </div>
                                   </div>
-                                  <div className="text-xs font-normal text-muted-foreground truncate mt-0.5">
-                                    {metadata}
-                                  </div>
-                                </div>
 
-                                {/* Middle: Trip Name (Show ONLY on the first transaction when trip started) */}
-                                {isTrip && isFirstTripStartTxn && (
-                                  <div className="px-3 shrink-0 text-center">
-                                    <span 
-                                      className="text-sm font-bold max-w-[120px] truncate block"
-                                      style={{ color: tripBgColor }}
-                                    >
-                                      {tripName}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {/* Right: Amount */}
-                                <div className="text-right font-mono tabular-nums shrink-0 ml-auto pl-1">
-                                  <span className={`text-base font-bold block ${
-                                    isTransfer 
-                                      ? 'text-info' 
-                                      : isIncome 
-                                        ? 'text-positive' 
-                                        : 'text-negative'
-                                  }`}>
-                                    {txn.amount.toLocaleString('en-IN')}
-                                  </span>
-                                  {/* Running Balance */}
-                                  {showBalances && (
-                                    <div className="text-xs text-muted-foreground/70 font-normal mt-0.5 animate-fade-in">
-                                      {(() => {
-                                        const bal = transactionBalances[txn.id];
-                                        if (!bal) return '';
-                                        const isDestAcc = accountFilter !== 'all' && (txn.toAccount === accountFilter || txn.toAccountUid === accountFilter);
-                                        const val = isDestAcc && bal.toAccountBalance !== undefined ? bal.toAccountBalance : bal.accountBalance;
-                                        return (val || 0).toLocaleString('en-IN');
-                                      })()}
+                                  {/* Middle: Trip Name (Show ONLY on the first transaction when trip started) */}
+                                  {isTrip && isFirstTripStartTxn && (
+                                    <div className="px-3 shrink-0 text-center">
+                                      <span
+                                        className="text-sm font-bold max-w-[120px] truncate block"
+                                        style={{ color: tripBgColor }}
+                                      >
+                                        {tripName}
+                                      </span>
                                     </div>
                                   )}
+
+                                  {/* Right: Amount */}
+                                  <div className="text-right font-mono tabular-nums shrink-0 ml-auto pl-1">
+                                    <span
+                                      className={`text-sm font-bold block ${
+                                        isTransfer
+                                          ? 'text-foreground'
+                                          : isIncome
+                                            ? 'text-positive'
+                                            : 'text-negative'
+                                      }`}
+                                    >
+                                      ₹{txn.amount.toLocaleString('en-IN')}
+                                    </span>
+                                    {/* Running Balance */}
+                                    {showBalances && (
+                                      <div className="text-xs text-muted-foreground/70 font-normal mt-0.5 animate-fade-in">
+                                        {(() => {
+                                          const bal = transactionBalances[txn.id];
+                                          if (!bal) return '';
+                                          const isDestAcc =
+                                            accountFilter !== 'all' &&
+                                            (txn.toAccount === accountFilter ||
+                                              txn.toAccountUid === accountFilter);
+                                          const val =
+                                            isDestAcc && bal.toAccountBalance !== undefined
+                                              ? bal.toAccountBalance
+                                              : bal.accountBalance;
+                                          return (val || 0).toLocaleString('en-IN');
+                                        })()}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  });
-                })()}
+                      );
+                    });
+                  })()
+                )}
               </div>
             )}
 
@@ -1915,8 +2253,13 @@ function TransactionsPageContent() {
                 <div className="bg-secondary rounded-xl border border-border overflow-hidden shadow-sm flex flex-col h-[calc(100vh-270px)] min-h-[380px] md:h-[480px]">
                   {/* Table Header */}
                   <div className="grid grid-cols-7 text-center border-b border-border bg-[#0b0f1a] divide-x divide-border/60 flex-shrink-0">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <span key={day} className="py-2 text-xs font-bold text-muted-foreground uppercase">{day}</span>
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                      <span
+                        key={day}
+                        className="py-2 text-xs font-bold text-muted-foreground uppercase"
+                      >
+                        {day}
+                      </span>
                     ))}
                   </div>
 
@@ -1924,29 +2267,50 @@ function TransactionsPageContent() {
                   <div className="grid grid-cols-7 flex-1">
                     {calendarDays.map((cell, idx) => {
                       if (!cell) {
-                        return <div key={`empty-${idx}`} className="h-full bg-muted/5 border-r border-b border-border/60" />;
+                        return (
+                          <div
+                            key={`empty-${idx}`}
+                            className="h-full bg-muted/5 border-r border-b border-border/60"
+                          />
+                        );
                       }
-                      
+
                       const isSelected = selectedCalendarDay === cell.day;
                       const hasActivity = cell.income > 0 || cell.expense > 0;
-                      
+
                       return (
                         <button
                           key={`day-${cell.day}`}
                           onClick={() => setSelectedCalendarDay(isSelected ? null : cell.day)}
                           className={`h-full border-r border-b border-border/80 flex flex-col justify-between p-1.5 transition text-left relative ${
-                            isSelected 
-                              ? 'bg-primary/20 text-primary font-bold' 
+                            isSelected
+                              ? 'bg-primary/20 text-primary font-bold'
                               : 'bg-background/40 hover:bg-muted/30'
                           }`}
                         >
-                          <span className={`text-xs sm:text-sm font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                          <span
+                            className={`text-xs sm:text-sm font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}
+                          >
                             {cell.day}
                           </span>
                           {hasActivity && (
                             <div className="space-y-0.5 text-[10px] sm:text-[11px] leading-tight font-mono text-right w-full mt-auto">
-                              {cell.income > 0 && <span className="text-positive block font-extrabold">+{cell.income >= 1000 ? `${(cell.income / 1000).toFixed(0)}k` : cell.income}</span>}
-                              {cell.expense > 0 && <span className="text-negative block font-extrabold">-{cell.expense >= 1000 ? `${(cell.expense / 1000).toFixed(0)}k` : cell.expense}</span>}
+                              {cell.income > 0 && (
+                                <span className="text-positive block font-extrabold">
+                                  +
+                                  {cell.income >= 1000
+                                    ? `${(cell.income / 1000).toFixed(0)}k`
+                                    : cell.income}
+                                </span>
+                              )}
+                              {cell.expense > 0 && (
+                                <span className="text-negative block font-extrabold">
+                                  -
+                                  {cell.expense >= 1000
+                                    ? `${(cell.expense / 1000).toFixed(0)}k`
+                                    : cell.expense}
+                                </span>
+                              )}
                             </div>
                           )}
                         </button>
@@ -1959,23 +2323,34 @@ function TransactionsPageContent() {
                 {selectedCalendarDay !== null && (
                   <div className="bg-secondary border border-border/80 rounded-xl p-3.5 space-y-2 shadow-xs">
                     <div className="flex justify-between items-center pb-2 border-b border-border/40">
-                      <span className="text-sm font-bold uppercase tracking-wider text-white">Transactions on Day {selectedCalendarDay}</span>
-                      <button onClick={() => setSelectedCalendarDay(null)} className="text-sm text-white/90 hover:text-white font-bold uppercase tracking-wider">Clear Selection</button>
+                      <span className="text-sm font-bold uppercase tracking-wider text-white">
+                        Transactions on Day {selectedCalendarDay}
+                      </span>
+                      <button
+                        onClick={() => setSelectedCalendarDay(null)}
+                        className="text-sm text-white/90 hover:text-white font-bold uppercase tracking-wider"
+                      >
+                        Clear Selection
+                      </button>
                     </div>
-                    
+
                     <div>
                       {selectedDayTransactions.length === 0 ? (
-                        <p className="text-center text-sm text-muted-foreground py-4 font-semibold">No transactions recorded on this day.</p>
+                        <p className="text-center text-sm text-muted-foreground py-4 font-semibold">
+                          No transactions recorded on this day.
+                        </p>
                       ) : (
                         selectedDayTransactions.map((txn) => {
                           const isIncome = txn.type === 'income';
                           const isTransfer = txn.type === 'transfer';
-                          
+
                           const title = txn.notes?.trim() || txn.category || 'Transaction';
 
                           const accName = txn.historicalAccountName || getAccountName(txn.account);
-                          const toAccName = txn.historicalToAccountName || (txn.toAccount ? getAccountName(txn.toAccount) : '');
-                          
+                          const toAccName =
+                            txn.historicalToAccountName ||
+                            (txn.toAccount ? getAccountName(txn.toAccount) : '');
+
                           let metadata = '';
                           if (isTransfer) {
                             metadata = `${accName} → ${toAccName || 'Unknown'}`;
@@ -1989,33 +2364,35 @@ function TransactionsPageContent() {
                           const isTrip = Boolean(txn.tripId);
 
                           return (
-                             <div 
-                               key={txn.id}
-                               onClick={() => startEditing(txn)}
-                               className={`flex items-center justify-between py-2 pl-10 pr-2 transition cursor-pointer ${
-                                 isTrip
-                                   ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
-                                   : 'hover:bg-secondary/45 active:bg-secondary/65'
-                               }`}
-                             >
-                               <div className="flex-1 min-w-0 pr-3">
-                                 <div className="text-base font-semibold text-foreground truncate flex items-center gap-1.5">
-                                   <span>{title}</span>
-                                   {isTrip && (
-                                     <span className="text-xs font-bold text-amber-500 bg-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
-                                       ✈️ Trip
-                                     </span>
-                                   )}
-                                 </div>
-                                 <div className="text-xs font-medium text-muted-foreground truncate mt-0.5">
-                                   {metadata}
-                                 </div>
-                               </div>
-                               <span className={`font-mono text-base font-bold shrink-0 ${isTransfer ? 'text-info' : isIncome ? 'text-positive' : 'text-negative'}`}>
-                                 {txn.amount.toLocaleString('en-IN')}
-                               </span>
-                             </div>
-                           );
+                            <div
+                              key={txn.id}
+                              onClick={() => startEditing(txn)}
+                              className={`flex items-center justify-between py-2 pl-10 pr-2 transition cursor-pointer ${
+                                isTrip
+                                  ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
+                                  : 'hover:bg-secondary/45 active:bg-secondary/65'
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0 pr-3">
+                                <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
+                                  <span>{title}</span>
+                                  {isTrip && (
+                                    <span className="text-xs font-bold text-amber-500 bg-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                                      ✈️ Trip
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs font-medium text-muted-foreground truncate mt-0.5">
+                                  {metadata}
+                                </div>
+                              </div>
+                              <span
+                                className={`font-mono text-sm font-bold shrink-0 ${isTransfer ? 'text-foreground' : isIncome ? 'text-positive' : 'text-negative'}`}
+                              >
+                                ₹{txn.amount.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                          );
                         })
                       )}
                     </div>
@@ -2026,19 +2403,18 @@ function TransactionsPageContent() {
 
             {/* MONTHLY TAB */}
             {activeTab === 'monthly' && (
-              <div 
+              <div
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
                 className="space-y-2 animate-slide-up font-mono text-sm font-bold select-none"
               >
-
                 <div className="grid grid-cols-4 bg-secondary p-2 rounded-lg text-muted-foreground uppercase text-xs font-bold tracking-wider text-center border border-border/60">
                   <span className="text-left pl-2">Month</span>
                   <span>Income</span>
                   <span>Expense</span>
                   <span>Net</span>
                 </div>
-                
+
                 <div className="space-y-1">
                   {monthlySummaryList.map((row) => (
                     <button
@@ -2051,10 +2427,17 @@ function TransactionsPageContent() {
                       className="w-full grid grid-cols-4 bg-secondary/35 border border-border/40 hover:bg-secondary/60 p-2.5 rounded hover:border-primary/40 transition text-center items-center cursor-pointer"
                     >
                       <span className="text-left text-foreground pl-2 text-sm">{row.name}</span>
-                      <span className="text-positive text-sm">+{row.income.toLocaleString('en-IN')}</span>
-                      <span className="text-negative text-sm">-{row.expense.toLocaleString('en-IN')}</span>
-                      <span className={`text-sm ${row.net >= 0 ? 'text-positive' : 'text-negative'}`}>
-                        {row.net >= 0 ? '+' : ''}{row.net.toLocaleString('en-IN')}
+                      <span className="text-positive text-sm">
+                        +{row.income.toLocaleString('en-IN')}
+                      </span>
+                      <span className="text-negative text-sm">
+                        -{row.expense.toLocaleString('en-IN')}
+                      </span>
+                      <span
+                        className={`text-sm ${row.net >= 0 ? 'text-positive' : 'text-negative'}`}
+                      >
+                        {row.net >= 0 ? '+' : ''}
+                        {row.net.toLocaleString('en-IN')}
                       </span>
                     </button>
                   ))}
@@ -2065,22 +2448,32 @@ function TransactionsPageContent() {
             {/* TOTAL TAB */}
             {activeTab === 'total' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up text-sm">
-                
                 {/* Expenses Breakdown */}
                 <div className="bg-secondary/40 p-3 rounded-lg border border-border/60 space-y-2.5">
-                  <h3 className="text-sm font-bold text-negative uppercase tracking-wider pb-1.5 border-b border-border">Expenses Categories</h3>
+                  <h3 className="text-sm font-bold text-negative uppercase tracking-wider pb-1.5 border-b border-border">
+                    Expenses Categories
+                  </h3>
                   {categoryTotals.expenseList.length === 0 ? (
-                    <p className="text-center text-xs text-muted-foreground py-6">No expenses in this period.</p>
+                    <p className="text-center text-xs text-muted-foreground py-6">
+                      No expenses in this period.
+                    </p>
                   ) : (
                     <div className="space-y-2.5">
-                      {categoryTotals.expenseList.map(cat => (
+                      {categoryTotals.expenseList.map((cat) => (
                         <div key={`exp-${cat.name}`} className="space-y-1">
                           <div className="flex justify-between items-center text-sm font-normal">
-                            <span className="text-foreground">{cat.name} ({cat.count})</span>
-                            <span className="font-mono font-normal text-negative">{formatVal(cat.amount)} ({cat.percentage}%)</span>
+                            <span className="text-foreground">
+                              {cat.name} ({cat.count})
+                            </span>
+                            <span className="font-mono font-normal text-negative">
+                              {formatVal(cat.amount)} ({cat.percentage}%)
+                            </span>
                           </div>
                           <div className="w-full bg-background h-1.5 rounded-full overflow-hidden border border-border/30">
-                            <div className="bg-negative h-full rounded-full" style={{ width: `${cat.percentage}%` }} />
+                            <div
+                              className="bg-negative h-full rounded-full"
+                              style={{ width: `${cat.percentage}%` }}
+                            />
                           </div>
                         </div>
                       ))}
@@ -2090,26 +2483,36 @@ function TransactionsPageContent() {
 
                 {/* Income Breakdown */}
                 <div className="bg-secondary/40 p-3 rounded-lg border border-border/60 space-y-2.5">
-                  <h3 className="text-sm font-bold text-positive uppercase tracking-wider pb-1.5 border-b border-border">Income Categories</h3>
+                  <h3 className="text-sm font-bold text-positive uppercase tracking-wider pb-1.5 border-b border-border">
+                    Income Categories
+                  </h3>
                   {categoryTotals.incomeList.length === 0 ? (
-                    <p className="text-center text-xs text-muted-foreground py-6">No income in this period.</p>
+                    <p className="text-center text-xs text-muted-foreground py-6">
+                      No income in this period.
+                    </p>
                   ) : (
                     <div className="space-y-2.5">
-                      {categoryTotals.incomeList.map(cat => (
+                      {categoryTotals.incomeList.map((cat) => (
                         <div key={`inc-${cat.name}`} className="space-y-1">
                           <div className="flex justify-between items-center text-sm font-normal">
-                            <span className="text-foreground">{cat.name} ({cat.count})</span>
-                            <span className="font-mono font-normal text-positive">{formatVal(cat.amount)} ({cat.percentage}%)</span>
+                            <span className="text-foreground">
+                              {cat.name} ({cat.count})
+                            </span>
+                            <span className="font-mono font-normal text-positive">
+                              {formatVal(cat.amount)} ({cat.percentage}%)
+                            </span>
                           </div>
                           <div className="w-full bg-background h-1.5 rounded-full overflow-hidden border border-border/30">
-                            <div className="bg-positive h-full rounded-full" style={{ width: `${cat.percentage}%` }} />
+                            <div
+                              className="bg-positive h-full rounded-full"
+                              style={{ width: `${cat.percentage}%` }}
+                            />
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-
               </div>
             )}
 
@@ -2126,7 +2529,7 @@ function TransactionsPageContent() {
                       className="w-full text-xs bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none"
                     />
                     {noteSearch && (
-                      <button 
+                      <button
                         onClick={() => setNoteSearch('')}
                         className="text-xs font-bold text-primary px-2 uppercase"
                       >
@@ -2151,14 +2554,18 @@ function TransactionsPageContent() {
                 {(() => {
                   const query = noteSearch.toLowerCase().trim();
                   const filteredNotes = generalNotes.filter(
-                    n => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query)
+                    (n) =>
+                      n.title.toLowerCase().includes(query) ||
+                      n.content.toLowerCase().includes(query)
                   );
-                  
+
                   if (filteredNotes.length === 0) {
                     return (
                       <div className="text-center py-12 bg-[#0b0f1a]/40 border border-border/40 rounded-xl space-y-1">
                         <p className="text-sm text-muted-foreground">No notes found.</p>
-                        <p className="text-xs text-muted-foreground/60">Create a general budget checklist, shopping list, or plan.</p>
+                        <p className="text-xs text-muted-foreground/60">
+                          Create a general budget checklist, shopping list, or plan.
+                        </p>
                       </div>
                     );
                   }
@@ -2166,18 +2573,27 @@ function TransactionsPageContent() {
                   return (
                     <div className="grid grid-cols-1 gap-3">
                       {filteredNotes.map((note) => (
-                        <div 
+                        <div
                           key={note.id}
                           className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between hover:border-primary/40 transition group"
                         >
                           <div className="space-y-1.5">
                             <div className="flex items-start justify-between">
-                              <h4 className="text-base font-bold text-foreground">{note.title || 'Untitled Note'}</h4>
+                              <h4 className="text-base font-bold text-foreground">
+                                {note.title || 'Untitled Note'}
+                              </h4>
                               <span className="text-2xs text-muted-foreground shrink-0 font-mono">
-                                {new Date(note.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                {new Date(note.updatedAt).toLocaleDateString('en-IN', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
                               </span>
                             </div>
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{note.content}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                              {note.content}
+                            </p>
                           </div>
                           <div className="flex justify-end items-center gap-3 mt-4 pt-3 border-t border-border/40">
                             <button
@@ -2194,7 +2610,7 @@ function TransactionsPageContent() {
                             <button
                               onClick={() => {
                                 if (confirm('Are you sure you want to delete this note?')) {
-                                  saveGeneralNotes(generalNotes.filter(n => n.id !== note.id));
+                                  saveGeneralNotes(generalNotes.filter((n) => n.id !== note.id));
                                   toast.success('Note deleted');
                                 }
                               }}
@@ -2215,19 +2631,16 @@ function TransactionsPageContent() {
       </div>
 
       {/* 5. Modals (Preserved existing functional modals, redesigned inside variables) */}
-      
+
       {/* Edit Transaction Full Screen Page */}
       {editingTransaction && editForm && (
-        <div className="fixed inset-0 z-50 bg-[#1F2027] flex flex-col text-[#F2F2F4] select-text animate-slide-up">
+        <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#1F2027] text-[#F2F2F4] select-text animate-slide-up">
           {/* Header with Always Visible Save Button */}
-          <div className="flex items-center justify-between h-14 px-5 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
+          <div className="flex items-center justify-between h-14 px-4 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
             <div className="flex items-center">
-              <button 
+              <button
                 type="button"
-                onClick={() => {
-                  setEditingTransaction(null);
-                  setEditForm(null);
-                }}
+                onClick={closeTransactionEditor}
                 className="text-[#F2F2F4] hover:bg-white/[0.08] transition flex items-center justify-center h-10 w-10 shrink-0 -ml-2 rounded-full"
                 title="Cancel"
               >
@@ -2248,11 +2661,10 @@ function TransactionsPageContent() {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto pb-8">
+          <div className="min-h-0 w-full flex-1 overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
             <form onSubmit={handleSaveEdit} className="flex flex-col">
-              
               {/* Transaction Type Selector */}
-              <div className="grid grid-cols-3 gap-2.5 px-5 mt-2">
+              <div className="grid grid-cols-3 gap-1.5 px-4 mt-1.5">
                 {(['income', 'expense', 'transfer'] as const).map((t) => {
                   const isActive = editForm.type === t;
                   let activeStyle = '';
@@ -2273,7 +2685,7 @@ function TransactionsPageContent() {
                       key={t}
                       type="button"
                       onClick={() => handleTypeChange(t)}
-                      className={`h-10 rounded-lg text-[16px] font-medium capitalize transition duration-150 ${activeStyle}`}
+                      className={`h-9 rounded-lg text-sm font-medium capitalize transition duration-150 ${activeStyle}`}
                     >
                       {t}
                     </button>
@@ -2282,12 +2694,13 @@ function TransactionsPageContent() {
               </div>
 
               {/* Vertical Form Fields (Gap of 20dp between selector and form) */}
-              <div className="flex flex-col mt-5">
-                
+              <div className="flex flex-col mt-2">
                 {/* Date Row */}
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Date</span>
-                  <div className="flex-1 flex justify-start text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
+                <div className="relative flex items-center h-12 border-b border-white/[0.08] px-4">
+                  <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                    Date
+                  </span>
+                  <div className="flex-1 flex justify-start text-base text-[#F2F2F4] font-medium select-none pointer-events-none">
                     {formatDisplayDate(editForm.date)}
                   </div>
                   <input
@@ -2313,9 +2726,11 @@ function TransactionsPageContent() {
                 </div>
 
                 {/* Amount Row */}
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Amount</span>
-                  <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
+                <div className="relative flex items-center h-12 border-b border-white/[0.08] px-4">
+                  <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                    Amount
+                  </span>
+                  <div className="flex-1 flex items-center text-base text-[#F2F2F4] font-medium">
                     <span className="mr-1">{currencySymbol}</span>
                     <input
                       type="number"
@@ -2342,10 +2757,12 @@ function TransactionsPageContent() {
                 {editForm.type === 'transfer' ? (
                   <>
                     {/* From Account (Source Account) */}
-                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                      <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
+                    <div className="relative flex items-center h-12 border-b border-white/[0.08] px-4">
+                      <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                        Account
+                      </span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{accounts.find(a => a.id === editForm.account)?.name || ''}</span>
+                        <span>{accounts.find((a) => a.id === editForm.account)?.name || ''}</span>
                       </div>
                       <select
                         value={editForm.account}
@@ -2354,7 +2771,11 @@ function TransactionsPageContent() {
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       >
                         {accounts.map((acc) => (
-                          <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                          <option
+                            key={acc.id}
+                            value={acc.id}
+                            className="bg-[#1F2027] text-[#F2F2F4]"
+                          >
                             {acc.name}
                           </option>
                         ))}
@@ -2362,10 +2783,12 @@ function TransactionsPageContent() {
                     </div>
 
                     {/* To Account (Destination Account) */}
-                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                      <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">To Account</span>
+                    <div className="relative flex items-center h-12 border-b border-white/[0.08] px-4">
+                      <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                        To Account
+                      </span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                        <span>{accounts.find(a => a.id === editForm.toAccount)?.name || ''}</span>
+                        <span>{accounts.find((a) => a.id === editForm.toAccount)?.name || ''}</span>
                       </div>
                       <select
                         value={editForm.toAccount || ''}
@@ -2373,12 +2796,20 @@ function TransactionsPageContent() {
                         required
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       >
-                        <option value="" disabled className="text-muted-foreground">Select destination...</option>
-                        {accounts.filter((acc) => acc.id !== editForm.account).map((acc) => (
-                          <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
-                            {acc.name}
-                          </option>
-                        ))}
+                        <option value="" disabled className="text-muted-foreground">
+                          Select destination...
+                        </option>
+                        {accounts
+                          .filter((acc) => acc.id !== editForm.account)
+                          .map((acc) => (
+                            <option
+                              key={acc.id}
+                              value={acc.id}
+                              className="bg-[#1F2027] text-[#F2F2F4]"
+                            >
+                              {acc.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </>
@@ -2387,24 +2818,59 @@ function TransactionsPageContent() {
                     {/* Category Row - Tap to select category from bottom grid */}
                     <div
                       onClick={() => setEditPickerMode('category')}
-                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                      className="relative flex items-center h-12 border-b border-white/[0.08] px-4 cursor-pointer hover:bg-white/[0.04] transition-colors"
                     >
-                      <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Category</span>
+                      <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                        Category
+                      </span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
-                        <span className={editForm.category ? 'text-white font-semibold' : 'text-slate-500'}>
+                        <span
+                          className={
+                            editForm.category ? 'text-white font-semibold' : 'text-slate-500'
+                          }
+                        >
                           {editForm.category || ''}
                         </span>
                       </div>
                     </div>
 
+                    {/* Subcategory Row */}
+                    {activeCategorySubcategories.length > 0 && (
+                      <div
+                        onClick={() => setEditPickerMode('subcategory')}
+                        className="relative flex h-12 cursor-pointer items-center border-b border-white/[0.08] px-4 transition-colors hover:bg-white/[0.04]"
+                      >
+                        <span className="w-24 shrink-0 text-sm font-normal text-[#A5A6AD]">
+                          Subcategory
+                        </span>
+                        <div className="flex min-w-0 flex-1 items-center justify-between text-[17px] font-medium text-[#F2F2F4] pointer-events-none">
+                          <span
+                            className={
+                              editForm.subcategory
+                                ? 'truncate text-white font-semibold'
+                                : 'text-slate-500'
+                            }
+                          >
+                            {editForm.subcategory || 'Select subcategory'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Account Row - Tap to select account from bottom grid */}
                     <div
                       onClick={() => setEditPickerMode('account')}
-                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                      className="relative flex items-center h-12 border-b border-white/[0.08] px-4 cursor-pointer hover:bg-white/[0.04] transition-colors"
                     >
-                      <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
+                      <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                        Account
+                      </span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
-                        <span className={editForm.account ? 'text-white font-semibold' : 'text-slate-500'}>
+                        <span
+                          className={
+                            editForm.account ? 'text-white font-semibold' : 'text-slate-500'
+                          }
+                        >
                           {accounts.find((a) => a.id === editForm.account)?.name || ''}
                         </span>
                       </div>
@@ -2413,15 +2879,17 @@ function TransactionsPageContent() {
                 )}
 
                 {/* Note Row */}
-                <div className="relative flex items-start py-4 border-b border-white/[0.08] px-5 min-h-[54px]">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal mt-0.5">Note</span>
+                <div className="relative flex items-start py-3 border-b border-white/[0.08] px-4 min-h-12">
+                  <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal mt-0.5">
+                    Note
+                  </span>
                   <textarea
                     value={editForm.notes}
                     onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                     onFocus={() => setIsEditNoteFocused(true)}
                     onBlur={() => setIsEditNoteFocused(false)}
                     rows={1}
-                    className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 resize-none h-auto min-h-[26px]"
+                    className="bg-transparent border-none text-left text-base text-[#F2F2F4] font-medium focus:outline-none w-full p-0 resize-none h-auto min-h-6"
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
                       target.style.height = 'auto';
@@ -2429,42 +2897,58 @@ function TransactionsPageContent() {
                     }}
                   />
                 </div>
-
               </div>
 
               {/* Description & Camera Section (Gap of 20dp between form and description) */}
-              <div className="flex flex-col mt-5">
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+              <div className="mt-2 flex flex-col">
+                <div className="relative flex h-10 items-center border-b border-white/[0.08] px-4">
                   <input
                     type="text"
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 pr-8"
                   />
-                  <Camera size={20} className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />
+                  <Camera
+                    size={20}
+                    className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5"
+                  />
                 </div>
               </div>
 
               {/* Split Details Section if transaction is a Split Expense */}
               {editingTransaction?.isSplit && editingTransaction?.splitDetails && (
-                <div className="mx-5 my-3 bg-secondary/50 border border-border/60 rounded-xl p-3.5 space-y-3 text-xs">
+                <div className="mx-4 my-2 bg-secondary/50 border border-border/60 rounded-xl p-3 space-y-2 text-xs">
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
                     <div className="flex items-center gap-1.5 font-normal text-foreground">
-                      <span className="text-xs font-normal text-muted-foreground">Total: ₹{editingTransaction.splitDetails.totalAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-xs font-normal text-muted-foreground">
+                        Total: ₹
+                        {editingTransaction.splitDetails.totalAmount.toLocaleString('en-IN')}
+                      </span>
                       <span>•</span>
-                      <span className="text-xs font-normal text-positive">₹{editingTransaction.splitDetails.toReceive.toLocaleString('en-IN')}</span>
+                      <span className="text-xs font-normal text-positive">
+                        ₹{editingTransaction.splitDetails.toReceive.toLocaleString('en-IN')}
+                      </span>
                     </div>
                   </div>
 
                   <div className="space-y-1.5 pt-2 border-t border-border/40">
-                    <span className="text-[10px] text-muted-foreground uppercase block">Split With</span>
+                    <span className="text-[10px] text-muted-foreground uppercase block">
+                      Split With
+                    </span>
                     {editingTransaction.splitDetails.members.map((m, idx) => (
-                      <div key={`edit-split-m-${idx}`} className="flex justify-between items-center py-1.5 border-b border-border/20 text-xs">
+                      <div
+                        key={`edit-split-m-${idx}`}
+                        className="flex justify-between items-center py-1.5 border-b border-border/20 text-xs"
+                      >
                         <span>{m.name}</span>
                         <div className="font-mono text-right">
-                          <span className="text-foreground">₹{m.share.toLocaleString('en-IN')}</span>
+                          <span className="text-foreground">
+                            ₹{m.share.toLocaleString('en-IN')}
+                          </span>
                           {m.pending > 0 ? (
-                            <span className="text-2xs text-negative block">Pending: ₹{m.pending.toLocaleString('en-IN')}</span>
+                            <span className="text-2xs text-negative block">
+                              Pending: ₹{m.pending.toLocaleString('en-IN')}
+                            </span>
                           ) : (
                             <span className="text-2xs text-positive block">Paid</span>
                           )}
@@ -2491,15 +2975,25 @@ function TransactionsPageContent() {
               )}
 
               {/* Bottom Actions Grid */}
-              <div className="px-5 mt-5 space-y-3">
-                <div className="flex items-center gap-3">
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-2 px-4">
                   <button
                     type="button"
                     onClick={() => {
+                      setDeletingTxn(editingTransaction);
                       setEditingTransaction(null);
                       setEditForm(null);
                     }}
-                    className="h-12 px-5 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border border-negative/35 bg-negative-subtle text-negative transition-colors hover:bg-negative/15"
+                    title="Delete transaction"
+                    aria-label="Delete transaction"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeTransactionEditor}
+                    className="h-12 px-4 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
                   >
                     <X size={18} />
                     <span>Cancel</span>
@@ -2515,104 +3009,159 @@ function TransactionsPageContent() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeletingTxn(editingTransaction);
-                      setEditingTransaction(null);
-                      setEditForm(null);
-                    }}
-                    className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
-                  >
-                    <Trash2 size={16} />
-                    <span>Delete</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCopyTransaction}
-                    className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
-                  >
-                    <Copy size={16} />
-                    <span>Copy</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleBookmarkTransaction}
-                    className="h-12 rounded-[10px] border border-white/[0.15] bg-[#16171C] flex items-center justify-center gap-2 text-[15px] font-medium text-[#F2F2F4] hover:bg-white/[0.04] active:scale-95 transition-all"
-                  >
-                    <Star size={16} />
-                    <span>Bookmark</span>
-                  </button>
-                </div>
-
                 {/* Space Under Save Transaction Button Used For Category & Account Selection */}
                 {editForm && !isEditAmountFocused && !isEditNoteFocused && (
-                  <div className="pt-4 border-t border-white/[0.08] space-y-3 pb-8">
+                  <div className="pt-3 border-t border-white/[0.08] space-y-2 pb-4">
                     {/* 1. CLEAN SUBTLE FLOATING CHIPS GRID (CATEGORIES - NO SCROLLBAR) */}
                     {editPickerMode === 'category' && (
-                      <div className="grid grid-cols-4 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        {editCategories.map((cat) => {
-                          const isSelected = editForm.category === cat.name;
-                          return (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() =>
-                                setEditForm({
-                                  ...editForm,
-                                  category: cat.name,
-                                  subcategory: '',
-                                })
-                              }
-                              className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
-                                isSelected
-                                  ? 'bg-primary border border-primary text-slate-950 font-bold'
-                                  : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
-                              }`}
-                            >
-                              <span className="truncate block">{cat.name}</span>
-                            </button>
-                          );
-                        })}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-0.5">
+                          <p className="text-xs font-semibold text-white">Choose category</p>
+                          <p className="text-[11px] text-[#A5A6AD]">
+                            {editCategories.length} available
+                          </p>
+                        </div>
 
-                        {/* Add Category Pill Chip */}
+                        <div className="max-h-72 overflow-y-auto rounded-lg border border-border/80 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                          <table className="w-full table-fixed border-collapse" aria-label="Categories">
+                            <tbody>
+                              {Array.from({ length: Math.ceil(editCategories.length / 4) }).map(
+                                (_, rowIndex) => (
+                                  <tr key={`edit-category-row-${rowIndex}`}>
+                                    {[0, 1, 2, 3].map((columnIndex) => {
+                                      const cat = editCategories[rowIndex * 4 + columnIndex];
+                                      const isSelected = editForm.category === cat?.name;
+                                      return (
+                                        <td
+                                          key={`edit-category-cell-${rowIndex}-${columnIndex}`}
+                                          className="h-11 border border-border/70 p-0 first:border-l-0 last:border-r-0"
+                                        >
+                                          {cat && (
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setEditForm({
+                                                  ...editForm,
+                                                  category: cat.name,
+                                                  subcategory: '',
+                                                })
+                                              }
+                                              className={`h-full w-full truncate px-1.5 text-center text-xs font-medium transition-colors ${
+                                                isSelected
+                                                  ? 'bg-primary/15 text-primary'
+                                                  : 'bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                              }`}
+                                              aria-pressed={isSelected}
+                                            >
+                                              {cat.name}
+                                            </button>
+                                          )}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                )
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+
                         <button
                           type="button"
                           onClick={() => router.push('/categories')}
-                          className="px-2.5 py-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.04] text-slate-300 font-medium hover:bg-white/[0.08] transition-all cursor-pointer text-xs truncate flex items-center justify-center"
+                          className="flex w-full items-center justify-center rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-xs font-medium text-[#A5A6AD] transition-colors hover:border-primary/40 hover:text-primary"
                         >
-                          <span className="truncate">Add Category</span>
+                          <Plus size={14} className="mr-1.5" />
+                          Manage categories
                         </button>
+                      </div>
+                    )}
+
+                    {editPickerMode === 'subcategory' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between px-0.5">
+                          <p className="text-xs font-semibold text-white">Choose subcategory</p>
+                          <button
+                            type="button"
+                            onClick={() => setEditPickerMode('category')}
+                            className="text-[11px] font-medium text-primary"
+                          >
+                            Back to categories
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {activeCategorySubcategories.map((subcategory) => {
+                            const isSelected = editForm.subcategory === subcategory;
+                            return (
+                              <button
+                                key={subcategory}
+                                type="button"
+                                onClick={() => setEditForm({ ...editForm, subcategory })}
+                                className={`flex min-w-0 items-center justify-center gap-1 rounded-lg border px-2 py-2.5 text-center text-xs transition-colors ${
+                                  isSelected
+                                    ? 'border-primary/70 bg-primary/15 text-foreground'
+                                    : 'border-border/80 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground'
+                                }`}
+                                aria-pressed={isSelected}
+                              >
+                                <span className="min-w-0 truncate font-medium">
+                                  {subcategory}
+                                </span>
+                                {isSelected && (
+                                  <Check size={14} className="shrink-0 text-primary" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
                     {/* 2. CLEAN SUBTLE FLOATING CHIPS GRID (ACCOUNTS - 3 IN A ROW, NO MONEY DISPLAY, NO SCROLLBAR) */}
                     {editPickerMode === 'account' && (
-                      <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        {accounts.map((acc) => {
-                          const isSelected = editForm.account === acc.id;
-                          return (
-                            <button
-                              key={acc.id}
-                              type="button"
-                              onClick={() => setEditForm({ ...editForm, account: acc.id })}
-                              className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
-                                isSelected
-                                  ? 'bg-white/10 border border-white/30 text-white font-bold'
-                                  : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
-                              }`}
-                            >
-                              <span className="truncate block font-bold">{acc.name}</span>
-                            </button>
-                          );
-                        })}
+                      <div className="max-h-72 overflow-y-auto rounded-lg border border-border/80 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <table className="w-full table-fixed border-collapse" aria-label="Accounts">
+                          <tbody>
+                            {Array.from({ length: Math.ceil(accounts.length / 3) }).map(
+                              (_, rowIndex) => (
+                                <tr key={`edit-account-row-${rowIndex}`}>
+                                  {[0, 1, 2].map((columnIndex) => {
+                                    const acc = accounts[rowIndex * 3 + columnIndex];
+                                    const isSelected = editForm.account === acc?.id;
+                                    return (
+                                      <td
+                                        key={`edit-account-cell-${rowIndex}-${columnIndex}`}
+                                        className="h-11 border border-border/70 p-0 first:border-l-0 last:border-r-0"
+                                      >
+                                        {acc && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setEditForm({ ...editForm, account: acc.id })
+                                            }
+                                            className={`h-full w-full truncate px-2 text-center text-xs font-medium transition-colors ${
+                                              isSelected
+                                                ? 'bg-primary/15 text-primary'
+                                                : 'bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                            }`}
+                                            aria-pressed={isSelected}
+                                          >
+                                            {acc.name}
+                                          </button>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
                       </div>
                     )}
                   </div>
                 )}
               </div>
-
             </form>
           </div>
         </div>
@@ -2628,9 +3177,14 @@ function TransactionsPageContent() {
         >
           <div className="space-y-4 text-2xs leading-relaxed">
             <p className="text-muted-foreground">
-              Are you sure you want to delete <span className="font-bold text-foreground">{deletingTxn.description}</span> for <span className="font-bold text-foreground">₹{deletingTxn.amount.toLocaleString('en-IN')}</span>?
+              Are you sure you want to delete{' '}
+              <span className="font-bold text-foreground">{deletingTxn.description}</span> for{' '}
+              <span className="font-bold text-foreground">
+                ₹{deletingTxn.amount.toLocaleString('en-IN')}
+              </span>
+              ?
             </p>
-            
+
             <div className="space-y-2">
               <button
                 type="button"
@@ -2642,8 +3196,12 @@ function TransactionsPageContent() {
                 }}
                 className="w-full text-left p-3.5 bg-background border border-border hover:border-negative rounded-lg transition-all group flex flex-col gap-1"
               >
-                <span className="font-bold text-foreground group-hover:text-negative transition-colors">1. Reverse effect on balance</span>
-                <span className="text-[10px] text-muted-foreground">Permanently delete transaction and restore the account balance.</span>
+                <span className="font-bold text-foreground group-hover:text-negative transition-colors">
+                  1. Reverse effect on balance
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Permanently delete transaction and restore the account balance.
+                </span>
               </button>
 
               <button
@@ -2656,11 +3214,15 @@ function TransactionsPageContent() {
                 }}
                 className="w-full text-left p-3.5 bg-background border border-border hover:border-primary rounded-lg transition-all group flex flex-col gap-1"
               >
-                <span className="font-bold text-foreground group-hover:text-primary transition-colors">2. Retain balance, delete category</span>
-                <span className="text-[10px] text-muted-foreground">Keep the transaction in the ledger, but label its category as deleted.</span>
+                <span className="font-bold text-foreground group-hover:text-primary transition-colors">
+                  2. Retain balance, delete category
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Keep the transaction in the ledger, but label its category as deleted.
+                </span>
               </button>
             </div>
-            
+
             <div className="flex justify-end pt-1">
               <button
                 type="button"
@@ -2683,25 +3245,33 @@ function TransactionsPageContent() {
         >
           <form onSubmit={handleSaveEditedRepayment} className="space-y-3.5 text-2xs">
             <div>
-              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Source Account *</label>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
+                Source Account *
+              </label>
               <select
                 value={repaymentForm.paymentAccountId}
-                onChange={(e) => setRepaymentForm({ ...repaymentForm, paymentAccountId: e.target.value })}
+                onChange={(e) =>
+                  setRepaymentForm({ ...repaymentForm, paymentAccountId: e.target.value })
+                }
                 required
                 className="w-full rounded border border-border bg-background p-2 text-2xs font-bold focus:outline-none"
               >
                 <option value="">Select payment source...</option>
-                {accounts.filter((a) => a.type === 'accounts').map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} (₹{acc.balance.toLocaleString('en-IN')})
-                  </option>
-                ))}
+                {accounts
+                  .filter((a) => a.type === 'accounts')
+                  .map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} (₹{acc.balance.toLocaleString('en-IN')})
+                    </option>
+                  ))}
               </select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Amount *</label>
+                <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
+                  Amount *
+                </label>
                 <input
                   type="number"
                   value={repaymentForm.amount}
@@ -2711,7 +3281,9 @@ function TransactionsPageContent() {
                 />
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Date *</label>
+                <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
+                  Date *
+                </label>
                 <input
                   type="date"
                   value={repaymentForm.date}
@@ -2723,7 +3295,9 @@ function TransactionsPageContent() {
             </div>
 
             <div>
-              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Notes</label>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
+                Notes
+              </label>
               <textarea
                 value={repaymentForm.notes}
                 onChange={(e) => setRepaymentForm({ ...repaymentForm, notes: e.target.value })}
@@ -2760,10 +3334,20 @@ function TransactionsPageContent() {
         >
           <div className="space-y-4 text-2xs leading-relaxed">
             <p className="text-muted-foreground">
-              Are you sure you want to delete this repayment of <span className="font-bold text-foreground">₹{deletingRepayment.amount.toLocaleString('en-IN')}</span> on {new Date(deletingRepayment.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}?
+              Are you sure you want to delete this repayment of{' '}
+              <span className="font-bold text-foreground">
+                ₹{deletingRepayment.amount.toLocaleString('en-IN')}
+              </span>{' '}
+              on{' '}
+              {new Date(deletingRepayment.date).toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+              })}
+              ?
             </p>
             <p className="bg-negative-subtle border border-negative-subtle p-2.5 rounded text-negative text-[10px] leading-normal font-semibold">
-              ⚠️ Warning: This will delete principal/interest splits, restore the loan balances, and trigger chronological recalculation of repayments.
+              ⚠️ Warning: This will delete principal/interest splits, restore the loan balances, and
+              trigger chronological recalculation of repayments.
             </p>
             <div className="flex gap-2.5 pt-1">
               <button
@@ -2889,7 +3473,8 @@ function TransactionsPageContent() {
                     className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                   <p className="text-[10px] text-muted-foreground mt-1 font-medium">
-                    Set how many days in advance to show billing alerts on the dashboard (e.g. 3 or 5 days).
+                    Set how many days in advance to show billing alerts on the dashboard (e.g. 3 or
+                    5 days).
                   </p>
                 </div>
               </div>
@@ -2950,7 +3535,7 @@ function TransactionsPageContent() {
             setNoteTitle('');
             setNoteContent('');
           }}
-          title={editingGeneralNote ? "Edit General Note" : "Add General Note"}
+          title={editingGeneralNote ? 'Edit General Note' : 'Add General Note'}
         >
           <form onSubmit={handleSaveGeneralNote} className="space-y-4 text-xs font-semibold">
             <div>
@@ -3109,7 +3694,6 @@ function TransactionsPageContent() {
           </button>
         </>
       )}
-
     </div>
   );
 }

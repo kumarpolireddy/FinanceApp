@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import MetricCard from '@/components/ui/MetricCard';
-import { PieChart, AlertTriangle } from 'lucide-react';
 import { getBudgets, getTransactions, getAccounts, getTransactionImpact } from '@/lib/storage';
 
 import { useRouter } from 'next/navigation';
@@ -78,7 +77,11 @@ export default function DashboardKPIs({
     const savingsRate = income > 0 ? (cashFlow / income) * 100 : 0;
 
     // Calculate assets & liabilities from accounts list
-    const accounts = getAccounts();
+    const accounts = getAccounts(true).filter((account) => {
+      const isBankAccount =
+        account.type === 'accounts' || account.category?.toLowerCase().includes('bank');
+      return account.visible !== false || isBankAccount;
+    });
     const filteredAccounts = selectedAccountId
       ? accounts.filter((a) => a.id === selectedAccountId)
       : accounts;
@@ -87,13 +90,14 @@ export default function DashboardKPIs({
     let liabilities = 0;
     filteredAccounts.forEach((acc) => {
       const bal = acc.balance || 0;
-      if (
+      if (acc.type === 'credit' || acc.type === 'loan') {
+        liabilities += Math.abs(bal);
+      } else if (
         acc.type === 'accounts' ||
-        acc.type === 'cash'
+        acc.type === 'cash' ||
+        acc.category?.toLowerCase().includes('bank')
       ) {
         assets += bal;
-      } else if (acc.type === 'credit' || acc.type === 'loan') {
-        liabilities += Math.abs(bal);
       }
     });
 
@@ -139,146 +143,145 @@ export default function DashboardKPIs({
   const budgetRemaining = budgetSummary.totalAllocated - budgetSummary.totalSpent;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-6 xl:grid-cols-12 gap-4">
-      {/* Hero — Net Worth spans 2 cols */}
-      <div className="col-span-2 md:col-span-2 xl:col-span-2">
+    <div className="grid grid-cols-6 gap-2">
+      {/* Net Worth */}
+      <div className="col-span-6">
         <div
           onClick={() => router.push('/settings')}
-          className="bg-card/95 border border-primary/25 rounded-2xl p-5 md:p-6 flex flex-col justify-between h-full relative overflow-hidden shadow-xl shadow-primary/10 min-h-[140px] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-card-lg"
+          className="relative grid min-h-[68px] h-full grid-cols-3 divide-x divide-border overflow-hidden rounded-lg border border-border bg-card p-2.5 text-center cursor-pointer transition-colors duration-150 hover:border-primary/50"
         >
-          <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full blur-xl pointer-events-none" />
-          <div>
+          <div className="flex min-w-0 flex-col items-center justify-center pr-2">
             <span className="text-2xs font-semibold tracking-wider text-primary uppercase">
               Net Worth
             </span>
             <h3
-              className={`text-xl font-black mt-1 leading-none tabular-nums ${kpis.netWorth >= 0 ? 'text-positive' : 'text-negative'}`}
+              className={`text-base font-black mt-0.5 leading-none tabular-nums ${kpis.netWorth >= 0 ? 'text-primary' : 'text-negative'}`}
             >
               {kpis.netWorth < 0 ? '-' : ''}
               {fmt(kpis.netWorth)}
             </h3>
           </div>
-
-          <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-border/40">
-            <div>
-              <p className="text-3xs text-muted-foreground font-semibold uppercase tracking-wider">
-                Assets
-              </p>
-              <p className="text-xs font-bold text-positive mt-0.5 tabular-nums">
-                {fmt(kpis.assets)}
-              </p>
-            </div>
-            <div>
-              <p className="text-3xs text-muted-foreground font-semibold uppercase tracking-wider">
-                Liabilities
-              </p>
-              <p className="text-xs font-bold text-negative mt-0.5 tabular-nums">
-                {fmt(kpis.liabilities)}
-              </p>
-            </div>
+          <div className="flex min-w-0 flex-col items-center justify-center px-2">
+            <p className="text-2xs text-muted-foreground font-semibold uppercase tracking-wider">
+              Assets
+            </p>
+            <p className="mt-0.5 truncate text-base font-bold text-foreground tabular-nums">
+              {fmt(kpis.assets)}
+            </p>
+          </div>
+          <div className="flex min-w-0 flex-col items-center justify-center pl-2">
+            <p className="text-2xs text-muted-foreground font-semibold uppercase tracking-wider">
+              Liabilities
+            </p>
+            <p className="mt-0.5 truncate text-base font-bold text-foreground tabular-nums">
+              {fmt(kpis.liabilities)}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Pure Monthly Income */}
-      <MetricCard
+      <div className="col-span-2 grid gap-2">
+        {/* Pure Monthly Income */}
+        <MetricCard
         label="Income"
         value={fmt(kpis.pureIncome)}
         largeValue
-        variant="positive"
-        valueClassName="text-positive"
-        className="col-span-1 md:col-span-2 xl:col-span-2"
+        compact
+        variant="default"
+        valueClassName="text-foreground"
+        className="w-full"
         onClick={() => router.push(`/transactions?type=income&year=${selectedYear}&month=${selectedMonth + 1}${selectedAccountId ? `&account=${selectedAccountId}` : ''}`)}
-      />
+        />
 
-      {/* Pure Monthly Expenses */}
-      <MetricCard
+        {/* Pure Monthly Expenses */}
+        <MetricCard
         label="Expenses"
         value={fmt(kpis.pureExpenses)}
         largeValue
-        variant="negative"
-        valueClassName="text-negative"
-        className="col-span-1 md:col-span-2 xl:col-span-2"
+        compact
+        variant="default"
+        valueClassName="text-foreground"
+        className="w-full"
         onClick={() => router.push(`/transactions?type=expense&year=${selectedYear}&month=${selectedMonth + 1}${selectedAccountId ? `&account=${selectedAccountId}` : ''}`)}
-      />
+        />
+      </div>
 
-      {/* Monthly Income / Cash In Flow */}
-      <MetricCard
+      <div className="col-span-2 grid gap-2">
+        {/* Monthly Income / Cash In Flow */}
+        <MetricCard
         label="Cash In"
         value={fmt(kpis.income)}
         largeValue
-        variant="positive"
-        valueClassName="text-positive"
-        className="col-span-1 md:col-span-2 xl:col-span-2"
+        compact
+        variant="default"
+        valueClassName="text-foreground"
+        className="w-full"
         onClick={() => router.push(`/transactions?type=cash-in&year=${selectedYear}&month=${selectedMonth + 1}${selectedAccountId ? `&account=${selectedAccountId}` : ''}`)}
-      />
+        />
 
-      {/* Monthly Expenses / Cash Out Flow */}
-      <MetricCard
+        {/* Monthly Expenses / Cash Out Flow */}
+        <MetricCard
         label="Cash Out"
         value={fmt(kpis.expenses)}
         largeValue
-        variant="negative"
-        valueClassName="text-negative"
-        className="col-span-1 md:col-span-2 xl:col-span-2"
+        compact
+        variant="default"
+        valueClassName="text-foreground"
+        className="w-full"
         onClick={() => router.push(`/transactions?type=cash-out&year=${selectedYear}&month=${selectedMonth + 1}${selectedAccountId ? `&account=${selectedAccountId}` : ''}`)}
-      />
+        />
+      </div>
 
-      {/* Cash Flow */}
-      <MetricCard
+      <div className="col-span-2 grid gap-2">
+        {/* Cash Flow */}
+        <MetricCard
         label="Net Flow"
         value={`${kpis.cashFlow < 0 ? '-' : ''}${fmt(kpis.cashFlow)}`}
         largeValue
-        subValue={
+        compact
+        subValue={kpis.cashFlow >= 0 ? (
           <span
             className={`font-semibold ${
-              kpis.cashFlow > 0
-                ? 'text-positive'
-                : kpis.cashFlow < 0
-                  ? 'text-negative'
-                  : 'text-slate-400'
+              kpis.cashFlow > 0 ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
-            {kpis.cashFlow > 0 ? 'Positive' : kpis.cashFlow < 0 ? 'Negative' : 'Neutral'}
+            {kpis.cashFlow > 0 ? 'Positive' : 'Neutral'}
           </span>
-        }
-        variant={kpis.cashFlow >= 0 ? 'positive' : 'negative'}
-        valueClassName={kpis.cashFlow >= 0 ? 'text-positive' : 'text-negative'}
-        className="col-span-1 md:col-span-2 xl:col-span-2"
+        ) : undefined}
+        variant="default"
+        valueClassName={kpis.cashFlow >= 0 ? 'text-foreground' : 'text-negative'}
+        className="w-full"
         onClick={() => router.push(`/transactions?year=${selectedYear}&month=${selectedMonth + 1}${selectedAccountId ? `&account=${selectedAccountId}` : ''}`)}
-      />
+        />
 
-      {/* Savings Rate */}
-      <MetricCard
+        {/* Savings Rate */}
+        <MetricCard
         label="Savings Rate"
         value={`${kpis.savingsRate.toFixed(1)}%`}
         subValue="Target: 30%"
+        compact
         variant="default"
-        className="col-span-1 md:col-span-2 xl:col-span-2"
+        className="w-full"
         onClick={() => router.push(`/transactions?year=${selectedYear}&month=${selectedMonth + 1}${selectedAccountId ? `&account=${selectedAccountId}` : ''}`)}
-      />
+        />
+      </div>
 
       {/* Budget Utilization Card */}
       <div
         onClick={() => router.push('/budgets')}
-        className="relative rounded-2xl border p-5 md:p-6 flex flex-col justify-between bg-card/95 border-border shadow-card h-full min-h-[140px] col-span-1 md:col-span-2 xl:col-span-2 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-card-lg"
+        className="relative col-span-3 flex min-h-[72px] h-full flex-col items-center justify-center rounded-lg border border-border bg-card p-2.5 text-center cursor-pointer transition-colors duration-150 hover:border-primary/50"
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-center">
           <p className="text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
             Budget Used
           </p>
-          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground">
-            <PieChart size={16} />
-          </div>
         </div>
-        <div className="mt-2 flex-1 flex flex-col justify-end gap-1.5">
+        <div className="mt-1 flex flex-col items-center justify-center gap-1">
           <p
-            className={`text-2xl font-bold tabular-nums leading-none ${
+            className={`text-lg font-bold tabular-nums leading-none ${
               budgetSummary.utilizationPct > 100
                 ? 'text-negative'
-                : budgetSummary.utilizationPct >= 85
-                  ? 'text-warning'
-                  : 'text-positive'
+                : 'text-primary'
             }`}
           >
             {budgetSummary.utilizationPct}%
@@ -287,21 +290,19 @@ export default function DashboardKPIs({
             {fmt(budgetSummary.totalSpent)} of {fmt(budgetSummary.totalAllocated)}
           </p>
           {/* Mini progress bar */}
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden w-full">
+          <div className="h-1 bg-muted rounded-full overflow-hidden w-full">
             <div
               className={`h-full rounded-full transition-all duration-700 ${
                 budgetSummary.utilizationPct > 100
                   ? 'bg-negative'
-                  : budgetSummary.utilizationPct >= 85
-                    ? 'bg-warning'
-                    : 'bg-primary'
+                  : 'bg-primary'
               }`}
               style={{ width: `${Math.min(budgetSummary.utilizationPct, 100)}%` }}
             />
           </div>
           <p
             className={`text-2xs font-medium ${
-              budgetRemaining >= 0 ? 'text-positive' : 'text-negative'
+              budgetRemaining >= 0 ? 'text-muted-foreground' : 'text-negative'
             }`}
           >
             {budgetRemaining >= 0
@@ -313,30 +314,21 @@ export default function DashboardKPIs({
 
       {/* Over-Budget Alert Card */}
       <div
-        className={`relative rounded-2xl border p-5 md:p-6 flex flex-col justify-between bg-card/95 border-border shadow-card h-full min-h-[140px] col-span-1 md:col-span-2 xl:col-span-2 ${
+        className={`relative col-span-3 flex min-h-[72px] h-full flex-col items-center justify-center rounded-lg border border-border bg-card p-2.5 text-center ${
           budgetSummary.overBudgetCount > 0
-            ? 'bg-negative-subtle/10 border-negative-subtle/50 card-glow-negative'
+            ? 'border-negative/40'
             : ''
         }`}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-center">
           <p className="text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
             Budget Alerts
           </p>
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              budgetSummary.overBudgetCount > 0
-                ? 'bg-negative-subtle text-negative'
-                : 'bg-muted/50 text-muted-foreground'
-            }`}
-          >
-            <AlertTriangle size={16} />
-          </div>
         </div>
-        <div className="mt-2 flex-1 flex flex-col justify-end gap-1.5">
+        <div className="mt-1 flex flex-col items-center justify-center gap-1">
           <p
-            className={`text-2xl font-bold tabular-nums leading-none ${
-              budgetSummary.overBudgetCount > 0 ? 'text-negative' : 'text-positive'
+            className={`text-lg font-bold tabular-nums leading-none ${
+              budgetSummary.overBudgetCount > 0 ? 'text-negative' : 'text-foreground'
             }`}
           >
             {budgetSummary.overBudgetCount}
@@ -349,7 +341,7 @@ export default function DashboardKPIs({
           <div className="flex items-center gap-1.5 mt-1">
             <span
               className={`inline-block w-2 h-2 rounded-full ${
-                budgetSummary.overBudgetCount > 0 ? 'bg-negative animate-pulse' : 'bg-positive'
+                budgetSummary.overBudgetCount > 0 ? 'bg-negative animate-pulse' : 'bg-primary'
               }`}
             />
             <span className="text-2xs text-muted-foreground">

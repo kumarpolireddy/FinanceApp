@@ -53,6 +53,7 @@ import {
   skipBillOccurrence,
   snoozeBillReminder,
   clearAllBills,
+  formatLocalDate,
 } from '@/lib/billStorage';
 import { scheduleBillNotifications, cancelBillNotifications, requestLocalNotificationPermissions } from '@/lib/billNotification';
 import { getAccounts, getCategories, calculateCreditCardBalances } from '@/lib/storage';
@@ -76,7 +77,7 @@ export default function BillsPage() {
   const [payingBill, setPayingBill] = useState<BillPaymentReminder | null>(null);
   const [paidAmount, setPaidAmount] = useState<number>(0);
   const [paidAccountId, setPaidAccountId] = useState<string>('');
-  const [paidDate, setPaidDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [paidDate, setPaidDate] = useState<string>(formatLocalDate());
   const [paidNotes, setPaidNotes] = useState<string>('');
 
   // Snooze Modal State
@@ -115,7 +116,7 @@ export default function BillsPage() {
     amount: 0,
     amountType: 'fixed',
     minimumDue: 0,
-    dueDate: new Date().toISOString().split('T')[0],
+    dueDate: formatLocalDate(),
     dueTime: '09:00',
     accountId: '',
     categoryId: '',
@@ -148,12 +149,16 @@ export default function BillsPage() {
   // Summary Metrics
   const summaryMetrics = useMemo(() => {
     const activeUnpaid = bills.filter(
-      (b) => b.status !== 'paid' && b.status !== 'skipped' && !(b.type === 'Credit Card' && Number(b.amount || 0) <= 0)
+      (b) => b.status !== 'paid' && b.status !== 'skipped' && Number(b.amount || 0) > 0
     );
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = formatLocalDate();
 
-    const d7 = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
-    const d30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    const d7 = formatLocalDate(sevenDaysFromNow);
+    const d30 = formatLocalDate(thirtyDaysFromNow);
 
     const overdueTotal = activeUnpaid
       .filter((b) => b.status === 'overdue')
@@ -176,12 +181,20 @@ export default function BillsPage() {
 
   // Active Upcoming Bills for Main List (excludes paid & skipped)
   const filteredBills = useMemo(() => {
-    return bills
-      .filter(
-        (b) => b.status !== 'paid' && b.status !== 'skipped' && !(b.type === 'Credit Card' && Number(b.amount || 0) <= 0)
+    const visibleBills = bills.filter(
+      (b) => b.status !== 'skipped' && Number(b.amount || 0) > 0
+    );
+    return visibleBills
+      .filter((b) =>
+        statusFilter === 'all' ? b.status !== 'paid' : b.status === statusFilter
       )
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-  }, [bills]);
+  }, [bills, statusFilter]);
+
+  const activeBillCount = useMemo(
+    () => bills.filter((b) => b.status !== 'paid' && b.status !== 'skipped').length,
+    [bills]
+  );
 
   // Payment History Filtered List
   const filteredHistory = useMemo(() => {
@@ -222,7 +235,7 @@ export default function BillsPage() {
       amount: 0,
       amountType: 'fixed',
       minimumDue: 0,
-      dueDate: new Date().toISOString().split('T')[0],
+      dueDate: formatLocalDate(),
       dueTime: settings.defaultReminderTime || '09:00',
       accountId: accounts[0]?.id || '',
       categoryId: '',
@@ -306,7 +319,7 @@ export default function BillsPage() {
     setPayingBill(bill);
     setPaidAmount(bill.amount);
     setPaidAccountId(bill.accountId || accounts[0]?.id || 'acc-cash');
-    setPaidDate(new Date().toISOString().split('T')[0]);
+    setPaidDate(formatLocalDate());
     setPaidNotes('');
   };
 
@@ -350,34 +363,35 @@ export default function BillsPage() {
   };
 
   const getBillIcon = (type: BillType) => {
+    const iconClass = 'w-5 h-5 text-muted-foreground';
     switch (type) {
       case 'Credit Card':
-        return <CreditCard className="w-5 h-5 text-amber-400" />;
+        return <CreditCard className={iconClass} />;
       case 'EMI / Loan':
-        return <Landmark className="w-5 h-5 text-blue-400" />;
+        return <Landmark className={iconClass} />;
       case 'Rent':
-        return <Receipt className="w-5 h-5 text-emerald-400" />;
+        return <Receipt className={iconClass} />;
       case 'Electricity':
-        return <Zap className="w-5 h-5 text-yellow-400" />;
+        return <Zap className={iconClass} />;
       case 'Water':
-        return <Droplet className="w-5 h-5 text-sky-400" />;
+        return <Droplet className={iconClass} />;
       case 'Internet':
-        return <Wifi className="w-5 h-5 text-purple-400" />;
+        return <Wifi className={iconClass} />;
       case 'Mobile':
-        return <Smartphone className="w-5 h-5 text-pink-400" />;
+        return <Smartphone className={iconClass} />;
       case 'Insurance':
-        return <Shield className="w-5 h-5 text-teal-400" />;
+        return <Shield className={iconClass} />;
       case 'Subscription':
-        return <RefreshCcw className="w-5 h-5 text-indigo-400" />;
+        return <RefreshCcw className={iconClass} />;
       case 'SIP / Investment':
-        return <TrendingUp className="w-5 h-5 text-emerald-300" />;
+        return <TrendingUp className={iconClass} />;
       default:
-        return <CalendarDays className="w-5 h-5 text-slate-400" />;
+        return <CalendarDays className={iconClass} />;
     }
   };
 
   const getStatusBadge = (bill: BillPaymentReminder) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = formatLocalDate();
     const today = new Date(todayStr + 'T00:00:00');
     const due = new Date((bill.dueDate || '') + 'T00:00:00');
     const diffDays = !isNaN(due.getTime())
@@ -393,21 +407,21 @@ export default function BillsPage() {
         );
       case 'due_today':
         return (
-          <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/25 animate-pulse">
+          <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
             Due Today
           </span>
         );
       case 'due_soon':
       case 'upcoming':
         return (
-          <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+          <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-muted text-muted-foreground border border-border">
             {diffDays !== null && diffDays > 0 ? `${diffDays}d left` : 'Upcoming'}
           </span>
         );
       case 'paid':
-        return <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">Paid</span>;
+        return <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-primary/10 text-primary border border-primary/20">Paid</span>;
       case 'skipped':
-        return <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Skipped</span>;
+        return <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-muted text-muted-foreground border border-border">Skipped</span>;
       default:
         return null;
     }
@@ -416,7 +430,7 @@ export default function BillsPage() {
   const formatDueDateDisplay = (dateStr: string) => {
     if (!dateStr) return null;
     const d = new Date(dateStr + 'T00:00:00');
-    if (isNaN(d.getTime())) return <span className="font-medium text-slate-200">{dateStr}</span>;
+    if (isNaN(d.getTime())) return <span className="font-medium text-foreground">{dateStr}</span>;
 
     const formattedDate = d.toLocaleDateString('en-IN', {
       day: 'numeric',
@@ -425,85 +439,93 @@ export default function BillsPage() {
     });
 
     return (
-      <span className="font-mono font-medium text-slate-200 text-xs">
+      <span className="font-mono font-medium text-foreground text-xs">
         {formattedDate}
       </span>
     );
   };
 
+  const formatDueDateText = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(`${dateStr}T00:00:00`);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
   return (
     <AppLayout>
-      <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="bills-minimal min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header Banner */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 py-2 sm:py-3 relative overflow-hidden">
           <div className="space-y-1 z-10">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-inner">
-                <Receipt className="w-7 h-7" />
+              <div className="text-primary">
+                <Receipt className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                   Bills & Payment Reminders
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  Track recurring bills, EMI installments, credit card dues & offline device notifications.
-                </p>
               </div>
             </div>
           </div>
 
           <button
             onClick={handleOpenAddModal}
-            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all transform active:scale-95 z-10"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm shadow-sm transition active:scale-[0.98] z-10"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            Add Payment Reminder
+            Add reminder
           </button>
         </div>
 
         {/* 1. Summary Metrics - Single Row of 3 Cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <div className="p-3 sm:p-4 rounded-2xl bg-slate-900/60 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3">
+        <div className="grid grid-cols-3 border-y border-border/70 divide-x divide-border/70">
+          <div className="py-4 px-3 sm:px-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-3xs sm:text-2xs font-bold text-slate-400 uppercase tracking-wider truncate">Next 7 Days</p>
-              <p className="text-base sm:text-xl font-mono font-bold text-white mt-0.5">
+              <p className="text-xs font-medium text-muted-foreground">Next 7 days</p>
+              <p className="text-base sm:text-xl font-mono font-semibold text-foreground mt-1 truncate">
                 ₹{summaryMetrics.next7DaysTotal.toLocaleString('en-IN')}
               </p>
             </div>
-            <div className="hidden sm:block p-2 rounded-xl bg-sky-500/10 text-sky-400 shrink-0">
+            <div className="hidden sm:block text-muted-foreground shrink-0">
               <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
 
-          <div className="p-3 sm:p-4 rounded-2xl bg-slate-900/60 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3">
+          <div className="py-4 px-3 sm:px-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-3xs sm:text-2xs font-bold text-slate-400 uppercase tracking-wider truncate">Overdue</p>
-              <p className="text-base sm:text-xl font-mono font-bold text-red-400 mt-0.5">
+              <p className="text-xs font-medium text-muted-foreground">Overdue</p>
+              <p className="text-base sm:text-xl font-mono font-semibold text-foreground mt-1 truncate">
                 ₹{summaryMetrics.overdueTotal.toLocaleString('en-IN')}
               </p>
             </div>
-            <div className="hidden sm:block p-2 rounded-xl bg-red-500/10 text-red-400 shrink-0">
+            <div className="hidden sm:block text-muted-foreground shrink-0">
               <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
 
-          <div className="p-3 sm:p-4 rounded-2xl bg-slate-900/60 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3">
+          <div className="py-4 px-3 sm:px-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-3xs sm:text-2xs font-bold text-slate-400 uppercase tracking-wider truncate">Due Today</p>
-              <p className="text-base sm:text-xl font-mono font-bold text-amber-400 mt-0.5">
+              <p className="text-xs font-medium text-muted-foreground">Due today</p>
+              <p className="text-base sm:text-xl font-mono font-semibold text-foreground mt-1 truncate">
                 ₹{summaryMetrics.dueTodayTotal.toLocaleString('en-IN')}
               </p>
             </div>
-            <div className="hidden sm:block p-2 rounded-xl bg-amber-500/10 text-amber-400 shrink-0">
+            <div className="hidden sm:block text-muted-foreground shrink-0">
               <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-white/10 space-x-2 sm:space-x-6 overflow-x-auto pb-1">
+        <div className="flex gap-5 overflow-x-auto border-b border-border/70">
           {[
-            { id: 'bills', label: 'Upcoming Bills', icon: Receipt, count: bills.length },
+            { id: 'bills', label: 'Upcoming', icon: Receipt, count: activeBillCount },
             { id: 'calendar', label: 'Calendar View', icon: CalendarIcon },
             { id: 'history', label: 'Payment History', icon: History, count: history.length },
             { id: 'settings', label: 'Settings', icon: Settings },
@@ -514,17 +536,17 @@ export default function BillsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 py-3 px-4 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 py-3 px-0 border-b-2 font-medium text-sm transition whitespace-nowrap ${
                   isActive
-                    ? 'bg-emerald-500/15 text-emerald-400 border-b-2 border-emerald-400 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
                 {tab.count !== undefined && (
                   <span className={`px-2 py-0.5 rounded-full text-2xs font-bold ${
-                    isActive ? 'bg-emerald-500 text-slate-950' : 'bg-white/10 text-slate-300'
+                    isActive ? 'text-primary' : 'text-muted-foreground'
                   }`}>
                     {tab.count}
                   </span>
@@ -537,27 +559,54 @@ export default function BillsPage() {
         {/* TAB 1: UPCOMING BILLS */}
         {activeTab === 'bills' && (
           <div className="space-y-4">
+            <div className="flex items-center gap-4 overflow-x-auto border-b border-border/50">
+              {[
+                { id: 'all', label: 'All active' },
+                { id: 'overdue', label: 'Overdue' },
+                { id: 'due_today', label: 'Due today' },
+                { id: 'due_soon', label: 'Due soon' },
+                { id: 'upcoming', label: 'Upcoming' },
+                { id: 'paid', label: 'Paid' },
+              ].map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setStatusFilter(filter.id as typeof statusFilter)}
+                  className={`py-2.5 border-b-2 text-xs font-medium whitespace-nowrap transition ${
+                    statusFilter === filter.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
             {filteredBills.length === 0 ? (
-              <div className="p-12 text-center rounded-3xl bg-slate-900/40 border border-white/5 text-slate-400 text-sm">
-                No upcoming bill payment reminders found.
+              <div className="py-16 text-center text-muted-foreground text-sm">
+                No payment reminders match this filter.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="divide-y divide-border/70 border-y border-border/70">
                 {filteredBills.map((bill) => (
                   <div
                     key={bill.id}
-                    className="p-5 rounded-2xl bg-slate-900/60 hover:bg-slate-900 transition-all flex flex-col justify-between space-y-4"
+                    className="py-5 px-1 sm:px-2 hover:bg-muted/20 transition-colors flex flex-col justify-between space-y-4"
                   >
                     <div className="space-y-3">
                       {/* Top Bar: Icon, Name & Status Badge */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-3">
-                          <div className="p-2.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700/60">
+                          <div className="text-muted-foreground">
                             {getBillIcon(bill.type)}
                           </div>
                           <div>
-                            <h3 className="text-base font-bold text-white leading-tight">{bill.name}</h3>
-                            <span className="text-xs text-slate-400 capitalize">{bill.type}</span>
+                            <h3 className="text-sm font-semibold text-foreground leading-tight">{bill.name}</h3>
+                            <span className="text-xs text-muted-foreground">
+                              {bill.type}
+                              {bill.type === 'Credit Card' && (
+                                <> · Due {formatDueDateText(bill.dueDate)}</>
+                              )}
+                            </span>
                           </div>
                         </div>
                         {getStatusBadge(bill)}
@@ -568,25 +617,20 @@ export default function BillsPage() {
                         <div className="py-2 space-y-2">
                           <div className="flex items-baseline justify-between">
                             <span className="text-xs text-slate-400 font-medium">Due</span>
-                            <span className="text-2xl font-mono font-bold text-white">
+                            <span className="text-2xl font-mono font-semibold text-foreground">
                               ₹{bill.amount.toLocaleString('en-IN')}
                             </span>
                           </div>
 
                           {(() => {
                             const linkedAcc = accounts.find((a) => a.id === bill.linkedAccountId || a.id === bill.accountId);
-                            const payAcc = accounts.find((a) => a.id === bill.accountId);
                             const stmtDay = linkedAcc?.billingCycle || bill.dayOfMonth || '4';
 
                             return (
-                              <div className="space-y-1.5 pt-2 border-t border-white/5 text-xs text-slate-300">
+                              <div className="space-y-1.5 pt-2 text-xs text-slate-300">
                                 <div className="flex justify-between">
                                   <span className="text-slate-400">Billing Date:</span>
                                   <span className="font-medium text-slate-200">{stmtDay}th of month</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="text-slate-400">Due Date:</span>
-                                  {formatDueDateDisplay(bill.dueDate)}
                                 </div>
                               </div>
                             );
@@ -597,7 +641,7 @@ export default function BillsPage() {
                         <div className="py-2 space-y-2">
                           <div className="flex items-baseline justify-between">
                             <span className="text-xs text-slate-400 font-medium">EMI Installment</span>
-                            <span className="text-2xl font-mono font-bold text-white">
+                            <span className="text-2xl font-mono font-semibold text-foreground">
                               ₹{bill.amount.toLocaleString('en-IN')}
                             </span>
                           </div>
@@ -607,7 +651,7 @@ export default function BillsPage() {
                             const outstanding = loanAcc ? Math.max(0, (loanAcc.originalAmount || 0) - (loanAcc.totalPrincipalRepaid || 0)) : undefined;
 
                             return (
-                              <div className="space-y-1.5 pt-2 border-t border-white/5 text-xs text-slate-300">
+                              <div className="space-y-1.5 pt-2 text-xs text-slate-300">
                                 <div className="flex justify-between items-center">
                                   <span className="text-slate-400">EMI Due Date:</span>
                                   {formatDueDateDisplay(bill.dueDate)}
@@ -627,12 +671,12 @@ export default function BillsPage() {
                         <div className="py-2 space-y-2">
                           <div className="flex items-baseline justify-between">
                             <span className="text-xs text-slate-400 font-medium">Amount</span>
-                            <span className="text-2xl font-mono font-bold text-white">
+                            <span className="text-2xl font-mono font-semibold text-foreground">
                               ₹{bill.amount.toLocaleString('en-IN')}
                             </span>
                           </div>
 
-                          <div className="space-y-1.5 pt-2 border-t border-white/5 text-xs text-slate-300">
+                          <div className="space-y-1.5 pt-2 text-xs text-slate-300">
                             <div className="flex justify-between items-center">
                               <span className="text-slate-400">Due Date:</span>
                               {formatDueDateDisplay(bill.dueDate)}
@@ -646,22 +690,60 @@ export default function BillsPage() {
                       )}
                     </div>
 
+                    {bill.status !== 'paid' && (
+                      <div className="grid grid-cols-[1fr_auto_auto] gap-2 pt-3">
+                        <button
+                          onClick={() => handleOpenMarkPaid(bill)}
+                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold transition"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Mark paid
+                        </button>
+                        <button
+                          onClick={() => setSnoozingBill(bill)}
+                          className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition"
+                          title="Snooze reminder"
+                        >
+                          <Clock className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleSkipBill(bill.id)}
+                          className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition"
+                          title="Skip this occurrence"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
                     {/* Footer Actions - Clean Minimal Controls */}
-                    <div className="pt-3 border-t border-white/5 flex items-center justify-between text-2xs text-slate-400">
+                    <div className="pt-3 flex items-center justify-between text-xs text-muted-foreground">
                       <span className="capitalize text-slate-400">
                         {bill.status === 'paid' ? '✓ Paid' : `Status: ${bill.status}`}
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {bill.amountType === 'variable' && bill.status !== 'paid' && (
+                          <button
+                            onClick={() => {
+                              setEditingAmountBill(bill);
+                              setNewAmountVal(bill.amount);
+                            }}
+                            className="px-2 py-1.5 rounded-lg hover:bg-muted hover:text-foreground transition"
+                            title="Update amount"
+                          >
+                            Amount
+                          </button>
+                        )}
                         <button
                           onClick={() => handleOpenEditModal(bill)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                          className="p-1.5 rounded-lg hover:bg-muted hover:text-foreground transition"
                           title="Edit Bill"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteBill(bill.id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition"
+                          className="p-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400 transition"
                           title="Delete Bill"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -711,7 +793,7 @@ export default function BillsPage() {
               <button
                 onClick={() => {
                   setCurrentCalendarMonth(new Date());
-                  setSelectedCalendarDate(new Date().toISOString().slice(0, 10));
+                  setSelectedCalendarDate(formatLocalDate());
                 }}
                 className="px-2.5 py-1 rounded-md text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition"
               >
@@ -737,7 +819,7 @@ export default function BillsPage() {
                     return <div key={`empty-${idx}`} className="h-16 sm:h-20 bg-muted/5 border-r border-b border-border/60" />;
                   }
 
-                  const todayStr = new Date().toISOString().slice(0, 10);
+                  const todayStr = formatLocalDate();
                   const isToday = cell.dateStr === todayStr;
                   const isSelected = selectedCalendarDate === cell.dateStr;
                   const hasBills = cell.bills.length > 0;
@@ -894,14 +976,14 @@ export default function BillsPage() {
                           </div>
                         </td>
                         <td className="p-3.5">
-                          <span className="px-2.5 py-0.5 rounded-md text-2xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                          <span className="px-2.5 py-0.5 rounded-md text-2xs font-semibold bg-slate-800 text-slate-300">
                             {h.type}
                           </span>
                         </td>
                         <td className="p-3.5 font-mono font-bold text-white text-sm">₹{h.amount.toLocaleString('en-IN')}</td>
                         <td className="p-3.5 font-mono text-slate-300">{h.paidDate}</td>
                         <td className="p-3.5">
-                          <span className="px-2.5 py-1 rounded-md text-2xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                          <span className="px-2.5 py-1 rounded-md text-2xs font-bold bg-emerald-500/15 text-emerald-400">
                             ✓ Paid
                           </span>
                         </td>

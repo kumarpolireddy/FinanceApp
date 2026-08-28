@@ -49,28 +49,101 @@
   --info: #2563EB;
 }
 
-/* The default theme uses neutral charcoal layers; blue is reserved for actions and financial signals. */
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .bg-\[\#0b0f1a\],
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) select.bg-\[\#0b0f1a\],
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) input.bg-\[\#0b0f1a\],
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) textarea.bg-\[\#0b0f1a\] {
+/* Softer application-wide typography hierarchy for improved mobile readability. */
+.font-black,
+.font-extrabold {
+  font-weight: 400 !important;
+}
+
+.font-bold {
+  font-weight: 400 !important;
+}
+
+.font-semibold {
+  font-weight: 400 !important;
+}
+
+/* Bills uses a deliberately restrained palette: neutral surfaces, one accent,
+   and red only for overdue/destructive states. Scoped to avoid changing other pages. */
+.bills-minimal .bg-slate-950 {
+  background-color: var(--background) !important;
+}
+
+.bills-minimal .bg-slate-900,
+.bills-minimal .bg-slate-900\/60,
+.bills-minimal .bg-slate-900\/40,
+.bills-minimal .bg-slate-800 {
   background-color: var(--card) !important;
 }
 
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .bg-\[\#0b0f1a\]\/80,
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .bg-\[\#0b0f1a\]\/85,
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .hover\:bg-\[\#0b0f1a\]\/85:hover {
+.bills-minimal .bg-white\/5,
+.bills-minimal .bg-white\/10 {
+  background-color: color-mix(in srgb, var(--muted) 65%, transparent) !important;
+}
+
+.bills-minimal .border-white\/5,
+.bills-minimal .border-white\/10,
+.bills-minimal .border-white\/15,
+.bills-minimal .border-slate-700,
+.bills-minimal .border-slate-700\/60 {
+  border-color: var(--border) !important;
+}
+
+.bills-minimal .text-white,
+.bills-minimal .text-slate-100,
+.bills-minimal .text-slate-200,
+.bills-minimal .text-slate-300 {
+  color: var(--foreground) !important;
+}
+
+.bills-minimal .text-slate-400 {
+  color: var(--muted-foreground) !important;
+}
+
+.bills-minimal .text-emerald-300,
+.bills-minimal .text-emerald-400,
+.bills-minimal .text-amber-300,
+.bills-minimal .text-amber-400,
+.bills-minimal .text-blue-400,
+.bills-minimal .text-sky-400,
+.bills-minimal .text-yellow-400,
+.bills-minimal .text-purple-400,
+.bills-minimal .text-pink-400,
+.bills-minimal .text-teal-400,
+.bills-minimal .text-indigo-400 {
+  color: var(--primary) !important;
+}
+
+.bills-minimal .bg-emerald-500 {
+  background-color: var(--primary) !important;
+}
+
+.bills-minimal .hover\:bg-emerald-400:hover {
+  background-color: color-mix(in srgb, var(--primary) 88%, white) !important;
+}
+
+/* The default theme uses neutral charcoal layers; blue is reserved for actions and financial signals. */
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .bg-\[\#0b0f1a\],
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) select.bg-\[\#0b0f1a\],
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) input.bg-\[\#0b0f1a\],
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) textarea.bg-\[\#0b0f1a\] {
+  background-color: var(--card) !important;
+}
+
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .bg-\[\#0b0f1a\]\/80,
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .bg-\[\#0b0f1a\]\/85,
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .hover\:bg-\[\#0b0f1a\]\/85:hover {
   background-color: rgba(32, 32, 32, 0.85) !important;
 }
 
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .bg-\[\#0b0f1a\]\/50,
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .bg-\[\#0b0f1a\]\/40,
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .bg-\[\#0b0f1a\]\/20,
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .bg-\[\#0b0f1a\]\/10 {
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .bg-\[\#0b0f1a\]\/50,
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .bg-\[\#0b0f1a\]\/40,
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .bg-\[\#0b0f1a\]\/20,
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .bg-\[\#0b0f1a\]\/10 {
   background-color: rgba(32, 32, 32, 0.55) !important;
 }
 
-.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange) .bg-\[\#0a0e17\] {
+.dark:not(.theme-midnight-blue):not(.theme-emerald-green):not(.theme-royal-purple):not(.theme-sunset-orange):not(.theme-slate-teal):not(.theme-navy-cyan):not(.theme-clean-light) .bg-\[\#0a0e17\] {
   background-color: var(--background) !important;
 }
 
@@ -525,4 +598,65 @@
 .theme-sunset-orange div.bg-\[\#0b0f1a\] {
   background-color: var(--background) !important;
   border-color: var(--border) !important;
+}
+
+/* Slate Teal Theme */
+.theme-slate-teal {
+  --background: #111b1d;
+  --foreground: #edf7f5;
+  --primary: #2dd4bf;
+  --primary-foreground: #09201e;
+  --secondary: #1b2b2c;
+  --secondary-foreground: #b7d8d3;
+  --accent: #2dd4bf;
+  --accent-foreground: #09201e;
+  --muted: #203536;
+  --muted-foreground: #88aaa6;
+  --card: #172627;
+  --card-foreground: #edf7f5;
+  --border: #2d4646;
+  --input: #122021;
+  --ring: #2dd4bf;
+}
+
+/* Navy Cyan Theme */
+.theme-navy-cyan {
+  --background: #0b1524;
+  --foreground: #eef6ff;
+  --primary: #38bdf8;
+  --primary-foreground: #062033;
+  --secondary: #14263b;
+  --secondary-foreground: #b9d4e8;
+  --accent: #38bdf8;
+  --accent-foreground: #062033;
+  --muted: #1b3047;
+  --muted-foreground: #86a6bf;
+  --card: #102137;
+  --card-foreground: #eef6ff;
+  --border: #28415d;
+  --input: #0d1b2d;
+  --ring: #38bdf8;
+}
+
+/* Clean Light Theme */
+.theme-clean-light {
+  --background: #f5f7f6;
+  --foreground: #172522;
+  --primary: #087f73;
+  --primary-foreground: #ffffff;
+  --secondary: #e7efed;
+  --secondary-foreground: #526863;
+  --accent: #087f73;
+  --accent-foreground: #ffffff;
+  --muted: #e7efed;
+  --muted-foreground: #637873;
+  --card: #ffffff;
+  --card-foreground: #172522;
+  --border: #d2dfdb;
+  --input: #ffffff;
+  --ring: #087f73;
+  --positive: #16845b;
+  --negative: #c94b45;
+  --warning: #b7791f;
+  --info: #2878a8;
 }

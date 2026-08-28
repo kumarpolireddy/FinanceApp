@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
+import { createLocalId } from '@/lib/ids';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
 import {
@@ -60,8 +61,32 @@ function todayDateTimeISO() {
   return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
 
-const COLOR_PRESETS = ['#ef4444', '#f97316', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#6b7280'];
-const ICON_PRESETS = ['🍽️', '🚗', '🛍️', '🎬', '💡', '🏥', '🛒', '⛽', '🏠', '📈', '💼', '💻', '💰', '🎁'];
+const COLOR_PRESETS = [
+  '#ef4444',
+  '#f97316',
+  '#22c55e',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#6b7280',
+];
+const ICON_PRESETS = [
+  '🍽️',
+  '🚗',
+  '🛍️',
+  '🎬',
+  '💡',
+  '🏥',
+  '🛒',
+  '⛽',
+  '🏠',
+  '📈',
+  '💼',
+  '💻',
+  '💰',
+  '🎁',
+];
 
 export default function AddExpensePage() {
   const router = useRouter();
@@ -94,19 +119,53 @@ export default function AddExpensePage() {
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   const [isNoteFocused, setIsNoteFocused] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [bottomPickerMode, setBottomPickerMode] = useState<'category' | 'account'>('category');
+  const [bottomPickerMode, setBottomPickerMode] = useState<
+    'category' | 'subcategory' | 'account'
+  >('category');
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const bottomPickerRef = useRef<HTMLDivElement>(null);
+  const noteInputRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionInputRef = useRef<HTMLInputElement>(null);
+
+  const openBottomPicker = (mode: 'category' | 'subcategory' | 'account') => {
+    setBottomPickerMode(mode);
+    requestAnimationFrame(() => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      requestAnimationFrame(() => {
+        bottomPickerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  };
+
+  const focusNoteField = () => {
+    requestAnimationFrame(() => {
+      noteInputRef.current?.focus();
+      noteInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
+
+  const focusDescriptionField = () => {
+    requestAnimationFrame(() => {
+      descriptionInputRef.current?.focus();
+      descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
 
   function getCategoryEmoji(name: string): string {
     const lower = name.toLowerCase();
-    if (lower.includes('food') || lower.includes('dining') || lower.includes('restaurant')) return '🍕';
+    if (lower.includes('food') || lower.includes('dining') || lower.includes('restaurant'))
+      return '🍕';
     if (lower.includes('grocer')) return '🛒';
     if (lower.includes('shop') || lower.includes('cloth')) return '🛍️';
     if (lower.includes('bill') || lower.includes('util')) return '⚡';
     if (lower.includes('rent') || lower.includes('house') || lower.includes('home')) return '🏠';
-    if (lower.includes('transport') || lower.includes('fuel') || lower.includes('travel')) return '🚗';
+    if (lower.includes('transport') || lower.includes('fuel') || lower.includes('travel'))
+      return '🚗';
     if (lower.includes('entertain') || lower.includes('movie')) return '🎬';
-    if (lower.includes('health') || lower.includes('medical') || lower.includes('doctor')) return '🏥';
+    if (lower.includes('health') || lower.includes('medical') || lower.includes('doctor'))
+      return '🏥';
     if (lower.includes('salary') || lower.includes('income')) return '💰';
     if (lower.includes('invest') || lower.includes('stock')) return '📈';
     if (lower.includes('gift') || lower.includes('donat')) return '🎁';
@@ -203,7 +262,7 @@ export default function AddExpensePage() {
 
     saveTransaction({
       date,
-      description: description.trim() || (type === 'transfer' ? 'Transfer' : (category || 'Expense')),
+      description: description.trim() || (type === 'transfer' ? 'Transfer' : category || 'Expense'),
       category: type === 'transfer' ? 'Transfer' : category,
       subcategory: type === 'transfer' ? undefined : subcategory || undefined,
       account,
@@ -227,7 +286,7 @@ export default function AddExpensePage() {
     toast.success('Transaction saved!');
     setTimeout(() => {
       setSaved(false);
-      router.push('/transactions');
+      router.back();
     }, 800);
   }
 
@@ -247,7 +306,7 @@ export default function AddExpensePage() {
 
     const allCats = getCategories();
     const newCat: Category = {
-      id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: createLocalId('cat', 4),
       name: cleanName,
       type: type === 'income' ? 'income' : 'expense',
       color: newCategoryColor,
@@ -332,24 +391,21 @@ export default function AddExpensePage() {
       {/* Header */}
       <div className="flex items-center justify-between h-14 px-5 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
         <div className="flex items-center">
-          <button 
+          <button
             type="button"
-            onClick={() => router.push('/transactions')}
+            onClick={() => router.back()}
             className="text-[#F2F2F4] hover:bg-white/[0.08] transition flex items-center justify-center h-10 w-10 shrink-0 -ml-2 rounded-full"
             title="Cancel"
           >
             <ArrowLeft size={24} />
           </button>
-          <h2 className="text-[20px] font-medium text-[#F2F2F4] ml-2 capitalize">
-            {type}
-          </h2>
+          <h2 className="text-[20px] font-medium text-[#F2F2F4] ml-2 capitalize">{type}</h2>
         </div>
       </div>
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto pb-12">
         <form onSubmit={handleSubmit} className="flex flex-col">
-          
           {/* Transaction Type Selector */}
           <div className="grid grid-cols-3 gap-2.5 px-5 mt-2">
             {(['income', 'expense', 'transfer'] as const).map((t) => {
@@ -386,10 +442,11 @@ export default function AddExpensePage() {
 
           {/* Vertical Form Fields (Gap of 20dp between selector and form) */}
           <div className="flex flex-col mt-5">
-            
             {/* Date Row */}
             <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Date</span>
+              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                Date
+              </span>
               <div className="flex-1 flex justify-start text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
                 {formatDisplayDate(date)}
               </div>
@@ -404,13 +461,16 @@ export default function AddExpensePage() {
 
             {/* Amount Row */}
             <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Amount</span>
+              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                Amount
+              </span>
               <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                 <span className="mr-1">₹</span>
                 <input
                   ref={amountInputRef}
                   type="number"
                   inputMode="decimal"
+                  enterKeyHint="next"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   onFocus={() => {
@@ -420,11 +480,14 @@ export default function AddExpensePage() {
                   onBlur={() => {
                     setIsInputFocused(false);
                     setIsAmountFocused(false);
+                    if (Number(amount) > 0) {
+                      openBottomPicker(type === 'transfer' ? 'account' : 'category');
+                    }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      setBottomPickerMode('category');
+                      openBottomPicker('category');
                       (e.target as HTMLInputElement).blur();
                     }
                   }}
@@ -441,9 +504,11 @@ export default function AddExpensePage() {
               <>
                 {/* From Account */}
                 <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
+                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                    Account
+                  </span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                    <span>{accounts.find(a => a.id === account)?.name || ''}</span>
+                    <span>{accounts.find((a) => a.id === account)?.name || ''}</span>
                   </div>
                   <select
                     value={account}
@@ -461,9 +526,11 @@ export default function AddExpensePage() {
 
                 {/* To Account */}
                 <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">To Account</span>
+                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                    To Account
+                  </span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
-                    <span>{accounts.find(a => a.id === toAccount)?.name || ''}</span>
+                    <span>{accounts.find((a) => a.id === toAccount)?.name || ''}</span>
                   </div>
                   <select
                     value={toAccount}
@@ -471,12 +538,16 @@ export default function AddExpensePage() {
                     required
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   >
-                    <option value="" disabled className="text-muted-foreground">Select destination...</option>
-                    {accounts.filter((acc) => acc.id !== account).map((acc) => (
-                      <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
-                        {acc.name}
-                      </option>
-                    ))}
+                    <option value="" disabled className="text-muted-foreground">
+                      Select destination...
+                    </option>
+                    {accounts
+                      .filter((acc) => acc.id !== account)
+                      .map((acc) => (
+                        <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                          {acc.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
               </>
@@ -484,10 +555,12 @@ export default function AddExpensePage() {
               <>
                 {/* Category Row - Tap to select category from bottom grid */}
                 <div
-                  onClick={() => setBottomPickerMode('category')}
+                  onClick={() => openBottomPicker('category')}
                   className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
                 >
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Category</span>
+                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                    Category
+                  </span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                     <span className={category ? 'text-white font-semibold' : 'text-slate-500'}>
                       {category || ''}
@@ -495,12 +568,35 @@ export default function AddExpensePage() {
                   </div>
                 </div>
 
+                {/* Subcategory Row - Opens the bottom picker */}
+                {category && (
+                  <div
+                    onClick={() => openBottomPicker('subcategory')}
+                    className="relative flex h-[54px] cursor-pointer items-center border-b border-white/[0.08] px-5 transition-colors hover:bg-white/[0.04]"
+                  >
+                    <span className="w-[110px] shrink-0 text-[15px] font-normal text-[#A5A6AD]">
+                      Subcategory
+                    </span>
+                    <div className="flex min-w-0 flex-1 items-center text-[17px] font-medium text-[#F2F2F4]">
+                      <span
+                        className={
+                          subcategory ? 'truncate text-white font-semibold' : 'text-slate-500'
+                        }
+                      >
+                        {subcategory || 'Select subcategory'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Account Row - Tap to select account from bottom grid */}
                 <div
-                  onClick={() => setBottomPickerMode('account')}
+                  onClick={() => openBottomPicker('account')}
                   className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
                 >
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
+                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                    Account
+                  </span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                     <span className={account ? 'text-white font-semibold' : 'text-slate-500'}>
                       {accounts.find((a) => a.id === account)?.name || ''}
@@ -512,9 +608,13 @@ export default function AddExpensePage() {
 
             {/* Note Row */}
             <div className="relative flex items-start py-4 border-b border-white/[0.08] px-5 min-h-[54px]">
-              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal mt-0.5">Note</span>
+              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal mt-0.5">
+                Note
+              </span>
               <textarea
+                ref={noteInputRef}
                 value={notes}
+                enterKeyHint="next"
                 onChange={(e) => setNotes(e.target.value)}
                 onFocus={() => {
                   setIsInputFocused(true);
@@ -523,6 +623,12 @@ export default function AddExpensePage() {
                 onBlur={() => {
                   setIsInputFocused(false);
                   setIsNoteFocused(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    focusDescriptionField();
+                  }
                 }}
                 rows={1}
                 className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 resize-none h-auto min-h-[26px]"
@@ -533,13 +639,13 @@ export default function AddExpensePage() {
                 }}
               />
             </div>
-
           </div>
 
           {/* Description & Camera Section */}
           <div className="flex flex-col mt-5">
             <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
               <input
+                ref={descriptionInputRef}
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -548,13 +654,16 @@ export default function AddExpensePage() {
                 placeholder="Description"
                 className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 pr-8"
               />
-              <Camera size={20} className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />
+              <Camera
+                size={20}
+                className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5"
+              />
             </div>
           </div>
 
           {/* Bottom Action Grid */}
-          <div className="px-5 mt-5">
-            <div className="flex items-center gap-3">
+          <div className="mt-5">
+            <div className="flex items-center gap-3 px-5">
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -576,71 +685,170 @@ export default function AddExpensePage() {
 
             {/* Space Under Save Transaction Button Used For Category & Account Selection */}
             {!isAmountFocused && !isNoteFocused && (
-              <div className="pt-4 border-t border-white/[0.08] space-y-3 pb-8">
+              <div
+                ref={bottomPickerRef}
+                className="mt-3 scroll-mt-3 space-y-3 border-t border-white/[0.08] pb-8 pt-4"
+              >
                 {/* 1. CLEAN SUBTLE FLOATING CHIPS GRID (CATEGORIES - NO SCROLLBAR) */}
                 {bottomPickerMode === 'category' && (
-                  <div className="grid grid-cols-4 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    {categories.map((catName) => {
-                      const isSelected = category === catName;
-                      return (
-                        <button
-                          key={catName}
-                          type="button"
-                          onClick={() => {
-                            setCategory(catName);
-                            setSubcategory('');
-                          }}
-                          className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
-                            isSelected
-                              ? 'bg-primary border border-primary text-slate-950 font-bold'
-                              : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
-                          }`}
-                        >
-                          <span className="truncate block">{catName}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="space-y-2">
+                    <div className="max-h-72 overflow-y-auto rounded-lg border border-border/80 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                      <table className="w-full table-fixed border-collapse" aria-label="Categories">
+                        <tbody>
+                          {Array.from({ length: Math.ceil(categories.length / 4) }).map(
+                            (_, rowIndex) => (
+                              <tr key={`category-row-${rowIndex}`}>
+                                {[0, 1, 2, 3].map((columnIndex) => {
+                                  const catName = categories[rowIndex * 4 + columnIndex];
+                                  const isSelected = category === catName;
+                                  return (
+                                    <td
+                                      key={`category-cell-${rowIndex}-${columnIndex}`}
+                                      className="h-11 border border-border/70 p-0 first:border-l-0 last:border-r-0"
+                                    >
+                                      {catName && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setCategory(catName);
+                                            setSubcategory('');
+                                            const selectedCategory = categoriesMeta.find(
+                                              (item) =>
+                                                item.name.toLowerCase() === catName.toLowerCase()
+                                            );
+                                            openBottomPicker(
+                                              selectedCategory?.subcategories?.length
+                                                ? 'subcategory'
+                                                : 'account'
+                                            );
+                                          }}
+                                          className={`h-full w-full truncate px-1.5 text-center text-xs font-medium transition-colors ${
+                                            isSelected
+                                              ? 'bg-primary/15 text-primary'
+                                              : 'bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                          }`}
+                                        >
+                                          {catName}
+                                        </button>
+                                      )}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            )
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
 
-                    {/* Add Category Pill Chip */}
                     <button
                       type="button"
                       onClick={() => setIsAddCategoryOpen(true)}
-                      className="px-2.5 py-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.04] text-slate-300 font-medium hover:bg-white/[0.08] transition-all cursor-pointer text-xs truncate flex items-center justify-center"
+                      className="flex w-full items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/[0.04] px-2.5 py-2.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.08]"
                     >
-                      <span className="truncate">Add Category</span>
+                      <span>Add Category</span>
+                    </button>
+                  </div>
+                )}
+
+                {bottomPickerMode === 'subcategory' && category && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-0.5">
+                      <p className="text-xs font-semibold text-white">Choose subcategory</p>
+                      <button
+                        type="button"
+                        onClick={() => setBottomPickerMode('category')}
+                        className="text-[11px] font-medium text-primary"
+                      >
+                        Back to categories
+                      </button>
+                    </div>
+
+                    {activeCategorySubcategories.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {activeCategorySubcategories.map((subName) => {
+                          const isSelected = subcategory === subName;
+                          return (
+                            <button
+                              key={subName}
+                              type="button"
+                              onClick={() => {
+                                setSubcategory(subName);
+                                openBottomPicker('account');
+                              }}
+                              className={`flex min-w-0 items-center justify-center gap-1 rounded-lg border px-2 py-2.5 text-center text-xs transition-colors ${
+                                isSelected
+                                  ? 'border-primary/70 bg-primary/15 text-foreground'
+                                  : 'border-border/80 bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground'
+                              }`}
+                              aria-pressed={isSelected}
+                            >
+                              <span className="min-w-0 truncate font-medium">{subName}</span>
+                              {isSelected && <Check size={14} className="shrink-0 text-primary" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsAddSubcategoryOpen(true)}
+                      className="flex w-full items-center justify-center rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-xs font-medium text-[#A5A6AD] transition-colors hover:border-primary/40 hover:text-primary"
+                    >
+                      <PlusCircle size={14} className="mr-1.5" />
+                      Add subcategory
                     </button>
                   </div>
                 )}
 
                 {/* 2. CLEAN SUBTLE FLOATING CHIPS GRID (ACCOUNTS - 3 IN A ROW, NO MONEY DISPLAY, NO SCROLLBAR) */}
                 {bottomPickerMode === 'account' && (
-                  <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    {accounts.map((acc) => {
-                      const isSelected = account === acc.id;
-                      return (
-                        <button
-                          key={acc.id}
-                          type="button"
-                          onClick={() => {
-                            setAccount(acc.id);
-                            setAccountInputText(acc.name);
-                          }}
-                          className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
-                            isSelected
-                              ? 'bg-white/10 border border-white/30 text-white font-bold'
-                              : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
-                          }`}
-                        >
-                          <span className="truncate block font-bold">{acc.name}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="max-h-72 overflow-y-auto rounded-lg border border-border/80 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <table className="w-full table-fixed border-collapse" aria-label="Accounts">
+                      <tbody>
+                        {Array.from({ length: Math.ceil(accounts.length / 3) }).map(
+                          (_, rowIndex) => (
+                            <tr key={`account-row-${rowIndex}`}>
+                              {[0, 1, 2].map((columnIndex) => {
+                                const acc = accounts[rowIndex * 3 + columnIndex];
+                                const isSelected = account === acc?.id;
+                                return (
+                                  <td
+                                    key={`account-cell-${rowIndex}-${columnIndex}`}
+                                    className="h-11 border border-border/70 p-0 first:border-l-0 last:border-r-0"
+                                  >
+                                    {acc && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setAccount(acc.id);
+                                          setAccountInputText(acc.name);
+                                          focusNoteField();
+                                        }}
+                                        className={`h-full w-full truncate px-2 text-center text-xs font-medium transition-colors ${
+                                          isSelected
+                                            ? 'bg-primary/15 text-primary'
+                                            : 'bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                        }`}
+                                        aria-pressed={isSelected}
+                                      >
+                                        {acc.name}
+                                      </button>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          )
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
             )}
           </div>
-
         </form>
       </div>
 
@@ -652,7 +860,9 @@ export default function AddExpensePage() {
         >
           <form onSubmit={handleAddCategorySubmit} className="space-y-3.5 text-2xs">
             <div>
-              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Category Name *</label>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
+                Category Name *
+              </label>
               <input
                 type="text"
                 required
@@ -663,24 +873,31 @@ export default function AddExpensePage() {
             </div>
 
             <div>
-              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1.5">Color Tag</label>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1.5">
+                Color Tag
+              </label>
               <div className="flex flex-wrap gap-1.5">
-                {COLOR_PRESETS.map(c => (
+                {COLOR_PRESETS.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setNewCategoryColor(c)}
                     className="w-5 h-5 rounded-full border transition active:scale-90"
-                    style={{ backgroundColor: c, borderColor: newCategoryColor === c ? '#ffffff' : 'transparent' }}
+                    style={{
+                      backgroundColor: c,
+                      borderColor: newCategoryColor === c ? '#ffffff' : 'transparent',
+                    }}
                   />
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1.5">Emoji Icon</label>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1.5">
+                Emoji Icon
+              </label>
               <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto bg-background p-1.5 border border-border rounded">
-                {ICON_PRESETS.map(emoji => (
+                {ICON_PRESETS.map((emoji) => (
                   <button
                     key={emoji}
                     type="button"
@@ -694,8 +911,19 @@ export default function AddExpensePage() {
             </div>
 
             <div className="flex gap-2 pt-1.5">
-              <button type="submit" className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded">Create</button>
-              <button type="button" onClick={() => setIsAddCategoryOpen(false)} className="flex-1 py-2 bg-secondary border border-border rounded text-muted-foreground">Cancel</button>
+              <button
+                type="submit"
+                className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded"
+              >
+                Create
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddCategoryOpen(false)}
+                className="flex-1 py-2 bg-secondary border border-border rounded text-muted-foreground"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </Modal>
@@ -709,8 +937,13 @@ export default function AddExpensePage() {
         >
           <form onSubmit={handleAddSubcategorySubmit} className="space-y-3.5 text-2xs">
             <div>
-              <p className="text-muted-foreground mb-2">Creating subcategory for: <span className="font-bold text-foreground uppercase">{category}</span></p>
-              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">Subcategory Name *</label>
+              <p className="text-muted-foreground mb-2">
+                Creating subcategory for:{' '}
+                <span className="font-bold text-foreground uppercase">{category}</span>
+              </p>
+              <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
+                Subcategory Name *
+              </label>
               <input
                 type="text"
                 required
@@ -721,13 +954,23 @@ export default function AddExpensePage() {
             </div>
 
             <div className="flex gap-2 pt-1.5">
-              <button type="submit" className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded">Create</button>
-              <button type="button" onClick={() => setIsAddSubcategoryOpen(false)} className="flex-1 py-2 bg-secondary border border-border rounded text-muted-foreground">Cancel</button>
+              <button
+                type="submit"
+                className="flex-1 py-2 bg-primary text-primary-foreground font-bold rounded"
+              >
+                Create
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddSubcategoryOpen(false)}
+                className="flex-1 py-2 bg-secondary border border-border rounded text-muted-foreground"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </Modal>
       )}
-
     </div>
   );
 }

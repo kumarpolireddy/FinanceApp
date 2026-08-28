@@ -150,7 +150,7 @@ export default function GoalProgressRings() {
           </p>
         </div>
         <Link
-          href="/add-expense"
+          href="/goals"
           className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
         >
           <Plus size={13} />

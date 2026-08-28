@@ -5,7 +5,12 @@ const nextConfig = {
   output: 'export',
   allowedDevOrigins: ['localhost:3000', '127.0.0.1:3000', '192.168.137.1:3000', '192.168.137.1', '192.168.1.30:3000', '192.168.1.30', '10.0.2.2:3000', '10.0.2.2'],
   productionBrowserSourceMaps: true,
-  distDir: process.env.DIST_DIR || '.next',
+  // Keep the dev compiler isolated from production builds. Running `next build`
+  // while the Android WebView is connected to `next dev` otherwise replaces
+  // chunks in `.next` and leaves the mobile UI with 500s or unstyled markup.
+  distDir:
+    process.env.DIST_DIR ||
+    (process.env.NODE_ENV === 'development' ? 'build/next-dev' : '.next'),
   typescript: {
     ignoreBuildErrors: true,
   },

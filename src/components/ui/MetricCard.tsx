@@ -12,6 +12,7 @@ interface MetricCardProps {
   className?: string;
   valueClassName?: string;
   largeValue?: boolean;
+  compact?: boolean;
   onClick?: () => void;
 }
 
@@ -26,6 +27,7 @@ export default function MetricCard({
   className = '',
   valueClassName = '',
   largeValue = false,
+  compact = false,
   onClick,
 }: MetricCardProps) {
   const variantStyles: Record<string, string> = {
@@ -38,15 +40,24 @@ export default function MetricCard({
 
   const trendPositive = trend !== undefined && trend > 0;
   const trendNegative = trend !== undefined && trend < 0;
+  const surfaceStyle = compact ? 'bg-card border-border shadow-none' : variantStyles[variant];
 
   return (
     <div
       onClick={onClick}
-      className={`relative rounded-2xl border p-5 md:p-6 flex flex-col justify-between h-full min-h-[140px] transition-all duration-200 ${
-        onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-card-lg' : ''
-      } ${variantStyles[variant]} ${className}`}
+      className={`relative border flex flex-col h-full transition-all duration-200 ${
+        compact
+          ? 'min-h-[72px] items-center justify-center rounded-lg p-2.5 text-center'
+          : 'min-h-[140px] justify-between rounded-2xl p-5 md:p-6'
+      } ${
+        onClick
+          ? compact
+            ? 'cursor-pointer hover:border-primary/50 hover:bg-muted/20'
+            : 'cursor-pointer hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-card-lg'
+          : ''
+      } ${surfaceStyle} ${className}`}
     >
-      <div className="flex items-start justify-between">
+      <div className={`flex items-start ${compact ? 'justify-center' : 'justify-between'}`}>
         <p className="text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
           {label}
         </p>
@@ -57,7 +68,9 @@ export default function MetricCard({
         )}
       </div>
 
-      <div className="mt-2 flex-1 flex flex-col justify-end">
+      <div
+        className={`${compact ? 'mt-1 flex-none items-center justify-center' : 'mt-2 flex-1 justify-end'} flex flex-col`}
+      >
         <p
           className={`tabular-nums tracking-tight ${
             largeValue
@@ -69,7 +82,9 @@ export default function MetricCard({
           style={
             largeValue
               ? {
-                  fontSize: 'clamp(1.4rem, 2vw, 2.25rem)',
+                  fontSize: compact
+                    ? 'clamp(1rem, 1.35vw, 1.35rem)'
+                    : 'clamp(1.4rem, 2vw, 2.25rem)',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'clip',
@@ -79,7 +94,7 @@ export default function MetricCard({
         >
           {value}
         </p>
-        {subValue && <div className="text-2xs mt-1 font-medium">{subValue}</div>}
+        {subValue && <div className={`text-2xs font-medium ${compact ? 'mt-0.5' : 'mt-1'}`}>{subValue}</div>}
       </div>
 
       {trend !== undefined && (

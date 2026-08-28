@@ -1,5 +1,7 @@
 'use client';
 
+import { createLocalId } from './ids';
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SplitMember {
@@ -33,6 +35,7 @@ export interface SplitPaymentRecord {
   amount: number;
   date: string;
   paymentAccountId?: string;
+  repaymentTransactionId?: string;
   notes?: string;
   createdAt: string;
 }
@@ -56,12 +59,29 @@ export interface Transaction {
   tripId?: string;
   isSplit?: boolean;
   splitDetails?: SplitDetails;
+  isSplitRepayment?: boolean;
+  splitPaymentId?: string;
   historicalCategoryName?: string;
   historicalAccountName?: string;
   historicalToAccountName?: string;
   isHistoricalOnly?: boolean;
   isHistoricalAccountOnly?: boolean;
   createdAt: string;
+}
+
+/**
+ * Amount that actually moved out of the payment account.
+ *
+ * A split transaction stores only the user's share in `amount` so spending
+ * reports remain personal, while `totalAmount` is the full amount initially
+ * paid from the selected account.
+ */
+export function getTransactionAccountAmount(transaction: Transaction): number {
+  const personalAmount = Math.max(0, Number(transaction.amount) || 0);
+  if (transaction.type !== 'expense' || !transaction.isSplit) return personalAmount;
+
+  const totalPaid = Number(transaction.splitDetails?.totalAmount);
+  return Number.isFinite(totalPaid) && totalPaid > 0 ? totalPaid : personalAmount;
 }
 
 export interface Trip {
@@ -239,7 +259,7 @@ export function addCategory(category: Omit<Category, 'id'>): Category {
   const all = getCategories();
   const newCat: Category = {
     ...category,
-    id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: createLocalId('cat', 4),
   };
   all.push(newCat);
   saveCategories(all);
@@ -330,7 +350,9 @@ export function recordSplitRepayment(params: {
 }): { updatedSplit: SplitDetails; paymentRecord: SplitPaymentRecord } {
   const splits = getSplitExpenses();
   const target = splits.find(
-    (s) => (params.splitId && s.id === params.splitId) || (params.transactionId && s.transactionId === params.transactionId)
+    (s) =>
+      (params.splitId && s.id === params.splitId) ||
+      (params.transactionId && s.transactionId === params.transactionId)
   );
   if (!target) {
     throw new Error('Split expense record not found');
@@ -349,6 +371,12 @@ export function recordSplitRepayment(params: {
   }
 
   const member = target.members[memberIdx];
+  const memberPending = Math.max(0, Number((member.share - member.paid).toFixed(2)));
+  if (pmtAmount > memberPending + 0.001) {
+    throw new Error(
+      `Payment cannot exceed the pending amount of ₹${memberPending.toLocaleString('en-IN')}.`
+    );
+  }
   const newMemberPaid = Math.min(member.share, Number((member.paid + pmtAmount).toFixed(2)));
   const newMemberPending = Math.max(0, Number((member.share - newMemberPaid).toFixed(2)));
 
@@ -384,7 +412,7 @@ export function recordSplitRepayment(params: {
   }
 
   const newRecord: SplitPaymentRecord = {
-    id: `pmt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: createLocalId('pmt', 4),
     splitId: target.id,
     transactionId: target.transactionId,
     personName: params.personName,
@@ -395,11 +423,91 @@ export function recordSplitRepayment(params: {
     createdAt: new Date().toISOString(),
   };
 
+  if (params.paymentAccountId) {
+    const splitDescription =
+      target.name || allTxns[txnIdx]?.description || allTxns[txnIdx]?.category || 'Split Repayment';
+    const repaymentNote = `From ${params.personName}${params.notes ? ` · ${params.notes}` : ''}`;
+    const repaymentTransaction = saveTransaction({
+      date: params.date || new Date().toISOString(),
+      description: splitDescription,
+      category: 'Split Repayment',
+      account: params.paymentAccountId,
+      amount: pmtAmount,
+      type: 'income',
+      notes: repaymentNote,
+      isSplitRepayment: true,
+      splitPaymentId: newRecord.id,
+    });
+    newRecord.repaymentTransactionId = repaymentTransaction.id;
+  }
+
   const payments = getSplitPayments();
   payments.unshift(newRecord);
   saveSplitPayments(payments);
 
   return { updatedSplit: target, paymentRecord: newRecord };
+}
+
+export function ensureSplitRepaymentTransactions(): void {
+  const payments = getSplitPayments();
+  if (payments.length === 0) return;
+
+  const existingTransactions = getTransactions(true);
+  const transactionIds = new Set(existingTransactions.map((transaction) => transaction.id));
+  const splitsById = new Map(getSplitExpenses().map((split) => [split.id, split]));
+  let changed = false;
+
+  payments.forEach((payment) => {
+    if (!payment.paymentAccountId) return;
+    const split = splitsById.get(payment.splitId);
+    const linkedSplitTransaction = split
+      ? existingTransactions.find((transaction) => transaction.id === split.transactionId)
+      : undefined;
+    const splitDescription =
+      split?.name ||
+      linkedSplitTransaction?.description ||
+      linkedSplitTransaction?.category ||
+      'Split Repayment';
+    const repaymentNote = `From ${payment.personName}${payment.notes ? ` · ${payment.notes}` : ''}`;
+    const existingRepayment = existingTransactions.find(
+      (transaction) =>
+        transaction.id === payment.repaymentTransactionId ||
+        (transaction.isSplitRepayment && transaction.splitPaymentId === payment.id)
+    );
+    if (existingRepayment) {
+      if (
+        existingRepayment.description !== splitDescription ||
+        existingRepayment.notes !== repaymentNote
+      ) {
+        updateTransaction(existingRepayment.id, {
+          description: splitDescription,
+          notes: repaymentNote,
+        });
+      }
+      payment.repaymentTransactionId = existingRepayment.id;
+      transactionIds.add(existingRepayment.id);
+      changed = true;
+      return;
+    }
+
+    const repaymentTransaction = saveTransaction({
+      date: payment.date || payment.createdAt,
+      description: splitDescription,
+      category: 'Split Repayment',
+      account: payment.paymentAccountId,
+      amount: Number(payment.amount) || 0,
+      type: 'income',
+      notes: repaymentNote,
+      isSplitRepayment: true,
+      splitPaymentId: payment.id,
+    });
+    payment.repaymentTransactionId = repaymentTransaction.id;
+    transactionIds.add(repaymentTransaction.id);
+    existingTransactions.push(repaymentTransaction);
+    changed = true;
+  });
+
+  if (changed) saveSplitPayments(payments);
 }
 
 // ── Transactions ──────────────────────────────────────────────────────────────
@@ -486,14 +594,16 @@ export function saveTransaction(txn: Omit<Transaction, 'id' | 'createdAt'>): Tra
   }
 
   const activeTrip = getActiveTrip();
-  const description = (txn.description || '').trim() || (txn.type === 'transfer' ? 'Transfer' : (txn.category || 'Expense'));
-  const txnId = `txn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-  
+  const description =
+    (txn.description || '').trim() ||
+    (txn.type === 'transfer' ? 'Transfer' : txn.category || 'Expense');
+  const txnId = createLocalId('txn', 5);
+
   let splitObj = txn.splitDetails;
   if (txn.isSplit && splitObj) {
     splitObj = {
       ...splitObj,
-      id: splitObj.id || `split-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: splitObj.id || createLocalId('split', 4),
       transactionId: txnId,
       createdAt: splitObj.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -504,7 +614,7 @@ export function saveTransaction(txn: Omit<Transaction, 'id' | 'createdAt'>): Tra
   const newTxn: Transaction = {
     ...txn,
     description,
-    tripId: txn.tripId || activeTrip?.id,
+    tripId: txn.isSplitRepayment ? undefined : txn.tripId || activeTrip?.id,
     date: dateStr,
     id: txnId,
     isSplit: Boolean(txn.isSplit),
@@ -657,7 +767,8 @@ export function setActiveTrip(id: string | null): void {
   const trips = getTrips();
   const updated = trips.map((t) => ({
     ...t,
-    status: t.id === id ? ('active' as const) : t.status === 'active' ? ('completed' as const) : t.status,
+    status:
+      t.id === id ? ('active' as const) : t.status === 'active' ? ('completed' as const) : t.status,
   }));
   saveTrips(updated);
   localStorage.setItem(KEYS.ACTIVE_TRIP_ID, id);
@@ -677,7 +788,7 @@ export function addTrip(trip: Omit<Trip, 'id' | 'createdAt'>): Trip {
   const trips = getTrips();
   const newTrip: Trip = {
     ...trip,
-    id: `trip-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: createLocalId('trip', 4),
     createdAt: new Date().toISOString(),
   };
   if (newTrip.status === 'active') {
@@ -763,7 +874,8 @@ export function getTripSummary(tripId: string) {
 
   const budget = trip?.budget || 0;
   const remainingBudget = budget > 0 ? budget - totalExpense : 0;
-  const budgetUtilization = budget > 0 ? Math.min(100, Math.round((totalExpense / budget) * 100)) : 0;
+  const budgetUtilization =
+    budget > 0 ? Math.min(100, Math.round((totalExpense / budget) * 100)) : 0;
 
   return {
     trip,
@@ -792,7 +904,10 @@ export function getAccountCategories(): AccountCategory[] {
   try {
     const raw = localStorage.getItem('wealthiq_account_categories');
     if (!raw) {
-      localStorage.setItem('wealthiq_account_categories', JSON.stringify(DEFAULT_ACCOUNT_CATEGORIES));
+      localStorage.setItem(
+        'wealthiq_account_categories',
+        JSON.stringify(DEFAULT_ACCOUNT_CATEGORIES)
+      );
       return DEFAULT_ACCOUNT_CATEGORIES;
     }
     return JSON.parse(raw);
@@ -844,8 +959,10 @@ export function getAccounts(includeHidden = false): Account[] {
         const matchesAcc = (targetAccId?: string, targetAccUid?: string) => {
           if (txn.isHistoricalAccountOnly) return false;
           if (targetAccId && String(targetAccId) === String(acc.id)) return true;
-          if (acc.sourceUid && targetAccUid && String(targetAccUid) === String(acc.sourceUid)) return true;
-          if (targetAccId && targetAccId.trim().toLowerCase() === acc.name.trim().toLowerCase()) return true;
+          if (acc.sourceUid && targetAccUid && String(targetAccUid) === String(acc.sourceUid))
+            return true;
+          if (targetAccId && targetAccId.trim().toLowerCase() === acc.name.trim().toLowerCase())
+            return true;
           return false;
         };
 
@@ -853,12 +970,7 @@ export function getAccounts(includeHidden = false): Account[] {
           if (matchesAcc(txn.account, txn.accountUid)) balance += amount;
         } else if (type === 'expense') {
           if (matchesAcc(txn.account, txn.accountUid)) {
-            const splitObj = txn.splitDetails || (txn.isSplit ? getSplitExpenseByTxnId(txn.id) : undefined);
-            if (txn.isSplit && splitObj?.totalAmount) {
-              balance -= Number(splitObj.totalAmount);
-            } else {
-              balance -= amount;
-            }
+            balance -= getTransactionAccountAmount(txn);
           }
         } else if (type === 'transfer') {
           if (matchesAcc(txn.account, txn.accountUid)) balance -= amount;
@@ -866,8 +978,11 @@ export function getAccounts(includeHidden = false): Account[] {
         }
       });
 
+      const transactionIds = new Set(txns.map((txn) => txn.id));
       splitPayments.forEach((pmt) => {
-        if (pmt.paymentAccountId === acc.id) {
+        const hasRepaymentTransaction =
+          pmt.repaymentTransactionId && transactionIds.has(pmt.repaymentTransactionId);
+        if (pmt.paymentAccountId === acc.id && !hasRepaymentTransaction) {
           balance += Number(pmt.amount) || 0;
         }
       });
@@ -958,7 +1073,7 @@ export function addAccount(account: Omit<Account, 'id'>): Account {
   const all = getAccounts(true);
   const newAccount: Account = {
     ...account,
-    id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: createLocalId('acc', 4),
     openingBalance: account.balance,
     visible: account.visible !== false,
   };
@@ -1119,6 +1234,7 @@ export function getMonthlyIncomeExpense() {
 export function getBalanceAtDate(targetDateStr: string, selectedAccountId?: string): number {
   const accounts = getAccounts(true);
   const txns = getTransactions();
+  const targetTime = new Date(targetDateStr).getTime();
 
   let currentBalance = 0;
   if (selectedAccountId) {
@@ -1131,8 +1247,10 @@ export function getBalanceAtDate(targetDateStr: string, selectedAccountId?: stri
   txns.forEach((t) => {
     if (!t || !t.date || typeof t.date !== 'string') return;
 
-    if (t.date > targetDateStr) {
-      const amount = Number(t.amount) || 0;
+    const transactionTime = new Date(t.date).getTime();
+    if (Number.isFinite(transactionTime) && transactionTime > targetTime) {
+      const amount =
+        t.type === 'expense' ? getTransactionAccountAmount(t) : Number(t.amount) || 0;
 
       if (selectedAccountId) {
         if (t.type === 'income' && t.account === selectedAccountId) {
@@ -1771,6 +1889,7 @@ export function getTransactionImpact(t: Transaction, selectedAccountId?: string)
   let income = 0;
   let expense = 0;
   const amt = Number(t.amount) || 0;
+  const accountAmount = getTransactionAccountAmount(t);
 
   if (!selectedAccountId) {
     // Global metrics (no account filter)
@@ -1778,7 +1897,7 @@ export function getTransactionImpact(t: Transaction, selectedAccountId?: string)
       cashIn = amt;
       income = amt;
     } else if (t.type === 'expense') {
-      cashOut = amt;
+      cashOut = accountAmount;
       expense = amt;
     } else if (t.type === 'transfer') {
       cashIn = amt;
@@ -1790,7 +1909,7 @@ export function getTransactionImpact(t: Transaction, selectedAccountId?: string)
       cashIn = amt;
       income = amt;
     } else if (t.type === 'expense' && t.account === selectedAccountId) {
-      cashOut = amt;
+      cashOut = accountAmount;
       expense = amt;
     } else if (t.type === 'transfer') {
       if (t.toAccount === selectedAccountId) {
@@ -1838,10 +1957,14 @@ export function calculateCreditCardBalances(
 
   cardTxns.forEach((t) => {
     const parts = t.date.split('-');
-    const txnDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-    
+    const txnDate = new Date(
+      parseInt(parts[0], 10),
+      parseInt(parts[1], 10) - 1,
+      parseInt(parts[2], 10)
+    );
+
     let isPayment = false;
-    let amount = t.amount;
+    let amount = t.type === 'expense' ? getTransactionAccountAmount(t) : t.amount;
 
     if (t.type === 'income') {
       isPayment = true;
@@ -1866,20 +1989,26 @@ export function calculateCreditCardBalances(
     }
   });
 
-  // Calculate the statement balance from the closed billing cycle (before cycleStart)
-  const initialPayable = Math.max(expensesBefore - paymentsBefore, 0);
+  // Calculate the statement balance from the closed billing cycle. Preserve
+  // any overpayment as card credit so it can reduce current-cycle spending.
+  const previousCycleNet = expensesBefore - paymentsBefore;
+  const initialPayable = Math.max(previousCycleNet, 0);
+  const previousCycleCredit = Math.max(-previousCycleNet, 0);
 
   // Payments made during the current cycle reduce the older cycle's Balance Payable first
   let payable = initialPayable - paymentsDuring;
-  let remainingPayment = 0;
+  let remainingPayment = previousCycleCredit;
 
   if (payable < 0) {
-    remainingPayment = -payable;
+    remainingPayment += -payable;
     payable = 0;
   }
 
-  // Any remaining payment amount goes to pay off the current cycle's Outstanding Balance
-  const outstanding = Math.max(expensesDuring - remainingPayment, 0);
+  // Outstanding is the card's full unpaid balance: the remaining statement
+  // payable plus unbilled/current-cycle spending. Any payment left after
+  // clearing the statement reduces current-cycle spending.
+  const currentCycleOutstanding = Math.max(expensesDuring - remainingPayment, 0);
+  const outstanding = payable + currentCycleOutstanding;
 
   return {
     payable,

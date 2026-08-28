@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import SavingsTrendChart from './components/SavingsTrendChart';
@@ -13,7 +13,16 @@ import { getTransactions, type Transaction } from '@/lib/storage';
 
 export default function AnalyticsPage() {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    const refreshTransactions = () => setAllTransactions(getTransactions());
+
+    refreshTransactions();
+    window.addEventListener('storage', refreshTransactions);
+    return () => window.removeEventListener('storage', refreshTransactions);
+  }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -42,16 +51,14 @@ export default function AnalyticsPage() {
     touchStartX.current = null;
   };
 
-  const allTransactions = useMemo(() => getTransactions(), []);
-
   return (
     <AppLayout>
       <div className="w-full min-h-screen px-0 pt-0 pb-32 space-y-4 bg-secondary/70">
         {/* Swipeable Graph Carousel */}
-        <div className="select-none mb-6 pt-3">
+        <div className="select-none mb-2 pt-1">
           
           {/* Slider Controls & Sliding Progress Indicator Bar */}
-          <div className="flex items-center justify-between mb-3 px-3 sm:px-6 py-2">
+          <div className="flex items-center justify-between mb-1 px-3 sm:px-6 py-1">
             <button
               disabled={activeSlide === 0}
               onClick={() => setActiveSlide((p) => Math.max(p - 1, 0))}

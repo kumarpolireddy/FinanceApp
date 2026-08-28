@@ -28,10 +28,10 @@ export default function UpcomingPaymentsWidget() {
   }, [bills]);
 
   return (
-    <div className="bg-secondary/60 border border-border/80 rounded-2xl p-5 shadow-sm space-y-4">
+    <div className="space-y-4 rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+          <div className="rounded-md bg-muted p-2 text-primary">
             <Receipt size={18} />
           </div>
           <div>
@@ -80,7 +80,7 @@ export default function UpcomingPaymentsWidget() {
             return (
               <div
                 key={bill.id}
-                className="p-3 rounded-xl bg-background border border-border/60 flex items-center justify-between text-xs"
+                className="flex items-center justify-between rounded-md border border-border/70 bg-background/40 p-3 text-xs"
               >
                 <div className="space-y-0.5">
                   <p className="font-bold text-foreground">{bill.name}</p>

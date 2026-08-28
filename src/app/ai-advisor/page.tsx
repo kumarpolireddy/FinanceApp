@@ -337,13 +337,13 @@ export default function AiAdvisorPage() {
         )}
 
         {/* Input Bar - Absolutely Stationed at Bottom */}
-        <div className="flex-shrink-0 bg-background pt-2 pb-1 border-t border-border z-10">
+        <div className="flex-shrink-0 bg-background px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] z-10">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSendMessage();
             }}
-            className="flex items-center gap-2 bg-card border border-border rounded-xl p-2 shadow-md focus-within:border-primary transition"
+            className="flex items-center gap-2 rounded-full border border-border bg-muted/70 px-2 py-1.5 focus-within:border-primary transition-colors"
           >
             <input
               type="text"
@@ -351,12 +351,12 @@ export default function AiAdvisorPage() {
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="Type a message..."
               disabled={loading}
-              className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-foreground placeholder:text-muted-foreground disabled:opacity-50"
+              className="min-w-0 flex-1 appearance-none bg-transparent border-0 outline-none focus:border-0 focus:outline-none focus-visible:outline-none focus:ring-0 text-base px-3 py-1.5 text-foreground placeholder:text-muted-foreground disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={!inputMessage.trim() || loading}
-              className="w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition flex-shrink-0"
+              className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition flex-shrink-0"
             >
               <Send size={16} />
             </button>

@@ -21,33 +21,33 @@ import {
 } from '@/lib/storage';
 import { toast } from 'sonner';
 import {
+  calculateNewEMI,
+  calculateRemainingTenure,
+  getNextEmiDateStr,
+} from '@/lib/loanCalculations';
+import { createLocalId } from '@/lib/ids';
+import {
   Edit2,
   Trash2,
   Archive,
   Eye,
   EyeOff,
   Plus,
-  Landmark,
   TrendingUp,
-  TrendingDown,
   Calendar,
   Info,
   DollarSign,
-  CheckCircle2,
   AlertCircle,
   Clock,
   ArrowUpRight,
   Search,
   Filter,
-  Sparkles,
   Calculator,
   ChevronRight,
   ChevronLeft,
   PieChart,
-  ShieldAlert,
   Layers,
   CreditCard,
-  UserCheck,
   RefreshCw,
   X,
   LayoutGrid,
@@ -56,7 +56,6 @@ import {
   FileText,
   History,
   CornerDownRight,
-  Percent,
 } from 'lucide-react';
 
 const EMPTY_FORM = {
@@ -92,37 +91,6 @@ const EMPTY_FORM = {
   interestStartDate: '',
   expectedRepaymentDate: '',
   compoundingFrequency: 'monthly',
-};
-
-function calculateRemainingTenure(outstanding: number, annualRate: number, emi: number): number {
-  if (outstanding <= 0) return 0;
-  if (annualRate <= 0 || emi <= 0) return Math.ceil(outstanding / (emi || 1));
-  const r = annualRate / 12 / 100;
-  const pv = outstanding;
-  const pmt = emi;
-  if (pmt <= pv * r) {
-    return 120; // fallback if EMI is not enough to cover interest
-  }
-  const n = -Math.log(1 - (pv * r) / pmt) / Math.log(1 + r);
-  return Math.ceil(n);
-}
-
-function calculateNewEMI(outstanding: number, annualRate: number, remainingMonths: number): number {
-  if (outstanding <= 0 || remainingMonths <= 0) return 0;
-  if (annualRate <= 0) return Math.ceil(outstanding / remainingMonths);
-  const r = annualRate / 12 / 100;
-  const n = remainingMonths;
-  const emi = (outstanding * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  return Math.ceil(emi);
-}
-
-const getNextEmiDateStr = (currentDueStr: string, dueDay: number) => {
-  if (!currentDueStr || !/^\d{4}-\d{2}-\d{2}$/.test(currentDueStr)) return '';
-  const parts = currentDueStr.split('-');
-  const y = parseInt(parts[0]);
-  const m = parseInt(parts[1]) - 1;
-  const d = new Date(y, m + 1, dueDay || 5);
-  return d.toISOString().slice(0, 10);
 };
 
 interface LedgerRow {
@@ -219,7 +187,9 @@ export default function LoansPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [activeLoanDetails, setActiveLoanDetails] = useState<Account | null>(null);
-  const [activeDetailTab, setActiveDetailTab] = useState<'overview' | 'schedule' | 'ledger'>('overview');
+  const [activeDetailTab, setActiveDetailTab] = useState<'overview' | 'schedule' | 'ledger'>(
+    'overview'
+  );
 
   const [payingLoan, setPayingLoan] = useState<Account | null>(null);
   const [prepayingLoan, setPrepayingLoan] = useState<Account | null>(null);
@@ -284,7 +254,7 @@ export default function LoansPage() {
 
   const loansList = useMemo(() => {
     let list = accounts.filter((a) => a.type === 'loan');
-    
+
     if (!showArchived) {
       list = list.filter((a) => !a.archived);
     }
@@ -325,10 +295,7 @@ export default function LoansPage() {
   // Aggregate stats
   const stats = useMemo(() => {
     const activeLoans = accounts.filter(
-      (a) =>
-        a.type === 'loan' &&
-        !a.archived &&
-        a.loanStatus !== 'paid_off'
+      (a) => a.type === 'loan' && !a.archived && a.loanStatus !== 'paid_off'
     );
     const outstandingPrincipal = activeLoans.reduce((s, a) => s + Math.abs(a.balance), 0);
     const accruedInterest = activeLoans.reduce((s, a) => s + (a.accruedInterest || 0), 0);
@@ -499,12 +466,17 @@ export default function LoansPage() {
     const currentBal = Math.abs(loan.balance);
     const rate = Number(loan.interestRate) || 0;
     const currentEmi = Number(loan.emiAmount) || 0;
-    const currentTenure = loan.remainingTenureMonths !== undefined ? loan.remainingTenureMonths : (loan.tenureMonths || 60);
+    const currentTenure =
+      loan.remainingTenureMonths !== undefined
+        ? loan.remainingTenureMonths
+        : loan.tenureMonths || 60;
 
     const newOutstanding = Math.max(0, currentBal - prepayVal);
     const newTenureOption = calculateRemainingTenure(newOutstanding, rate, currentEmi);
     const monthsSaved = Math.max(0, currentTenure - newTenureOption);
-    const interestSavedTenure = Math.round(monthsSaved * (currentEmi - (newOutstanding * (rate / 12 / 100))));
+    const interestSavedTenure = Math.round(
+      monthsSaved * (currentEmi - newOutstanding * (rate / 12 / 100))
+    );
 
     const newEmiOption = calculateNewEMI(newOutstanding, rate, currentTenure);
     const emiReduction = Math.max(0, currentEmi - newEmiOption);
@@ -588,6 +560,19 @@ export default function LoansPage() {
     });
     setShowAccountForm(true);
   };
+
+  useEffect(() => {
+    if (accounts.length === 0 || typeof window === 'undefined') return;
+
+    const editId = new URLSearchParams(window.location.search).get('edit');
+    if (!editId) return;
+
+    const loanToEdit = accounts.find((account) => account.id === editId && account.type === 'loan');
+    if (!loanToEdit) return;
+
+    handleOpenEdit(loanToEdit);
+    window.history.replaceState({}, '', window.location.pathname);
+  }, [accounts]);
 
   const handleSaveLoan = (e: React.FormEvent) => {
     e.preventDefault();
@@ -881,7 +866,7 @@ export default function LoansPage() {
     }
 
     const newRepayment: Repayment = {
-      id: `repay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: createLocalId('repay', 5),
       loanId: friendRepayingLoan.id,
       amount: amountVal,
       date: repayDate,
@@ -986,10 +971,9 @@ export default function LoansPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 sm:p-6 space-y-5 max-w-5xl mx-auto pb-24">
-        
+      <div className="loans-mobile-ui min-h-full bg-background px-3 py-2 sm:p-6 space-y-2 sm:space-y-5 max-w-5xl mx-auto pb-24">
         {/* 1. PAGE HEADER */}
-        <div className="flex items-center justify-between gap-3 py-1">
+        <div className="hidden md:flex items-center justify-between gap-3 py-1">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
@@ -1020,7 +1004,6 @@ export default function LoansPage() {
               className="p-2 sm:px-3 sm:py-2 rounded-xl bg-secondary/80 hover:bg-secondary text-foreground text-xs font-bold border border-border/80 transition flex items-center gap-1.5 shadow-sm active:scale-95"
               title="Prepayment Simulator"
             >
-              <Sparkles className="w-4 h-4 text-amber-400" />
               <span className="hidden sm:inline">Simulator</span>
             </button>
 
@@ -1035,114 +1018,53 @@ export default function LoansPage() {
         </div>
 
         {/* 2. DEBT OVERVIEW */}
-        <div className="bg-gradient-to-br from-card via-card to-rose-950/20 border border-rose-500/20 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden space-y-3">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/5 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10" />
-          
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs uppercase font-extrabold tracking-wider text-rose-400 flex items-center gap-1.5">
-              <ShieldAlert className="w-4 h-4 text-rose-400" /> Debt Overview
-            </span>
-            <span className="w-8 h-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400">
-              <TrendingDown className="w-4 h-4" />
-            </span>
-          </div>
-
-          <div className="space-y-1">
+        <div className="py-1">
+          <div className="flex items-end justify-between gap-3">
+            <div className="space-y-1">
             <div className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">
               Total Outstanding
             </div>
-            <p className="text-3xl sm:text-4xl font-black text-rose-400 tracking-tight font-mono">
+            <p className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight tabular-nums">
               ₹{stats.totalLiability.toLocaleString('en-IN')}
             </p>
-            <p className="text-2xs text-muted-foreground font-medium pt-0.5">
-              Principal + unpaid interest
-            </p>
-          </div>
-        </div>
-
-        {/* 3. COMPACT FINANCIAL SUMMARY */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Card 1: Remaining Principal */}
-          <div className="bg-card border border-cyan-500/20 rounded-2xl p-4 shadow-sm space-y-1 hover:border-cyan-500/40 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-3xs uppercase font-extrabold tracking-wider text-cyan-400">Remaining Principal</span>
-              <DollarSign className="w-3.5 h-3.5 text-cyan-400" />
             </div>
-            <p className="text-xl font-black text-foreground font-mono">
-              ₹{stats.outstandingPrincipal.toLocaleString('en-IN')}
-            </p>
-            <p className="text-3xs text-muted-foreground">
-              Original: <strong className="text-foreground font-mono">₹{stats.totalOriginalPrincipal.toLocaleString('en-IN')}</strong>
-            </p>
-          </div>
-
-          {/* Card 2: Unpaid Interest */}
-          <div className="bg-card border border-amber-500/20 rounded-2xl p-4 shadow-sm space-y-1 hover:border-amber-500/40 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-3xs uppercase font-extrabold tracking-wider text-amber-400">Unpaid Interest</span>
-              <Percent className="w-3.5 h-3.5 text-amber-400" />
-            </div>
-            <p className="text-xl font-black text-amber-400 font-mono">
-              ₹{stats.accruedInterest.toLocaleString('en-IN')}
-            </p>
-            <p className="text-3xs text-muted-foreground">
-              Accrued interest to date
-            </p>
-          </div>
-
-          {/* Card 3: Total Repaid */}
-          <div className="bg-card border border-emerald-500/20 rounded-2xl p-4 shadow-sm space-y-1 hover:border-emerald-500/40 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-3xs uppercase font-extrabold tracking-wider text-emerald-400">Total Repaid</span>
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            </div>
-            <p className="text-xl font-black text-emerald-400 font-mono">
-              ₹{stats.totalRepaid.toLocaleString('en-IN')}
-            </p>
-            <p className="text-3xs text-muted-foreground">
-              Principal: ₹{stats.totalRepaidPrincipal.toLocaleString('en-IN')}
-            </p>
+            <p className="text-xs text-muted-foreground pb-1">{stats.count} active loans</p>
           </div>
         </div>
 
         {/* 4. DEBT PAYOFF PROGRESS */}
         {stats.totalOriginalPrincipal > 0 && (
-          <div className="bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+          <div className="py-2 border-y border-border/60 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <div>
-                <h3 className="font-extrabold text-foreground tracking-tight flex items-center gap-1.5">
-                  <PieChart className="w-4 h-4 text-primary" /> Debt Payoff
+                <h3 className="font-semibold text-foreground tracking-tight">
+                  Debt Payoff · {stats.overallProgress}%
                 </h3>
                 <p className="text-3xs text-muted-foreground mt-0.5">
-                  ₹{stats.totalRepaidPrincipal.toLocaleString('en-IN')} repaid of ₹{stats.totalOriginalPrincipal.toLocaleString('en-IN')}
+                  ₹{stats.totalRepaidPrincipal.toLocaleString('en-IN')} repaid of ₹
+                  {stats.totalOriginalPrincipal.toLocaleString('en-IN')}
                 </p>
               </div>
-              <span className="text-emerald-400 font-mono font-black text-xs sm:text-sm">
-                {stats.overallProgress}% completed
-              </span>
             </div>
 
             <div className="w-full h-2.5 bg-secondary/80 rounded-full overflow-hidden p-0.5 border border-border/40">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500 shadow-sm"
+                className="h-full bg-[#6f7782] dark:bg-[#9299a3] rounded-full transition-all duration-500"
                 style={{ width: `${Math.max(3, stats.overallProgress)}%` }}
               />
-            </div>
-
-            <div className="flex justify-between text-3xs font-mono text-muted-foreground pt-0.5">
-              <span>Remaining: <strong className="text-foreground">₹{Math.max(0, stats.totalOriginalPrincipal - stats.totalRepaidPrincipal).toLocaleString('en-IN')}</strong></span>
-              <span>Repaid: <strong className="text-emerald-400">₹{stats.totalRepaidPrincipal.toLocaleString('en-IN')}</strong></span>
             </div>
           </div>
         )}
 
         {/* 5 & 7. LOAN ACCOUNT SECTION & SEARCH / SORT / FILTER */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-1.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
             <div className="flex items-center justify-between w-full sm:w-auto">
               <h2 className="text-base font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 Your Loans
-                <span className="text-xs font-bold text-muted-foreground">({loansList.length})</span>
+                <span className="text-xs font-bold text-muted-foreground">
+                  ({loansList.length})
+                </span>
               </h2>
 
               <button
@@ -1154,62 +1076,67 @@ export default function LoansPage() {
             </div>
 
             {/* Segmented Filter Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none">
               <button
                 onClick={() => setFilterCategory('all')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                className={`px-2 py-2 border-b-2 text-xs font-semibold transition whitespace-nowrap ${
                   filterCategory === 'all'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-secondary/60 text-muted-foreground hover:text-foreground'
+                    ? 'border-[#666d76] text-foreground dark:border-[#9aa0a8]'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                All {accounts.filter(a => a.type === 'loan' && (!showArchived ? !a.archived : true)).length}
+                All{' '}
+                {
+                  accounts.filter((a) => a.type === 'loan' && (!showArchived ? !a.archived : true))
+                    .length
+                }
               </button>
 
               <button
                 onClick={() => setFilterCategory('bank')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 ${
+                className={`px-2 py-2 border-b-2 text-xs font-semibold transition whitespace-nowrap ${
                   filterCategory === 'bank'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-secondary/60 text-muted-foreground hover:text-foreground'
+                    ? 'border-[#666d76] text-foreground dark:border-[#9aa0a8]'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Landmark className="w-3.5 h-3.5" /> Bank & EMI
+                Bank & EMI
               </button>
 
               <button
                 onClick={() => setFilterCategory('informal')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 ${
+                className={`px-2 py-2 border-b-2 text-xs font-semibold transition whitespace-nowrap ${
                   filterCategory === 'informal'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-secondary/60 text-muted-foreground hover:text-foreground'
+                    ? 'border-[#666d76] text-foreground dark:border-[#9aa0a8]'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <UserCheck className="w-3.5 h-3.5" /> Informal
+                Informal
               </button>
 
               <button
                 onClick={() => setFilterCategory('paid')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 ${
+                className={`px-2 py-2 border-b-2 text-xs font-semibold transition whitespace-nowrap ${
                   filterCategory === 'paid'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-secondary/60 text-muted-foreground hover:text-foreground'
+                    ? 'border-[#666d76] text-foreground dark:border-[#9aa0a8]'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Paid Off
+                Paid Off
               </button>
             </div>
           </div>
 
           {/* Search, Sort & Controls Bar */}
-          <div className="flex items-center gap-2 bg-card border border-border/80 p-2 rounded-2xl shadow-sm">
+          <div className="grid grid-cols-[1fr_auto] sm:flex items-center gap-1.5 py-1 border-y border-border/60 bg-secondary/35">
             <div className="relative flex-1">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 value={loanSearch}
                 onChange={(e) => setLoanSearch(e.target.value)}
-                className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-secondary/30 text-xs text-foreground focus:outline-none focus:border-primary transition"
+                placeholder="Search loans"
+                className="w-full pl-8 pr-7 py-2 bg-transparent text-xs text-foreground focus:outline-none border-0 transition"
               />
               {loanSearch && (
                 <button
@@ -1224,7 +1151,7 @@ export default function LoansPage() {
             <select
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
-              className="py-1.5 px-2.5 rounded-xl border border-border/60 bg-secondary/40 text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer font-medium"
+              className="hidden sm:block py-2 px-2 bg-transparent border-0 text-xs text-foreground focus:outline-none cursor-pointer font-medium"
             >
               <option value="balance">Sort: Balance</option>
               <option value="dueDate">Sort: Due Date</option>
@@ -1232,11 +1159,13 @@ export default function LoansPage() {
               <option value="name">Sort: Name</option>
             </select>
 
-            <div className="flex items-center gap-0.5 bg-secondary/50 p-0.5 rounded-xl border border-border/40">
+            <div className="hidden sm:flex items-center gap-0.5 bg-secondary/50 p-0.5 rounded-xl border border-border/40">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition ${
-                  viewMode === 'grid' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  viewMode === 'grid'
+                    ? 'bg-card text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Grid View"
               >
@@ -1245,32 +1174,32 @@ export default function LoansPage() {
               <button
                 onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-lg transition ${
-                  viewMode === 'table' ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  viewMode === 'table'
+                    ? 'bg-card text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
                 title="Table View"
               >
                 <List className="w-3.5 h-3.5" />
               </button>
             </div>
-
-            <label className="flex items-center gap-1 text-3xs font-semibold text-muted-foreground cursor-pointer select-none pl-1">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
-                className="rounded border-border text-primary focus:ring-primary h-3.5 w-3.5 bg-secondary"
-              />
-              Archived
-            </label>
+            <button
+              type="button"
+              onClick={() => setShowArchived((current) => !current)}
+              className={`flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium transition ${
+                showArchived ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              aria-pressed={showArchived}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              {showArchived ? 'Archived shown' : 'Filter'}
+            </button>
           </div>
         </div>
 
         {/* 6. LOAN CARDS RENDERING */}
         {loansList.length === 0 ? (
-          <div className="bg-card border border-border rounded-3xl p-12 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto text-muted-foreground">
-              <Landmark className="w-8 h-8 opacity-60" />
-            </div>
+          <div className="py-12 text-center space-y-4">
             <div className="max-w-md mx-auto space-y-1">
               <h3 className="text-base font-bold text-foreground">No loan accounts found</h3>
               <p className="text-xs text-muted-foreground">
@@ -1287,14 +1216,10 @@ export default function LoansPage() {
             </button>
           </div>
         ) : viewMode === 'grid' ? (
-          /* Grid View of Cards */
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 sm:gap-4">
             {loansList.map((acc) => {
               const outstanding = Math.abs(acc.balance);
               const totalLiability = outstanding + (acc.accruedInterest || 0);
-              const original = acc.originalAmount || outstanding;
-              const repaid = acc.totalPrincipalRepaid || Math.max(0, original - outstanding);
-              const progressPct = original > 0 ? Math.min(100, Math.round((repaid / original) * 100)) : 0;
               const isPaidOff = acc.loanStatus === 'paid_off' || totalLiability === 0;
 
               return (
@@ -1304,115 +1229,27 @@ export default function LoansPage() {
                     setActiveLoanDetails(acc);
                     setActiveDetailTab('overview');
                   }}
-                  className="bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200 cursor-pointer group space-y-4 relative overflow-hidden"
+                  className="flex items-center justify-between gap-4 py-3 px-3 sm:p-5 border-b border-border/60 cursor-pointer group bg-secondary hover:bg-secondary/80 transition"
                   title="Click to view all loan details"
                 >
-                  {/* Top Header */}
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-2xl bg-secondary/80 border border-border/60 flex items-center justify-center text-lg shadow-sm group-hover:border-primary/50 transition shrink-0">
-                        {acc.icon || (acc.isInformal ? '🤝' : '🏦')}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-extrabold text-base text-foreground tracking-tight line-clamp-1 group-hover:text-primary transition">
-                            {acc.name}
-                          </h3>
-                          {acc.archived && (
-                            <span className="text-3xs font-black text-rose-400 border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 rounded uppercase">
-                              Archived
-                            </span>
-                          )}
-                        </div>
-                        {acc.lenderName && (
-                          <p className="text-3xs text-muted-foreground font-medium truncate">
-                            {acc.lenderName}
-                          </p>
-                        )}
-                      </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-foreground truncate">{acc.name}</h3>
+                      {acc.archived && (
+                        <span className="text-3xs text-muted-foreground uppercase">Archived</span>
+                      )}
                     </div>
-
-                    <span
-                      className={`text-3xs font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 ${
-                        isPaidOff
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : acc.isInformal
-                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                          : 'bg-primary/10 text-primary border border-primary/20'
-                      }`}
-                    >
-                      {isPaidOff ? 'Paid Off' : acc.loanStatus || 'Active'}
-                    </span>
+                    <p className="text-2xs text-muted-foreground truncate">
+                      {acc.lenderName || (acc.isInformal ? 'Personal loan' : 'Loan account')}
+                      {' · '}
+                      {isPaidOff ? 'Paid off' : 'Active'}
+                    </p>
                   </div>
 
-                  {/* Outstanding Amount */}
-                  <div className="bg-secondary/30 p-3 rounded-xl border border-border/40 space-y-0.5">
-                    <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider block">
-                      Outstanding
-                    </span>
-                    <span className="text-xl font-black text-rose-400 font-mono block">
+                  <div className="shrink-0 text-right">
+                    <span className="block text-sm font-semibold text-foreground tabular-nums">
                       ₹{totalLiability.toLocaleString('en-IN')}
                     </span>
-                  </div>
-
-                  {/* Metrics Row */}
-                  {!acc.isInformal ? (
-                    <div className="grid grid-cols-3 gap-2 text-2xs">
-                      <div>
-                        <span className="text-3xs text-muted-foreground block">EMI</span>
-                        <span className="font-bold font-mono text-foreground">
-                          ₹{(acc.emiAmount || 0).toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-3xs text-muted-foreground block">Rate</span>
-                        <span className="font-bold font-mono text-foreground">
-                          {acc.interestRate ? `${acc.interestRate}%` : '0%'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-3xs text-muted-foreground block">Next EMI</span>
-                        <span className="font-medium text-foreground truncate block">
-                          {acc.dueDate || '—'}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2 text-2xs">
-                      <div>
-                        <span className="text-3xs text-muted-foreground block">Repayment</span>
-                        <span className="font-semibold text-muted-foreground">Flexible</span>
-                      </div>
-                      <div>
-                        <span className="text-3xs text-muted-foreground block">Due Date</span>
-                        <span className="font-medium text-foreground truncate block">
-                          {acc.dueDate || '—'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Remaining tenure if available */}
-                  {acc.tenureMonths && !acc.isInformal && (
-                    <div className="text-3xs text-muted-foreground">
-                      Remaining tenure: <strong className="text-foreground">{acc.remainingTenureMonths !== undefined ? acc.remainingTenureMonths : acc.tenureMonths} months</strong>
-                    </div>
-                  )}
-
-                  {/* Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.max(4, progressPct)}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-3xs font-mono">
-                      <span className="text-emerald-400 font-bold">{progressPct}% repaid</span>
-                      <span className="text-muted-foreground flex items-center gap-1 group-hover:text-primary transition">
-                        View <ChevronRight className="w-3 h-3" />
-                      </span>
-                    </div>
                   </div>
                 </div>
               );
@@ -1452,7 +1289,7 @@ export default function LoansPage() {
                             <div className="font-bold text-foreground flex items-center gap-1.5 group-hover:text-primary transition">
                               {acc.name}
                               {acc.archived && (
-                                <span className="text-4xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1 py-0.2 rounded">
+                                <span className="text-4xs font-medium text-muted-foreground bg-secondary border border-border px-1 py-0.2 rounded">
                                   Archived
                                 </span>
                               )}
@@ -1460,7 +1297,7 @@ export default function LoansPage() {
                           </div>
                         </td>
 
-                        <td className="p-4 font-mono font-extrabold text-rose-400 text-sm">
+                        <td className="p-4 font-mono font-semibold text-foreground text-sm">
                           ₹{totalLiability.toLocaleString('en-IN')}
                         </td>
 
@@ -1468,10 +1305,10 @@ export default function LoansPage() {
                           <span
                             className={`text-3xs font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${
                               isPaidOff
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                ? 'bg-secondary text-foreground border border-border'
                                 : acc.isInformal
-                                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                                : 'bg-primary/10 text-primary border border-primary/20'
+                                  ? 'bg-secondary text-muted-foreground border border-border'
+                                  : 'bg-secondary text-muted-foreground border border-border'
                             }`}
                           >
                             {isPaidOff ? 'Paid Off' : acc.loanStatus || 'Active'}
@@ -1491,7 +1328,6 @@ export default function LoansPage() {
             </div>
           </div>
         )}
-
       </div>
 
       {/* LOAN DETAIL DRAWER / MODAL */}
@@ -1504,7 +1340,6 @@ export default function LoansPage() {
       >
         {activeLoanDetails && (
           <div className="space-y-6">
-            
             {/* Modal Top Tab Switcher */}
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <button
@@ -1546,30 +1381,41 @@ export default function LoansPage() {
             {/* TAB 1: OVERVIEW */}
             {activeDetailTab === 'overview' && (
               <div className="space-y-6">
-                
                 {/* Stats Breakdown Row */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div className="bg-secondary/30 border border-border/50 rounded-2xl p-4 space-y-1">
-                    <span className="text-3xs uppercase font-extrabold text-muted-foreground">Original Principal</span>
+                    <span className="text-3xs uppercase font-extrabold text-muted-foreground">
+                      Original Principal
+                    </span>
                     <p className="text-lg font-black font-mono text-foreground">
                       ₹{(activeLoanDetails.originalAmount || 0).toLocaleString('en-IN')}
                     </p>
                   </div>
                   <div className="bg-secondary/30 border border-border/50 rounded-2xl p-4 space-y-1">
-                    <span className="text-3xs uppercase font-extrabold text-rose-400">Current Outstanding</span>
-                    <p className="text-lg font-black font-mono text-rose-400">
-                      ₹{(Math.abs(activeLoanDetails.balance) + (activeLoanDetails.accruedInterest || 0)).toLocaleString('en-IN')}
+                    <span className="text-3xs uppercase font-semibold text-muted-foreground">
+                      Current Outstanding
+                    </span>
+                    <p className="text-lg font-semibold font-mono text-foreground">
+                      ₹
+                      {(
+                        Math.abs(activeLoanDetails.balance) +
+                        (activeLoanDetails.accruedInterest || 0)
+                      ).toLocaleString('en-IN')}
                     </p>
                   </div>
                   <div className="bg-secondary/30 border border-border/50 rounded-2xl p-4 space-y-1">
-                    <span className="text-3xs uppercase font-extrabold text-emerald-400">Principal Repaid</span>
-                    <p className="text-lg font-black font-mono text-emerald-400">
+                    <span className="text-3xs uppercase font-semibold text-muted-foreground">
+                      Principal Repaid
+                    </span>
+                    <p className="text-lg font-semibold font-mono text-foreground">
                       ₹{(activeLoanDetails.totalPrincipalRepaid || 0).toLocaleString('en-IN')}
                     </p>
                   </div>
                   <div className="bg-secondary/30 border border-border/50 rounded-2xl p-4 space-y-1">
-                    <span className="text-3xs uppercase font-extrabold text-amber-400">Interest Paid</span>
-                    <p className="text-lg font-black font-mono text-amber-400">
+                    <span className="text-3xs uppercase font-semibold text-muted-foreground">
+                      Interest Paid
+                    </span>
+                    <p className="text-lg font-semibold font-mono text-foreground">
                       ₹{(activeLoanDetails.totalInterestPaid || 0).toLocaleString('en-IN')}
                     </p>
                   </div>
@@ -1579,8 +1425,10 @@ export default function LoansPage() {
                 {(() => {
                   const outstanding = Math.abs(activeLoanDetails.balance);
                   const original = activeLoanDetails.originalAmount || outstanding;
-                  const repaid = activeLoanDetails.totalPrincipalRepaid || Math.max(0, original - outstanding);
-                  const progressPct = original > 0 ? Math.min(100, Math.round((repaid / original) * 100)) : 0;
+                  const repaid =
+                    activeLoanDetails.totalPrincipalRepaid || Math.max(0, original - outstanding);
+                  const progressPct =
+                    original > 0 ? Math.min(100, Math.round((repaid / original) * 100)) : 0;
                   return (
                     <div className="space-y-1.5 bg-secondary/30 p-4 rounded-2xl border border-border/50">
                       <div className="flex justify-between items-center text-xs font-bold">
@@ -1611,28 +1459,44 @@ export default function LoansPage() {
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Interest Rate:</span>
                         <span className="font-semibold font-mono text-foreground">
-                          {activeLoanDetails.interestRate ? `${activeLoanDetails.interestRate}%` : '0% Interest-Free'}
+                          {activeLoanDetails.interestRate
+                            ? `${activeLoanDetails.interestRate}%`
+                            : '0% Interest-Free'}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Next Due Date:</span>
-                        <span className="font-medium text-foreground">{activeLoanDetails.dueDate || '—'}</span>
+                        <span className="font-medium text-foreground">
+                          {activeLoanDetails.dueDate || '—'}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Interest Structure:</span>
-                        <span className="font-semibold text-foreground capitalize">{activeLoanDetails.interestType || 'reducing'}</span>
+                        <span className="font-semibold text-foreground capitalize">
+                          {activeLoanDetails.interestType || 'reducing'}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Monthly EMI Amount:</span>
-                        <span className="font-bold font-mono text-foreground">{activeLoanDetails.emiAmount ? `₹${activeLoanDetails.emiAmount.toLocaleString('en-IN')}` : 'Flexible'}</span>
+                        <span className="font-bold font-mono text-foreground">
+                          {activeLoanDetails.emiAmount
+                            ? `₹${activeLoanDetails.emiAmount.toLocaleString('en-IN')}`
+                            : 'Flexible'}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Tenure:</span>
-                        <span className="font-medium text-foreground">{activeLoanDetails.tenureMonths ? `${activeLoanDetails.tenureMonths} Months` : 'N/A'}</span>
+                        <span className="font-medium text-foreground">
+                          {activeLoanDetails.tenureMonths
+                            ? `${activeLoanDetails.tenureMonths} Months`
+                            : 'N/A'}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Start Date:</span>
-                        <span className="font-medium text-foreground">{activeLoanDetails.startDate || '—'}</span>
+                        <span className="font-medium text-foreground">
+                          {activeLoanDetails.startDate || '—'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1644,25 +1508,37 @@ export default function LoansPage() {
                     <div className="space-y-2 text-xs divide-y divide-border/30">
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Lender / Bank:</span>
-                        <span className="font-semibold text-foreground">{activeLoanDetails.lenderName || 'Direct'}</span>
+                        <span className="font-semibold text-foreground">
+                          {activeLoanDetails.lenderName || 'Direct'}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Loan Account Number:</span>
-                        <span className="font-mono text-foreground">{activeLoanDetails.loanAccountNumber || '—'}</span>
+                        <span className="font-mono text-foreground">
+                          {activeLoanDetails.loanAccountNumber || '—'}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Processing Fee:</span>
-                        <span className="font-mono text-foreground">{activeLoanDetails.processingFee ? `₹${activeLoanDetails.processingFee}` : 'None'}</span>
+                        <span className="font-mono text-foreground">
+                          {activeLoanDetails.processingFee
+                            ? `₹${activeLoanDetails.processingFee}`
+                            : 'None'}
+                        </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Linked Bank Account:</span>
                         <span className="font-medium text-foreground">
-                          {paymentAccountOptions.find(a => a.id === activeLoanDetails.linkedPaymentAccountId)?.name || 'Not Linked'}
+                          {paymentAccountOptions.find(
+                            (a) => a.id === activeLoanDetails.linkedPaymentAccountId
+                          )?.name || 'Not Linked'}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground">Notes:</span>
-                        <span className="font-medium text-foreground italic">{activeLoanDetails.notes || 'No notes added'}</span>
+                        <span className="font-medium text-foreground italic">
+                          {activeLoanDetails.notes || 'No notes added'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1742,7 +1618,6 @@ export default function LoansPage() {
                     </button>
                   </div>
                 </div>
-
               </div>
             )}
 
@@ -1750,10 +1625,14 @@ export default function LoansPage() {
             {activeDetailTab === 'schedule' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground font-medium">Full installment amortization projection schedule</span>
-                  <span className="font-mono font-bold text-foreground">{activeLoanSchedule.length} Months Total</span>
+                  <span className="text-muted-foreground font-medium">
+                    Full installment amortization projection schedule
+                  </span>
+                  <span className="font-mono font-bold text-foreground">
+                    {activeLoanSchedule.length} Months Total
+                  </span>
                 </div>
-                
+
                 <div className="border border-border rounded-2xl overflow-hidden max-h-[400px] overflow-y-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-secondary/60 sticky top-0 text-muted-foreground uppercase text-3xs font-extrabold tracking-wider border-b border-border">
@@ -1774,9 +1653,15 @@ export default function LoansPage() {
                           <td className="p-3 font-bold text-muted-foreground">{row.num}</td>
                           <td className="p-3 font-sans text-foreground">{row.dueDateStr}</td>
                           <td className="p-3">₹{row.opening.toLocaleString('en-IN')}</td>
-                          <td className="p-3 font-bold text-foreground">₹{row.emi.toLocaleString('en-IN')}</td>
-                          <td className="p-3 text-emerald-400">₹{row.principal.toLocaleString('en-IN')}</td>
-                          <td className="p-3 text-amber-400">₹{row.interest.toLocaleString('en-IN')}</td>
+                          <td className="p-3 font-bold text-foreground">
+                            ₹{row.emi.toLocaleString('en-IN')}
+                          </td>
+                          <td className="p-3 text-emerald-400">
+                            ₹{row.principal.toLocaleString('en-IN')}
+                          </td>
+                          <td className="p-3 text-amber-400">
+                            ₹{row.interest.toLocaleString('en-IN')}
+                          </td>
                           <td className="p-3">₹{row.closing.toLocaleString('en-IN')}</td>
                           <td className="p-3 font-sans">
                             <span
@@ -1784,8 +1669,8 @@ export default function LoansPage() {
                                 row.status === 'Paid'
                                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                   : row.status === 'Overdue'
-                                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                  : 'bg-secondary text-muted-foreground'
+                                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                    : 'bg-secondary text-muted-foreground'
                               }`}
                             >
                               {row.status}
@@ -1802,7 +1687,6 @@ export default function LoansPage() {
             {/* TAB 3: LEDGER & REPAYMENTS */}
             {activeDetailTab === 'ledger' && (
               <div className="space-y-6">
-                
                 {/* Repayments Recorded List */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
@@ -1818,7 +1702,10 @@ export default function LoansPage() {
                   ) : (
                     <div className="border border-border rounded-2xl overflow-hidden divide-y divide-border/30">
                       {activeLoanRepayments.map((r) => (
-                        <div key={r.id} className="p-3 flex items-center justify-between text-xs hover:bg-secondary/30 transition">
+                        <div
+                          key={r.id}
+                          className="p-3 flex items-center justify-between text-xs hover:bg-secondary/30 transition"
+                        >
                           <div>
                             <div className="font-bold text-foreground font-mono">
                               ₹{r.amount.toLocaleString('en-IN')}
@@ -1877,18 +1764,25 @@ export default function LoansPage() {
                       <tbody className="divide-y divide-border/30 font-mono text-2xs">
                         {activeLoanLedger.map((row, idx) => (
                           <tr key={idx} className="hover:bg-secondary/20 transition">
-                            <td className="p-3 font-sans font-bold text-foreground">{row.period}</td>
+                            <td className="p-3 font-sans font-bold text-foreground">
+                              {row.period}
+                            </td>
                             <td className="p-3">₹{row.openingPrincipal.toLocaleString('en-IN')}</td>
-                            <td className="p-3 text-amber-400">₹{row.interestAccrued.toLocaleString('en-IN')}</td>
-                            <td className="p-3 text-emerald-400">₹{row.paymentsMade.toLocaleString('en-IN')}</td>
-                            <td className="p-3 font-bold text-foreground">₹{row.closingPrincipal.toLocaleString('en-IN')}</td>
+                            <td className="p-3 text-amber-400">
+                              ₹{row.interestAccrued.toLocaleString('en-IN')}
+                            </td>
+                            <td className="p-3 text-emerald-400">
+                              ₹{row.paymentsMade.toLocaleString('en-IN')}
+                            </td>
+                            <td className="p-3 font-bold text-foreground">
+                              ₹{row.closingPrincipal.toLocaleString('en-IN')}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 </div>
-
               </div>
             )}
 
@@ -1901,7 +1795,6 @@ export default function LoansPage() {
                 Close
               </button>
             </div>
-
           </div>
         )}
       </Modal>
@@ -1917,7 +1810,9 @@ export default function LoansPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Select Loan</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">
+                Select Loan
+              </label>
               <select
                 value={simLoanId}
                 onChange={(e) => setSimLoanId(e.target.value)}
@@ -1932,7 +1827,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Prepayment Amount (₹)</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">
+                Prepayment Amount (₹)
+              </label>
               <input
                 type="number"
                 value={simPrepayAmount}
@@ -1944,14 +1841,17 @@ export default function LoansPage() {
 
           {simResults && (
             <div className="space-y-4">
-              <h4 className="text-xs font-black uppercase text-primary tracking-wider">Comparison Scenarios</h4>
-              
+              <h4 className="text-xs font-black uppercase text-primary tracking-wider">
+                Comparison Scenarios
+              </h4>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
                 {/* Scenario A: Reduce Tenure */}
                 <div className="bg-card border border-emerald-500/30 rounded-2xl p-4 space-y-3 relative overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-emerald-400 uppercase">Option 1: Reduce Tenure</span>
+                    <span className="text-xs font-extrabold text-emerald-400 uppercase">
+                      Option 1: Reduce Tenure
+                    </span>
                     <span className="px-2 py-0.5 rounded-full text-4xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       Recommended
                     </span>
@@ -1961,34 +1861,46 @@ export default function LoansPage() {
                       Save {simResults.monthsSaved} Months
                     </div>
                     <p className="text-2xs text-muted-foreground">
-                      New Tenure: <strong className="text-foreground">{simResults.newTenureOption} Months</strong> (Down from {simResults.currentTenure})
+                      New Tenure:{' '}
+                      <strong className="text-foreground">
+                        {simResults.newTenureOption} Months
+                      </strong>{' '}
+                      (Down from {simResults.currentTenure})
                     </p>
                   </div>
                   <div className="pt-2 border-t border-border/40 text-xs">
                     <span className="text-muted-foreground">Est. Interest Savings: </span>
-                    <span className="font-mono font-bold text-emerald-400">₹{simResults.interestSavedTenure.toLocaleString('en-IN')}</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      ₹{simResults.interestSavedTenure.toLocaleString('en-IN')}
+                    </span>
                   </div>
                 </div>
 
                 {/* Scenario B: Reduce EMI */}
                 <div className="bg-card border border-primary/30 rounded-2xl p-4 space-y-3 relative overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-primary uppercase">Option 2: Reduce Monthly EMI</span>
+                    <span className="text-xs font-extrabold text-primary uppercase">
+                      Option 2: Reduce Monthly EMI
+                    </span>
                   </div>
                   <div className="space-y-1">
                     <div className="text-2xl font-black text-primary font-mono">
                       ₹{simResults.newEmiOption.toLocaleString('en-IN')}/mo
                     </div>
                     <p className="text-2xs text-muted-foreground">
-                      EMI Drop: <strong className="text-foreground">₹{simResults.emiReduction.toLocaleString('en-IN')}/month lower</strong>
+                      EMI Drop:{' '}
+                      <strong className="text-foreground">
+                        ₹{simResults.emiReduction.toLocaleString('en-IN')}/month lower
+                      </strong>
                     </p>
                   </div>
                   <div className="pt-2 border-t border-border/40 text-xs">
                     <span className="text-muted-foreground">Est. Interest Savings: </span>
-                    <span className="font-mono font-bold text-primary">₹{simResults.interestSavedEmi.toLocaleString('en-IN')}</span>
+                    <span className="font-mono font-bold text-primary">
+                      ₹{simResults.interestSavedEmi.toLocaleString('en-IN')}
+                    </span>
                   </div>
                 </div>
-
               </div>
             </div>
           )}
@@ -2013,9 +1925,10 @@ export default function LoansPage() {
       >
         <form onSubmit={handleSaveLoan} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Loan Name *</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">
+                Loan Name *
+              </label>
               <input
                 type="text"
                 required
@@ -2026,7 +1939,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Lender / Bank Name</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">
+                Lender / Bank Name
+              </label>
               <input
                 type="text"
                 value={accountForm.lenderName}
@@ -2036,7 +1951,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Original Loan Amount (₹) *</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">
+                Original Loan Amount (₹) *
+              </label>
               <input
                 type="number"
                 required
@@ -2047,7 +1964,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Current Outstanding Balance (₹) *</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">
+                Current Outstanding Balance (₹) *
+              </label>
               <input
                 type="number"
                 required
@@ -2058,7 +1977,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Annual Interest Rate (%)</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">
+                Annual Interest Rate (%)
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -2069,7 +1990,9 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Loan Start Date *</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">
+                Loan Start Date *
+              </label>
               <input
                 type="date"
                 required
@@ -2078,7 +2001,6 @@ export default function LoansPage() {
                 className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary"
               />
             </div>
-
           </div>
 
           <div className="pt-2 border-t border-border flex items-center gap-2">
@@ -2089,7 +2011,10 @@ export default function LoansPage() {
               onChange={(e) => setAccountForm({ ...accountForm, isInformal: e.target.checked })}
               className="rounded border-border text-primary h-4 w-4"
             />
-            <label htmlFor="isInformal" className="text-xs font-semibold text-foreground cursor-pointer">
+            <label
+              htmlFor="isInformal"
+              className="text-xs font-semibold text-foreground cursor-pointer"
+            >
               This is an informal / personal loan from a friend or relative (Flexible EMI)
             </label>
           </div>
@@ -2097,17 +2022,27 @@ export default function LoansPage() {
           {!accountForm.isInformal && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-secondary/30 p-4 rounded-2xl border border-border/50">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-muted-foreground uppercase">Tenure Months</label>
+                <label className="text-xs font-bold text-muted-foreground uppercase">
+                  Tenure Months
+                </label>
                 <input
                   type="number"
                   value={accountForm.tenureMonths}
-                  onChange={(e) => setAccountForm({ ...accountForm, tenureMonths: e.target.value, tenureType: 'months' })}
+                  onChange={(e) =>
+                    setAccountForm({
+                      ...accountForm,
+                      tenureMonths: e.target.value,
+                      tenureType: 'months',
+                    })
+                  }
                   className="w-full p-2.5 rounded-xl border border-border bg-card text-xs text-foreground focus:outline-none focus:border-primary font-mono"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-muted-foreground uppercase">Monthly EMI Amount (₹)</label>
+                <label className="text-xs font-bold text-muted-foreground uppercase">
+                  Monthly EMI Amount (₹)
+                </label>
                 <input
                   type="number"
                   value={accountForm.emiAmount}
@@ -2125,9 +2060,21 @@ export default function LoansPage() {
                 Calculated EMI Estimate
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono">
-                <div>EMI: <strong className="text-foreground">₹{emiPreview.emi.toLocaleString('en-IN')}</strong></div>
-                <div>Total Interest: <strong className="text-amber-400">₹{emiPreview.totalInterest.toLocaleString('en-IN')}</strong></div>
-                <div>End Date: <strong className="text-foreground">{emiPreview.endDate}</strong></div>
+                <div>
+                  EMI:{' '}
+                  <strong className="text-foreground">
+                    ₹{emiPreview.emi.toLocaleString('en-IN')}
+                  </strong>
+                </div>
+                <div>
+                  Total Interest:{' '}
+                  <strong className="text-amber-400">
+                    ₹{emiPreview.totalInterest.toLocaleString('en-IN')}
+                  </strong>
+                </div>
+                <div>
+                  End Date: <strong className="text-foreground">{emiPreview.endDate}</strong>
+                </div>
               </div>
             </div>
           )}
@@ -2159,7 +2106,9 @@ export default function LoansPage() {
       >
         <form onSubmit={handlePayEmi} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Payment Date</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Payment Date
+            </label>
             <input
               type="date"
               required
@@ -2170,7 +2119,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">EMI Repayment Amount (₹)</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              EMI Repayment Amount (₹)
+            </label>
             <input
               type="number"
               required
@@ -2181,7 +2132,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Payment From Bank Account *</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Payment From Bank Account *
+            </label>
             <select
               required
               value={payEmiAccountId}
@@ -2224,7 +2177,9 @@ export default function LoansPage() {
       >
         <form onSubmit={handlePrepayment} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Prepayment Date</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Prepayment Date
+            </label>
             <input
               type="date"
               required
@@ -2235,7 +2190,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Prepayment Amount (₹)</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Prepayment Amount (₹)
+            </label>
             <input
               type="number"
               required
@@ -2246,7 +2203,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Payment Strategy</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Payment Strategy
+            </label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -2274,7 +2233,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Payment From Bank Account *</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Payment From Bank Account *
+            </label>
             <select
               required
               value={prepayAccountId}
@@ -2291,7 +2252,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Notes / Remarks</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Notes / Remarks
+            </label>
             <input
               type="text"
               value={prepayNotes}
@@ -2327,7 +2290,9 @@ export default function LoansPage() {
       >
         <form onSubmit={handleFriendRepayment} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Repayment Date *</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Repayment Date *
+            </label>
             <input
               type="date"
               required
@@ -2338,7 +2303,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Amount Paid (₹) *</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Amount Paid (₹) *
+            </label>
             <input
               type="number"
               required
@@ -2349,7 +2316,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Paid From Account *</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Paid From Account *
+            </label>
             <select
               required
               value={repayAccountId}
@@ -2412,7 +2381,9 @@ export default function LoansPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Amount (₹) *</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">
+              Amount (₹) *
+            </label>
             <input
               type="number"
               required
@@ -2458,7 +2429,10 @@ export default function LoansPage() {
       >
         <div className="space-y-4">
           <p className="text-xs text-muted-foreground">
-            Are you sure you want to delete repayment of <strong className="text-foreground font-mono">₹{deletingRepayment?.amount}</strong> dated {deletingRepayment?.date}? The loan balance and interest ledger will be automatically recalculated.
+            Are you sure you want to delete repayment of{' '}
+            <strong className="text-foreground font-mono">₹{deletingRepayment?.amount}</strong>{' '}
+            dated {deletingRepayment?.date}? The loan balance and interest ledger will be
+            automatically recalculated.
           </p>
           <div className="pt-4 border-t border-border flex justify-end gap-3">
             <button
@@ -2485,7 +2459,9 @@ export default function LoansPage() {
       >
         <div className="space-y-4">
           <p className="text-xs text-muted-foreground">
-            Are you sure you want to delete loan account <strong className="text-foreground">{deleteAccountTarget?.name}</strong>? This action cannot be undone.
+            Are you sure you want to delete loan account{' '}
+            <strong className="text-foreground">{deleteAccountTarget?.name}</strong>? This action
+            cannot be undone.
           </p>
           <div className="pt-4 border-t border-border flex justify-end gap-3">
             <button
@@ -2503,7 +2479,6 @@ export default function LoansPage() {
           </div>
         </div>
       </Modal>
-
     </AppLayout>
   );
 }

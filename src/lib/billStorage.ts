@@ -1,6 +1,16 @@
 'use client';
 
-import { saveTransaction, getAccounts, updateAccount, getCategories, getTransactions, calculateCreditCardBalances } from '@/lib/storage';
+import { safeGetItem, safeSetItem } from './browserStorage';
+import { createLocalId } from './ids';
+
+import {
+  saveTransaction,
+  getAccounts,
+  updateAccount,
+  getCategories,
+  getTransactions,
+  calculateCreditCardBalances,
+} from '@/lib/storage';
 
 export type BillType =
   | 'Credit Card'
@@ -92,6 +102,21 @@ const BILLS_STORAGE_KEY = 'wealthiq_bills_data';
 const BILL_HISTORY_STORAGE_KEY = 'wealthiq_bills_history';
 const BILL_SETTINGS_STORAGE_KEY = 'wealthiq_bills_settings';
 
+export function formatLocalDate(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function shiftMonthsClamped(date: Date, months: number): Date {
+  const originalDay = date.getDate();
+  const target = new Date(date.getFullYear(), date.getMonth() + months, 1);
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  target.setDate(Math.min(originalDay, lastDay));
+  return target;
+}
+
 export const DEFAULT_BILL_SETTINGS: BillSettings = {
   defaultReminderTime: '09:00',
   defaultReminders: {
@@ -136,7 +161,7 @@ export function syncBillsFromUserAccounts(): void {
         const cc = calculateCreditCardBalances(acc, allTransactions);
         const payableAmount = cc.payable > 0 ? cc.payable : Math.abs(acc.balance || 0);
 
-        const todayYearMonth = new Date().toISOString().slice(0, 7);
+        const todayYearMonth = formatLocalDate(new Date()).slice(0, 7);
         const billingDay = parseInt(String(acc.billingCycle || '4'), 10) || 4;
 
         let dueDayVal = 18;
@@ -148,15 +173,18 @@ export function syncBillsFromUserAccounts(): void {
             dueDayVal = parseInt(String(acc.dueDate), 10) || 18;
           }
         }
-        const dueDateStr = acc.dueDate && acc.dueDate.includes('-')
-          ? acc.dueDate
-          : `${todayYearMonth}-${String(dueDayVal).padStart(2, '0')}`;
+        const dueDateStr =
+          acc.dueDate && acc.dueDate.includes('-')
+            ? acc.dueDate
+            : `${todayYearMonth}-${String(dueDayVal).padStart(2, '0')}`;
 
         const existingIndex = existingBills.findIndex(
           (b) =>
-            b.linkedAccountId === acc.id ||
-            b.name.toLowerCase() === acc.name.toLowerCase() ||
-            b.name.toLowerCase() === `${acc.name} payment`.toLowerCase()
+            b.status !== 'paid' &&
+            b.status !== 'skipped' &&
+            (b.linkedAccountId === acc.id ||
+              b.name.toLowerCase() === acc.name.toLowerCase() ||
+              b.name.toLowerCase() === `${acc.name} payment`.toLowerCase())
         );
 
         if (payableAmount <= 0) {
@@ -201,7 +229,7 @@ export function syncBillsFromUserAccounts(): void {
             name: acc.name,
             amount: payableAmount,
             minimumDue: acc.minPayment || Math.round(payableAmount * 0.1),
-            dueDate: dueDateStr,
+            dueDate: current.dueDate || dueDateStr,
             dayOfMonth: billingDay,
             linkedAccountId: acc.id,
           };
@@ -210,22 +238,42 @@ export function syncBillsFromUserAccounts(): void {
             updated = true;
           }
         }
-      } else if (acc.type === 'loan' && acc.loanStatus !== 'paid_off' && acc.loanStatus !== 'closed') {
-        const alreadyHas = existingBills.some(
-          (b) => b.linkedLoanId === acc.id || b.name.toLowerCase() === `${acc.name} emi`.toLowerCase()
+      } else if (
+        acc.type === 'loan' &&
+        acc.loanStatus !== 'paid_off' &&
+        acc.loanStatus !== 'closed'
+      ) {
+        const existingLoanIndex = existingBills.findIndex(
+          (b) =>
+            b.status !== 'paid' &&
+            b.status !== 'skipped' &&
+            (b.linkedLoanId === acc.id ||
+              b.name.toLowerCase() === `${acc.name} emi`.toLowerCase())
         );
-        if (!alreadyHas) {
+        const emiAmount = Number(acc.emiAmount) || 0;
+
+        if (emiAmount <= 0) {
+          if (
+            existingLoanIndex !== -1 &&
+            existingBills[existingLoanIndex].id.startsWith('bill_loan_')
+          ) {
+            existingBills.splice(existingLoanIndex, 1);
+            updated = true;
+          }
+        } else if (existingLoanIndex === -1) {
           const dueDay = acc.emiDueDay || 5;
-          const todayYearMonth = new Date().toISOString().slice(0, 7);
+          const todayYearMonth = formatLocalDate(new Date()).slice(0, 7);
           const dayVal = String(dueDay).padStart(2, '0');
           const dueDate =
-            acc.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(acc.dueDate) ? acc.dueDate : `${todayYearMonth}-${dayVal}`;
+            acc.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(acc.dueDate)
+              ? acc.dueDate
+              : `${todayYearMonth}-${dayVal}`;
 
           const newBill: BillPaymentReminder = {
             id: `bill_loan_${acc.id}`,
             name: `${acc.name} EMI`,
             type: 'EMI / Loan',
-            amount: acc.emiAmount || 0,
+            amount: emiAmount,
             amountType: 'fixed',
             dueDate,
             dueTime: '09:00',
@@ -247,6 +295,20 @@ export function syncBillsFromUserAccounts(): void {
           newBill.status = calculateBillStatus(newBill);
           existingBills.push(newBill);
           updated = true;
+        } else {
+          const current = existingBills[existingLoanIndex];
+          const updatedBill: BillPaymentReminder = {
+            ...current,
+            name: `${acc.name} EMI`,
+            amount: emiAmount,
+            accountId: acc.linkedPaymentAccountId || current.accountId,
+            linkedLoanId: acc.id,
+            dayOfMonth: acc.emiDueDay || current.dayOfMonth || 5,
+          };
+          if (JSON.stringify(current) !== JSON.stringify(updatedBill)) {
+            existingBills[existingLoanIndex] = updatedBill;
+            updated = true;
+          }
         }
       }
     });
@@ -256,24 +318,6 @@ export function syncBillsFromUserAccounts(): void {
     }
   } catch (err) {
     console.error('Failed to sync bills from accounts', err);
-  }
-}
-
-function safeGetItem(key: string): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeSetItem(key: string, value: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, value);
-  } catch (e) {
-    console.error('Failed to set localStorage item', key, e);
   }
 }
 
@@ -297,16 +341,30 @@ export function checkIsBillPaidFromTransactions(bill: BillPaymentReminder): bool
         const descLower = (tx.description || '').toLowerCase();
         const notesLower = (tx.notes || '').toLowerCase();
         const catLower = (tx.category || '').toLowerCase();
-        const isCardAcc = tx.accountId === cardId || tx.toAccountId === cardId;
+        const isTransferToCard =
+          tx.type === 'transfer' &&
+          (tx.toAccount === cardId || tx.toAccountId === cardId);
         const isMatch =
           descLower.includes(billNameLower) ||
           notesLower.includes(billNameLower) ||
-          catLower.includes('credit card');
+          catLower.includes('credit card') ||
+          descLower.includes('card payment');
+        const explicitlyDescribesPayment =
+          descLower.includes('payment') ||
+          descLower.includes('paid') ||
+          notesLower.includes('payment') ||
+          notesLower.includes('paid');
+        const isLegacyExpensePayment =
+          tx.type === 'expense' && isMatch && explicitlyDescribesPayment;
 
-        return (isCardAcc || isMatch) && (tx.type === 'expense' || tx.type === 'transfer');
+        return isTransferToCard || isLegacyExpensePayment;
       });
 
       if (hasPaymentTx) return true;
+
+      // Auto-generated card reminders must be recalculated from transactions;
+      // do not preserve a stale paid status caused by earlier detection rules.
+      return !bill.id.startsWith('bill_cc_') && bill.status === 'paid';
     }
 
     // 2. EMI / Loan Bill
@@ -318,7 +376,11 @@ export function checkIsBillPaidFromTransactions(bill: BillPaymentReminder): bool
         const descLower = (tx.description || '').toLowerCase();
         const notesLower = (tx.notes || '').toLowerCase();
         const catLower = (tx.category || '').toLowerCase();
-        const isLoanAcc = tx.accountId === loanId || tx.toAccountId === loanId;
+        const isLoanAcc =
+          tx.account === loanId ||
+          tx.toAccount === loanId ||
+          tx.accountId === loanId ||
+          tx.toAccountId === loanId;
         const isEmiMatch =
           descLower.includes(billNameLower) ||
           notesLower.includes(billNameLower) ||
@@ -339,10 +401,16 @@ export function checkIsBillPaidFromTransactions(bill: BillPaymentReminder): bool
       const catLower = (tx.category || '').toLowerCase();
 
       const isNameMatch = descLower.includes(billNameLower) || notesLower.includes(billNameLower);
-      const isTypeMatch = catLower.includes(bill.type.toLowerCase()) || bill.type.toLowerCase().includes(catLower);
-      const amountMatch = Math.abs(Number(tx.amount || 0) - Number(bill.amount || 0)) <= Math.max(20, Number(bill.amount || 0) * 0.1);
+      const isTypeMatch =
+        catLower.includes(bill.type.toLowerCase()) || bill.type.toLowerCase().includes(catLower);
+      const amountMatch =
+        Math.abs(Number(tx.amount || 0) - Number(bill.amount || 0)) <=
+        Math.max(20, Number(bill.amount || 0) * 0.1);
 
-      return (isNameMatch || (isTypeMatch && amountMatch)) && (tx.type === 'expense' || tx.type === 'transfer');
+      return (
+        (isNameMatch || (isTypeMatch && amountMatch)) &&
+        (tx.type === 'expense' || tx.type === 'transfer')
+      );
     });
 
     if (hasBillTx) return true;
@@ -361,7 +429,7 @@ export function calculateBillStatus(bill: BillPaymentReminder): BillStatus {
     return 'skipped';
   }
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = formatLocalDate(new Date());
   if (bill.dueDate < todayStr) {
     return 'overdue';
   }
@@ -386,15 +454,14 @@ export function getStoredBills(): BillPaymentReminder[] {
   if (data) {
     try {
       const parsed: BillPaymentReminder[] = JSON.parse(data);
-      // Purge legacy sample bills, clear notes/suffixes, and exclude 0-spending credit card bills
+      // Purge legacy sample records by ID, clear notes/suffixes, and exclude
+      // zero-value bills. Real accounts may legitimately use the same names
+      // as the old samples, so names must not be used for deletion.
       bills = parsed
         .filter(
           (b: BillPaymentReminder) =>
             !b.id.startsWith('bill_initial_') &&
-            b.name !== 'SBI Credit Card' &&
-            b.name !== 'Education Loan EMI' &&
-            b.name !== 'Fiber Internet Bill' &&
-            !(b.type === 'Credit Card' && Number(b.amount || 0) <= 0)
+            Number(b.amount || 0) > 0
         )
         .map((b: BillPaymentReminder) => {
           let updatedName = b.name;
@@ -438,12 +505,14 @@ export function saveStoredBills(bills: BillPaymentReminder[]): void {
   }
 }
 
-export function addBill(billData: Omit<BillPaymentReminder, 'id' | 'createdAt' | 'updatedAt' | 'status'>): BillPaymentReminder {
+export function addBill(
+  billData: Omit<BillPaymentReminder, 'id' | 'createdAt' | 'updatedAt' | 'status'>
+): BillPaymentReminder {
   const bills = getStoredBills();
   const now = new Date().toISOString();
   const tempBill: BillPaymentReminder = {
     ...billData,
-    id: 'bill_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    id: createLocalId('bill', 5, '_'),
     status: 'upcoming',
     createdAt: now,
     updatedAt: now,
@@ -454,7 +523,10 @@ export function addBill(billData: Omit<BillPaymentReminder, 'id' | 'createdAt' |
   return tempBill;
 }
 
-export function updateBill(id: string, updates: Partial<BillPaymentReminder>): BillPaymentReminder | null {
+export function updateBill(
+  id: string,
+  updates: Partial<BillPaymentReminder>
+): BillPaymentReminder | null {
   const bills = getStoredBills();
   const index = bills.findIndex((b) => b.id === id);
   if (index === -1) return null;
@@ -569,7 +641,9 @@ export function getBillHistory(): BillPaymentHistoryEntry[] {
             else if (catLower.includes('insurance')) billType = 'Insurance';
             else if (catLower.includes('subscription')) billType = 'Subscription';
 
-            const name = desc || (isCC ? 'Credit Card Payment' : isEMI ? 'Loan EMI Payment' : `${cat} Payment`);
+            const name =
+              desc ||
+              (isCC ? 'Credit Card Payment' : isEMI ? 'Loan EMI Payment' : `${cat} Payment`);
 
             // Avoid duplicates if already in manual entries
             const exists = manualEntries.some(
@@ -583,7 +657,7 @@ export function getBillHistory(): BillPaymentHistoryEntry[] {
                 billName: name,
                 type: billType,
                 amount: Number(tx.amount || 0),
-                paidDate: tx.date || new Date().toISOString().split('T')[0],
+                paidDate: tx.date ? tx.date.slice(0, 10) : formatLocalDate(),
                 status: 'paid',
                 transactionId: tx.id,
                 notes: notes || `Verified from ${tx.type}`,
@@ -605,11 +679,13 @@ export function getBillHistory(): BillPaymentHistoryEntry[] {
   return combined;
 }
 
-export function addBillHistoryEntry(entry: Omit<BillPaymentHistoryEntry, 'id' | 'createdAt'>): BillPaymentHistoryEntry {
+export function addBillHistoryEntry(
+  entry: Omit<BillPaymentHistoryEntry, 'id' | 'createdAt'>
+): BillPaymentHistoryEntry {
   const history = getBillHistory();
   const newEntry: BillPaymentHistoryEntry = {
     ...entry,
-    id: 'hist_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    id: createLocalId('hist', 4, '_'),
     createdAt: new Date().toISOString(),
   };
   const updated = [newEntry, ...history].slice(0, 200);
@@ -620,26 +696,29 @@ export function addBillHistoryEntry(entry: Omit<BillPaymentHistoryEntry, 'id' | 
 // Compute Next Occurrence Date for recurring bills
 export function computeNextDueDate(currentDueDateStr: string, recurrence: BillRecurrence): string {
   const d = new Date(currentDueDateStr + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return currentDueDateStr;
+
+  let nextDate = new Date(d);
   switch (recurrence) {
     case 'daily':
-      d.setDate(d.getDate() + 1);
+      nextDate.setDate(nextDate.getDate() + 1);
       break;
     case 'weekly':
-      d.setDate(d.getDate() + 7);
+      nextDate.setDate(nextDate.getDate() + 7);
       break;
     case 'monthly':
-      d.setMonth(d.getMonth() + 1);
+      nextDate = shiftMonthsClamped(d, 1);
       break;
     case 'quarterly':
-      d.setMonth(d.getMonth() + 3);
+      nextDate = shiftMonthsClamped(d, 3);
       break;
     case 'yearly':
-      d.setFullYear(d.getFullYear() + 1);
+      nextDate = shiftMonthsClamped(d, 12);
       break;
     default:
       return currentDueDateStr;
   }
-  return d.toISOString().split('T')[0];
+  return formatLocalDate(nextDate);
 }
 
 // Mark Bill as Paid
@@ -656,6 +735,14 @@ export function markBillAsPaid(params: {
     throw new Error('Bill not found');
   }
 
+  const paymentAmount = Number(params.amount);
+  if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+    throw new Error('Payment amount must be greater than zero');
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(params.paymentDate)) {
+    throw new Error('A valid payment date is required');
+  }
+
   // Prevent duplicate payment processing if already paid
   if (bill.linkedTransactionId) {
     return { updatedBill: bill, createdTransactionId: bill.linkedTransactionId };
@@ -668,10 +755,10 @@ export function markBillAsPaid(params: {
     const accounts = getAccounts();
     const loanAcc = accounts.find((a) => a.id === bill.linkedLoanId);
     if (loanAcc) {
-      const pmtAmount = Number(params.amount) || bill.amount;
+      const pmtAmount = paymentAmount;
       const interestRate = loanAcc.interestRate || 10;
       const accrued = loanAcc.accruedInterest || 0;
-      
+
       const interestComponent = Number(Math.min(pmtAmount, accrued).toFixed(2));
       const principalComponent = Number(Math.max(0, pmtAmount - interestComponent).toFixed(2));
 
@@ -688,8 +775,12 @@ export function markBillAsPaid(params: {
       createdTxnId = txn.id;
 
       // Update Loan details
-      const newPrincipalRepaid = Number(((loanAcc.totalPrincipalRepaid || 0) + principalComponent).toFixed(2));
-      const newInterestPaid = Number(((loanAcc.totalInterestPaid || 0) + interestComponent).toFixed(2));
+      const newPrincipalRepaid = Number(
+        ((loanAcc.totalPrincipalRepaid || 0) + principalComponent).toFixed(2)
+      );
+      const newInterestPaid = Number(
+        ((loanAcc.totalInterestPaid || 0) + interestComponent).toFixed(2)
+      );
       const newAmountPaid = Number(((loanAcc.totalAmountPaid || 0) + pmtAmount).toFixed(2));
 
       updateAccount(loanAcc.id, {
@@ -698,10 +789,22 @@ export function markBillAsPaid(params: {
         totalAmountPaid: newAmountPaid,
       } as any);
     }
+  } else if (bill.type === 'Credit Card' && bill.linkedAccountId) {
+    const txn = saveTransaction({
+      amount: paymentAmount,
+      type: 'transfer',
+      account: params.accountId || bill.accountId || 'acc-cash',
+      toAccount: bill.linkedAccountId,
+      category: 'Credit Card',
+      description: bill.name,
+      date: params.paymentDate,
+      notes: params.notes || `Payment for ${bill.name}`,
+    });
+    createdTxnId = txn.id;
   } else {
     // Standard Expense Transaction Creation
     const txn = saveTransaction({
-      amount: Number(params.amount) || bill.amount,
+      amount: paymentAmount,
       type: 'expense',
       account: params.accountId || 'acc-cash',
       category: bill.categoryId || (bill.type === 'Credit Card' ? 'Credit Card' : bill.type),
@@ -717,7 +820,7 @@ export function markBillAsPaid(params: {
     billId: bill.id,
     billName: bill.name,
     type: bill.type,
-    amount: Number(params.amount) || bill.amount,
+    amount: paymentAmount,
     paidFromAccountId: params.accountId,
     paidDate: params.paymentDate,
     status: 'paid',
@@ -728,7 +831,7 @@ export function markBillAsPaid(params: {
   // Mark current bill as Paid
   updateBill(bill.id, {
     status: 'paid',
-    amount: Number(params.amount) || bill.amount,
+    amount: paymentAmount,
     linkedTransactionId: createdTxnId,
   });
 
@@ -774,7 +877,7 @@ export function skipBillOccurrence(billId: string): BillPaymentReminder {
     billName: bill.name,
     type: bill.type,
     amount: bill.amount,
-    paidDate: new Date().toISOString().split('T')[0],
+    paidDate: formatLocalDate(),
     status: 'skipped',
     notes: 'Skipped occurrence',
   });

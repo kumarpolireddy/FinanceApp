@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
+import { createLocalId } from '@/lib/ids';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
 import {
   getSplitExpenses,
   getSplitPayments,
+  ensureSplitRepaymentTransactions,
   recordSplitRepayment,
   getAccounts,
   getTransactions,
@@ -77,6 +79,7 @@ export default function SplitExpensesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   const loadData = () => {
+    ensureSplitRepaymentTransactions();
     setSplits(getSplitExpenses());
     setPayments(getSplitPayments());
     setTxns(getTransactions(true));
@@ -101,7 +104,15 @@ export default function SplitExpensesPage() {
     if (expenseCatNames.length > 0) {
       return Array.from(new Set(expenseCatNames));
     }
-    return ['Food & Dining', 'Shopping', 'Utilities', 'Entertainment', 'Travel', 'Health & Fitness', 'General'];
+    return [
+      'Food & Dining',
+      'Shopping',
+      'Utilities',
+      'Entertainment',
+      'Travel',
+      'Health & Fitness',
+      'General',
+    ];
   }, [categories]);
 
   useEffect(() => {
@@ -124,8 +135,13 @@ export default function SplitExpensesPage() {
         pending: equalShare,
       }));
       const toReceive = Number((totalPaid - myShare).toFixed(2));
-      const totalShares = Number((myShare + computedMembers.reduce((sum, m) => sum + m.share, 0)).toFixed(2));
-      const isValid = Math.abs(totalPaid - totalShares) < 0.05 && totalPaid > 0 && newSplitMembers.every((m) => m.name.trim().length > 0);
+      const totalShares = Number(
+        (myShare + computedMembers.reduce((sum, m) => sum + m.share, 0)).toFixed(2)
+      );
+      const isValid =
+        Math.abs(totalPaid - totalShares) < 0.05 &&
+        totalPaid > 0 &&
+        newSplitMembers.every((m) => m.name.trim().length > 0);
 
       return { totalPaid, myShare, toReceive, totalShares, members: computedMembers, isValid };
     } else {
@@ -136,7 +152,10 @@ export default function SplitExpensesPage() {
       });
       const toReceive = Number(computedMembers.reduce((sum, m) => sum + m.share, 0).toFixed(2));
       const totalShares = Number((myShare + toReceive).toFixed(2));
-      const isValid = Math.abs(totalPaid - totalShares) < 0.05 && totalPaid > 0 && newSplitMembers.every((m) => m.name.trim().length > 0);
+      const isValid =
+        Math.abs(totalPaid - totalShares) < 0.05 &&
+        totalPaid > 0 &&
+        newSplitMembers.every((m) => m.name.trim().length > 0);
 
       return { totalPaid, myShare, toReceive, totalShares, members: computedMembers, isValid };
     }
@@ -169,12 +188,14 @@ export default function SplitExpensesPage() {
       return;
     }
     if (!newSplitCalculations.isValid) {
-      toast.error(`Split amounts total ₹${newSplitCalculations.totalShares.toLocaleString('en-IN')}. Must equal ₹${totalPaid.toLocaleString('en-IN')}.`);
+      toast.error(
+        `Split amounts total ₹${newSplitCalculations.totalShares.toLocaleString('en-IN')}. Must equal ₹${totalPaid.toLocaleString('en-IN')}.`
+      );
       return;
     }
 
     const splitDetails: SplitDetails = {
-      id: `split-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: createLocalId('split', 4),
       transactionId: '',
       name: newSplitName.trim() || undefined,
       totalAmount: totalPaid,
@@ -230,8 +251,10 @@ export default function SplitExpensesPage() {
     setEditSplitName(s.name || linkedTxn?.description || '');
     setEditTotalAmount(String(s.totalAmount));
     setEditCategory(linkedTxn?.category || 'Food & Dining');
-    setEditAccount(linkedTxn?.account || (accounts[0]?.id || ''));
-    setEditDate(linkedTxn?.date ? linkedTxn.date.slice(0, 10) : new Date().toISOString().slice(0, 10));
+    setEditAccount(linkedTxn?.account || accounts[0]?.id || '');
+    setEditDate(
+      linkedTxn?.date ? linkedTxn.date.slice(0, 10) : new Date().toISOString().slice(0, 10)
+    );
     setEditSplitMethod(s.splitMethod || 'equal');
     setEditSplitMembers(s.members.map((m) => ({ name: m.name, share: String(m.share) })));
     setEditMyShareCustom(String(s.myShare));
@@ -241,7 +264,11 @@ export default function SplitExpensesPage() {
 
   const handleDeleteSplit = (s: SplitDetails) => {
     const title = s.name || 'this split expense';
-    if (confirm(`Are you sure you want to delete "${title}"? This will reverse its transaction and account balance adjustment.`)) {
+    if (
+      confirm(
+        `Are you sure you want to delete "${title}"? This will reverse its transaction and account balance adjustment.`
+      )
+    ) {
       deleteTransaction(s.transactionId);
       toast.success('Split expense deleted successfully!');
       loadData();
@@ -256,7 +283,9 @@ export default function SplitExpensesPage() {
       const equalShare = totalPaid > 0 ? Number((totalPaid / validMembersCount).toFixed(2)) : 0;
       const myShare = equalShare;
       const computedMembers: SplitMember[] = editSplitMembers.map((m) => {
-        const existing = editingSplit?.members.find((em) => em.name.trim().toLowerCase() === m.name.trim().toLowerCase());
+        const existing = editingSplit?.members.find(
+          (em) => em.name.trim().toLowerCase() === m.name.trim().toLowerCase()
+        );
         const paid = existing ? existing.paid : 0;
         return {
           name: m.name.trim() || 'Person',
@@ -266,15 +295,22 @@ export default function SplitExpensesPage() {
         };
       });
       const toReceive = Number((totalPaid - myShare).toFixed(2));
-      const totalShares = Number((myShare + computedMembers.reduce((sum, m) => sum + m.share, 0)).toFixed(2));
-      const isValid = Math.abs(totalPaid - totalShares) < 0.05 && totalPaid > 0 && editSplitMembers.every((m) => m.name.trim().length > 0);
+      const totalShares = Number(
+        (myShare + computedMembers.reduce((sum, m) => sum + m.share, 0)).toFixed(2)
+      );
+      const isValid =
+        Math.abs(totalPaid - totalShares) < 0.05 &&
+        totalPaid > 0 &&
+        editSplitMembers.every((m) => m.name.trim().length > 0);
 
       return { totalPaid, myShare, toReceive, totalShares, members: computedMembers, isValid };
     } else {
       const myShare = Math.max(0, parseFloat(editMyShareCustom) || 0);
       const computedMembers: SplitMember[] = editSplitMembers.map((m) => {
         const s = Math.max(0, parseFloat(m.share) || 0);
-        const existing = editingSplit?.members.find((em) => em.name.trim().toLowerCase() === m.name.trim().toLowerCase());
+        const existing = editingSplit?.members.find(
+          (em) => em.name.trim().toLowerCase() === m.name.trim().toLowerCase()
+        );
         const paid = existing ? existing.paid : 0;
         return {
           name: m.name.trim() || 'Person',
@@ -285,7 +321,10 @@ export default function SplitExpensesPage() {
       });
       const toReceive = Number(computedMembers.reduce((sum, m) => sum + m.share, 0).toFixed(2));
       const totalShares = Number((myShare + toReceive).toFixed(2));
-      const isValid = Math.abs(totalPaid - totalShares) < 0.05 && totalPaid > 0 && editSplitMembers.every((m) => m.name.trim().length > 0);
+      const isValid =
+        Math.abs(totalPaid - totalShares) < 0.05 &&
+        totalPaid > 0 &&
+        editSplitMembers.every((m) => m.name.trim().length > 0);
 
       return { totalPaid, myShare, toReceive, totalShares, members: computedMembers, isValid };
     }
@@ -315,7 +354,9 @@ export default function SplitExpensesPage() {
       }
     }
     if (!editSplitCalculations.isValid) {
-      toast.error(`Split amounts total ₹${editSplitCalculations.totalShares.toLocaleString('en-IN')}. Must equal ₹${totalPaid.toLocaleString('en-IN')}.`);
+      toast.error(
+        `Split amounts total ₹${editSplitCalculations.totalShares.toLocaleString('en-IN')}. Must equal ₹${totalPaid.toLocaleString('en-IN')}.`
+      );
       return;
     }
 
@@ -325,7 +366,10 @@ export default function SplitExpensesPage() {
       totalAmount: totalPaid,
       myShare: editSplitCalculations.myShare,
       toReceive: editSplitCalculations.toReceive,
-      pending: Math.max(0, Number((editSplitCalculations.toReceive - editingSplit.received).toFixed(2))),
+      pending: Math.max(
+        0,
+        Number((editSplitCalculations.toReceive - editingSplit.received).toFixed(2))
+      ),
       splitMethod: editSplitMethod,
       members: editSplitCalculations.members,
       updatedAt: new Date().toISOString(),
@@ -431,10 +475,16 @@ export default function SplitExpensesPage() {
 
   const activePersonData = useMemo(() => {
     if (!selectedPerson) return null;
-    return personSummary.find((p) => p.personName.toLowerCase() === selectedPerson.toLowerCase()) || null;
+    return (
+      personSummary.find((p) => p.personName.toLowerCase() === selectedPerson.toLowerCase()) || null
+    );
   }, [personSummary, selectedPerson]);
 
-  const handleOpenPaymentModal = (split: SplitDetails, personName: string, defaultAmount?: number) => {
+  const handleOpenPaymentModal = (
+    split: SplitDetails,
+    personName: string,
+    defaultAmount?: number
+  ) => {
     setTargetSplit(split);
     setPaymentPerson(personName);
     setPaymentAmount(defaultAmount ? String(defaultAmount) : '');
@@ -487,14 +537,13 @@ export default function SplitExpensesPage() {
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto px-3.5 py-3 space-y-4 bg-background min-h-[90vh]">
-        
         {/* Header Navigation */}
         <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 if (selectedPerson) setSelectedPerson(null);
-                else router.push('/more');
+                else router.back();
               }}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition cursor-pointer"
             >
@@ -517,16 +566,28 @@ export default function SplitExpensesPage() {
         {/* Top Summary Banner */}
         <div className="grid grid-cols-3 bg-secondary/40 border border-border/60 rounded-xl p-3 text-center gap-2 shadow-xs">
           <div>
-            <span className="text-[10px] text-muted-foreground font-normal uppercase block">Total To Receive</span>
-            <span className="text-sm font-normal text-foreground block mt-0.5">{formatCurrency(overallSummary.totalToReceive)}</span>
+            <span className="text-[10px] text-muted-foreground font-normal uppercase block">
+              Total To Receive
+            </span>
+            <span className="text-sm font-normal text-foreground block mt-0.5">
+              {formatCurrency(overallSummary.totalToReceive)}
+            </span>
           </div>
           <div className="border-x border-border/40">
-            <span className="text-[10px] text-muted-foreground font-normal uppercase block">Total Received</span>
-            <span className="text-sm font-normal text-positive block mt-0.5">{formatCurrency(overallSummary.totalReceived)}</span>
+            <span className="text-[10px] text-muted-foreground font-normal uppercase block">
+              Total Received
+            </span>
+            <span className="text-sm font-normal text-positive block mt-0.5">
+              {formatCurrency(overallSummary.totalReceived)}
+            </span>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground font-normal uppercase block">Pending</span>
-            <span className="text-sm font-normal text-negative block mt-0.5">{formatCurrency(overallSummary.pending)}</span>
+            <span className="text-[10px] text-muted-foreground font-normal uppercase block">
+              Pending
+            </span>
+            <span className="text-sm font-normal text-negative block mt-0.5">
+              {formatCurrency(overallSummary.pending)}
+            </span>
           </div>
         </div>
 
@@ -536,7 +597,10 @@ export default function SplitExpensesPage() {
             {/* Search & Filter Bar */}
             <div className="space-y-2.5">
               <div className="relative">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
                 <input
                   type="text"
                   value={search}
@@ -551,7 +615,9 @@ export default function SplitExpensesPage() {
                   type="button"
                   onClick={() => setStatusFilter('all')}
                   className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer ${
-                    statusFilter === 'all' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                    statusFilter === 'all'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   All ({personSummary.length})
@@ -560,7 +626,9 @@ export default function SplitExpensesPage() {
                   type="button"
                   onClick={() => setStatusFilter('pending')}
                   className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
-                    statusFilter === 'pending' ? 'bg-negative text-white shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                    statusFilter === 'pending'
+                      ? 'bg-negative text-white shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Clock size={13} />
@@ -570,7 +638,9 @@ export default function SplitExpensesPage() {
                   type="button"
                   onClick={() => setStatusFilter('settled')}
                   className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
-                    statusFilter === 'settled' ? 'bg-positive text-white shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                    statusFilter === 'settled'
+                      ? 'bg-positive text-white shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <CheckCircle2 size={13} />
@@ -599,7 +669,7 @@ export default function SplitExpensesPage() {
               ) : (
                 <>
                   {/* Pending / Not Settled Category Section */}
-                  {(statusFilter === 'all' || statusFilter === 'pending') && (
+                  {(statusFilter === 'all' || statusFilter === 'pending') &&
                     (() => {
                       const pendingList = filteredPeople.filter((p) => p.pending > 0);
                       if (pendingList.length === 0 && statusFilter === 'pending') {
@@ -619,7 +689,8 @@ export default function SplitExpensesPage() {
                               <span>Active Pending ({pendingList.length})</span>
                             </h2>
                             <span className="text-2xs font-mono text-negative font-normal">
-                              Total Receivable: {formatCurrency(pendingList.reduce((sum, p) => sum + p.pending, 0))}
+                              Total Receivable:{' '}
+                              {formatCurrency(pendingList.reduce((sum, p) => sum + p.pending, 0))}
                             </span>
                           </div>
                           {pendingList.map((person) => (
@@ -633,12 +704,19 @@ export default function SplitExpensesPage() {
                                   <UserCheck size={18} />
                                 </div>
                                 <div className="space-y-0.5 truncate">
-                                  <span className="text-sm font-normal text-foreground block truncate">{person.personName}</span>
+                                  <span className="text-sm font-normal text-foreground block truncate">
+                                    {person.personName}
+                                  </span>
                                   <span className="text-2xs text-muted-foreground block truncate">
                                     {person.items
                                       .map((i) => {
                                         const linkedTxn = txnMap.get(i.split.transactionId);
-                                        return i.split.name || linkedTxn?.description || linkedTxn?.category || 'Split Expense';
+                                        return (
+                                          i.split.name ||
+                                          linkedTxn?.description ||
+                                          linkedTxn?.category ||
+                                          'Split Expense'
+                                        );
                                       })
                                       .filter(Boolean)
                                       .join(' • ')}
@@ -648,7 +726,9 @@ export default function SplitExpensesPage() {
 
                               <div className="flex items-center gap-3 shrink-0 text-right">
                                 <div>
-                                  <span className="text-xs text-muted-foreground block">You need to receive</span>
+                                  <span className="text-xs text-muted-foreground block">
+                                    You need to receive
+                                  </span>
                                   <span className="text-sm font-normal text-negative block font-mono">
                                     {formatCurrency(person.pending)}
                                   </span>
@@ -658,11 +738,10 @@ export default function SplitExpensesPage() {
                           ))}
                         </div>
                       );
-                    })()
-                  )}
+                    })()}
 
                   {/* Fully Settled Category Section */}
-                  {(statusFilter === 'all' || statusFilter === 'settled') && (
+                  {(statusFilter === 'all' || statusFilter === 'settled') &&
                     (() => {
                       const settledList = filteredPeople.filter((p) => p.pending <= 0);
                       if (settledList.length === 0 && statusFilter === 'settled') {
@@ -693,12 +772,19 @@ export default function SplitExpensesPage() {
                                   <CheckCircle2 size={18} />
                                 </div>
                                 <div className="space-y-0.5 truncate">
-                                  <span className="text-sm font-normal text-foreground block truncate">{person.personName}</span>
+                                  <span className="text-sm font-normal text-foreground block truncate">
+                                    {person.personName}
+                                  </span>
                                   <span className="text-2xs text-muted-foreground block truncate">
                                     {person.items
                                       .map((i) => {
                                         const linkedTxn = txnMap.get(i.split.transactionId);
-                                        return i.split.name || linkedTxn?.description || linkedTxn?.category || 'Split Expense';
+                                        return (
+                                          i.split.name ||
+                                          linkedTxn?.description ||
+                                          linkedTxn?.category ||
+                                          'Split Expense'
+                                        );
                                       })
                                       .filter(Boolean)
                                       .join(' • ')}
@@ -717,8 +803,7 @@ export default function SplitExpensesPage() {
                           ))}
                         </div>
                       );
-                    })()
-                  )}
+                    })()}
                 </>
               )}
             </div>
@@ -733,7 +818,9 @@ export default function SplitExpensesPage() {
                   type="button"
                   onClick={() => setStatusFilter('all')}
                   className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer ${
-                    statusFilter === 'all' ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                    statusFilter === 'all'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   All ({activePersonData.items.length})
@@ -742,34 +829,43 @@ export default function SplitExpensesPage() {
                   type="button"
                   onClick={() => setStatusFilter('pending')}
                   className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
-                    statusFilter === 'pending' ? 'bg-negative text-white shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                    statusFilter === 'pending'
+                      ? 'bg-negative text-white shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Clock size={13} />
-                  <span>Pending ({activePersonData.items.filter((i) => i.memberPending > 0).length})</span>
+                  <span>
+                    Pending ({activePersonData.items.filter((i) => i.memberPending > 0).length})
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setStatusFilter('settled')}
                   className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
-                    statusFilter === 'settled' ? 'bg-positive text-white shadow-xs' : 'text-muted-foreground hover:text-foreground'
+                    statusFilter === 'settled'
+                      ? 'bg-positive text-white shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <CheckCircle2 size={13} />
-                  <span>Settled ({activePersonData.items.filter((i) => i.memberPending <= 0).length})</span>
+                  <span>
+                    Settled ({activePersonData.items.filter((i) => i.memberPending <= 0).length})
+                  </span>
                 </button>
               </div>
 
               {/* Transactions List with this person */}
               <div className="space-y-4">
                 {/* Active Pending Shared Expenses Category Section */}
-                {(statusFilter === 'all' || statusFilter === 'pending') && (
+                {(statusFilter === 'all' || statusFilter === 'pending') &&
                   (() => {
                     const pendingItems = activePersonData.items.filter((i) => i.memberPending > 0);
                     if (pendingItems.length === 0 && statusFilter === 'pending') {
                       return (
                         <div className="py-4 text-center text-xs text-muted-foreground">
-                          No pending expenses with {activePersonData.personName}. All splits are settled! 🎉
+                          No pending expenses with {activePersonData.personName}. All splits are
+                          settled! 🎉
                         </div>
                       );
                     }
@@ -783,15 +879,25 @@ export default function SplitExpensesPage() {
                             <span>Active Pending Expenses ({pendingItems.length})</span>
                           </h3>
                           <span className="text-2xs font-mono text-negative">
-                            Pending: {formatCurrency(pendingItems.reduce((sum, i) => sum + i.memberPending, 0))}
+                            Pending:{' '}
+                            {formatCurrency(
+                              pendingItems.reduce((sum, i) => sum + i.memberPending, 0)
+                            )}
                           </span>
                         </div>
 
                         {pendingItems.map((item) => {
                           const s = item.split;
                           const linkedTxn = txnMap.get(s.transactionId);
-                          const title = s.name || linkedTxn?.description || linkedTxn?.category || 'Shared Expense';
-                          const splitNames = s.members.map((m) => m.name).filter(Boolean).join(', ');
+                          const title =
+                            s.name ||
+                            linkedTxn?.description ||
+                            linkedTxn?.category ||
+                            'Shared Expense';
+                          const splitNames = s.members
+                            .map((m) => m.name)
+                            .filter(Boolean)
+                            .join(', ');
                           const rawDate = linkedTxn?.date || s.createdAt;
                           const d = new Date(rawDate);
                           const numericDate = !isNaN(d.getTime())
@@ -799,7 +905,10 @@ export default function SplitExpensesPage() {
                             : String(rawDate).slice(0, 10);
 
                           return (
-                            <div key={s.id} className="bg-negative/10 border border-negative/30 hover:border-negative/50 rounded-xl p-3.5 space-y-2.5 shadow-xs">
+                            <div
+                              key={s.id}
+                              className="bg-negative/10 border border-negative/30 hover:border-negative/50 rounded-xl p-3.5 space-y-2.5 shadow-xs"
+                            >
                               <div className="flex items-start justify-between gap-2">
                                 <div>
                                   <span className="text-sm font-normal text-foreground block">
@@ -830,9 +939,7 @@ export default function SplitExpensesPage() {
                                   </span>
                                   <span
                                     className={`text-xs font-normal shrink-0 ${
-                                      item.memberPaid > 0
-                                        ? 'text-amber-500'
-                                        : 'text-negative'
+                                      item.memberPaid > 0 ? 'text-amber-500' : 'text-negative'
                                     }`}
                                   >
                                     {item.memberPaid > 0 ? 'Partially Paid' : 'Pending'}
@@ -842,26 +949,42 @@ export default function SplitExpensesPage() {
 
                               <div className="grid grid-cols-4 text-center text-xs font-mono py-1">
                                 <div>
-                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">Total Paid</span>
+                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">
+                                    Total Paid
+                                  </span>
                                   <span>{formatCurrency(s.totalAmount)}</span>
                                 </div>
                                 <div>
-                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">Share</span>
+                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">
+                                    Share
+                                  </span>
                                   <span>{formatCurrency(item.memberShare)}</span>
                                 </div>
                                 <div>
-                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">Received</span>
+                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">
+                                    Received
+                                  </span>
                                   <span>{formatCurrency(item.memberPaid)}</span>
                                 </div>
                                 <div>
-                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">Pending</span>
-                                  <span className="text-negative">{formatCurrency(item.memberPending)}</span>
+                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">
+                                    Pending
+                                  </span>
+                                  <span className="text-negative">
+                                    {formatCurrency(item.memberPending)}
+                                  </span>
                                 </div>
                               </div>
 
                               <div className="flex items-center justify-end pt-1">
                                 <button
-                                  onClick={() => handleOpenPaymentModal(s, activePersonData.personName, item.memberPending)}
+                                  onClick={() =>
+                                    handleOpenPaymentModal(
+                                      s,
+                                      activePersonData.personName,
+                                      item.memberPending
+                                    )
+                                  }
                                   className="px-3 py-1 bg-primary text-primary-foreground text-xs font-normal rounded-lg hover:opacity-90 transition flex items-center gap-1 cursor-pointer"
                                 >
                                   <span>Record Payment</span>
@@ -872,11 +995,10 @@ export default function SplitExpensesPage() {
                         })}
                       </div>
                     );
-                  })()
-                )}
+                  })()}
 
                 {/* Fully Settled Shared Expenses Category Section */}
-                {(statusFilter === 'all' || statusFilter === 'settled') && (
+                {(statusFilter === 'all' || statusFilter === 'settled') &&
                   (() => {
                     const settledItems = activePersonData.items.filter((i) => i.memberPending <= 0);
                     if (settledItems.length === 0 && statusFilter === 'settled') {
@@ -900,8 +1022,15 @@ export default function SplitExpensesPage() {
                         {settledItems.map((item) => {
                           const s = item.split;
                           const linkedTxn = txnMap.get(s.transactionId);
-                          const title = s.name || linkedTxn?.description || linkedTxn?.category || 'Shared Expense';
-                          const splitNames = s.members.map((m) => m.name).filter(Boolean).join(', ');
+                          const title =
+                            s.name ||
+                            linkedTxn?.description ||
+                            linkedTxn?.category ||
+                            'Shared Expense';
+                          const splitNames = s.members
+                            .map((m) => m.name)
+                            .filter(Boolean)
+                            .join(', ');
 
                           const rawDate = linkedTxn?.date || s.createdAt;
                           const d = new Date(rawDate);
@@ -910,7 +1039,10 @@ export default function SplitExpensesPage() {
                             : String(rawDate).slice(0, 10);
 
                           return (
-                            <div key={s.id} className="bg-positive/10 border border-positive/30 hover:border-positive/50 rounded-xl p-3.5 space-y-2.5 shadow-xs">
+                            <div
+                              key={s.id}
+                              className="bg-positive/10 border border-positive/30 hover:border-positive/50 rounded-xl p-3.5 space-y-2.5 shadow-xs"
+                            >
                               <div className="flex items-start justify-between gap-2">
                                 <div>
                                   <span className="text-sm font-normal text-foreground block">
@@ -947,19 +1079,27 @@ export default function SplitExpensesPage() {
 
                               <div className="grid grid-cols-4 text-center text-xs font-mono py-1">
                                 <div>
-                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">Total Paid</span>
+                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">
+                                    Total Paid
+                                  </span>
                                   <span>{formatCurrency(s.totalAmount)}</span>
                                 </div>
                                 <div>
-                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">Share</span>
+                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">
+                                    Share
+                                  </span>
                                   <span>{formatCurrency(item.memberShare)}</span>
                                 </div>
                                 <div>
-                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">Received</span>
+                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">
+                                    Received
+                                  </span>
                                   <span>{formatCurrency(item.memberPaid)}</span>
                                 </div>
                                 <div>
-                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">Pending</span>
+                                  <span className="text-2xs text-muted-foreground uppercase block font-normal">
+                                    Pending
+                                  </span>
                                   <span>₹0</span>
                                 </div>
                               </div>
@@ -968,8 +1108,7 @@ export default function SplitExpensesPage() {
                         })}
                       </div>
                     );
-                  })()
-                )}
+                  })()}
               </div>
             </div>
           )
@@ -990,6 +1129,12 @@ export default function SplitExpensesPage() {
                 type="number"
                 step="any"
                 min="0.01"
+                max={
+                  targetSplit?.members.find(
+                    (member) =>
+                      member.name.trim().toLowerCase() === paymentPerson.trim().toLowerCase()
+                  )?.pending || undefined
+                }
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 required
@@ -1056,7 +1201,9 @@ export default function SplitExpensesPage() {
             <form onSubmit={handleAddSplitSubmit} className="space-y-3 text-xs font-normal">
               {/* Split Name Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Split Name</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Split Name
+                </span>
                 <input
                   type="text"
                   value={newSplitName}
@@ -1068,7 +1215,9 @@ export default function SplitExpensesPage() {
 
               {/* Total Amount Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Total Paid</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Total Paid
+                </span>
                 <div className="flex-1 flex items-center bg-transparent border-b border-white/[0.12] focus-within:border-primary text-xs font-mono text-foreground py-1 px-0">
                   <span className="mr-1 text-muted-foreground font-normal">₹</span>
                   <input
@@ -1085,7 +1234,9 @@ export default function SplitExpensesPage() {
 
               {/* Date Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Date</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Date
+                </span>
                 <input
                   type="date"
                   value={newDate}
@@ -1097,7 +1248,9 @@ export default function SplitExpensesPage() {
 
               {/* Paid From Account Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Paid From</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Paid From
+                </span>
                 <select
                   value={newAccount}
                   onChange={(e) => setNewAccount(e.target.value)}
@@ -1114,7 +1267,9 @@ export default function SplitExpensesPage() {
 
               {/* Category Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Category</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Category
+                </span>
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
@@ -1130,13 +1285,17 @@ export default function SplitExpensesPage() {
 
               {/* Split Method */}
               <div className="flex items-center justify-between pt-1">
-                <span className="text-2xs text-muted-foreground uppercase font-normal">Split Method</span>
+                <span className="text-2xs text-muted-foreground uppercase font-normal">
+                  Split Method
+                </span>
                 <div className="flex bg-secondary rounded-lg p-0.5 border border-border/60">
                   <button
                     type="button"
                     onClick={() => setNewSplitMethod('equal')}
                     className={`px-3 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
-                      newSplitMethod === 'equal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                      newSplitMethod === 'equal'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     Equal
@@ -1145,7 +1304,9 @@ export default function SplitExpensesPage() {
                     type="button"
                     onClick={() => setNewSplitMethod('custom')}
                     className={`px-3 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
-                      newSplitMethod === 'custom' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                      newSplitMethod === 'custom'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     Custom
@@ -1156,10 +1317,14 @@ export default function SplitExpensesPage() {
               {/* Members list */}
               <div className="space-y-2 pt-1 border-t border-border/40">
                 <div className="flex items-center justify-between">
-                  <span className="text-2xs text-muted-foreground uppercase font-normal">Split With</span>
+                  <span className="text-2xs text-muted-foreground uppercase font-normal">
+                    Split With
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setNewSplitMembers([...newSplitMembers, { name: '', share: '' }])}
+                    onClick={() =>
+                      setNewSplitMembers([...newSplitMembers, { name: '', share: '' }])
+                    }
                     className="text-xs text-primary font-normal hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <PlusCircle size={13} /> Add Person
@@ -1170,7 +1335,9 @@ export default function SplitExpensesPage() {
                 <div className="flex items-center justify-between py-1 px-1 text-xs">
                   <span className="font-normal text-foreground">You (Your Share)</span>
                   {newSplitMethod === 'equal' ? (
-                    <span className="font-mono text-primary font-normal">₹{newSplitCalculations.myShare.toLocaleString('en-IN')}</span>
+                    <span className="font-mono text-primary font-normal">
+                      ₹{newSplitCalculations.myShare.toLocaleString('en-IN')}
+                    </span>
                   ) : (
                     <div className="flex items-center gap-1">
                       <span>₹</span>
@@ -1186,7 +1353,10 @@ export default function SplitExpensesPage() {
 
                 {/* Other Members */}
                 {newSplitMembers.map((member, index) => (
-                  <div key={`new-mem-${index}`} className="flex items-center gap-2 py-1 px-1 text-xs">
+                  <div
+                    key={`new-mem-${index}`}
+                    className="flex items-center gap-2 py-1 px-1 text-xs"
+                  >
                     <input
                       type="text"
                       value={member.name}
@@ -1234,26 +1404,36 @@ export default function SplitExpensesPage() {
               <div className="py-2 space-y-1 text-2xs border-t border-border/40">
                 <div className="flex justify-between items-center text-muted-foreground">
                   <span>Account Outflow:</span>
-                  <span className="font-mono font-normal text-foreground">₹{newSplitCalculations.totalPaid.toLocaleString('en-IN')}</span>
+                  <span className="font-mono font-normal text-foreground">
+                    ₹{newSplitCalculations.totalPaid.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-muted-foreground">
                   <span>Your Expense:</span>
-                  <span className="font-mono font-normal text-primary">₹{newSplitCalculations.myShare.toLocaleString('en-IN')}</span>
+                  <span className="font-mono font-normal text-primary">
+                    ₹{newSplitCalculations.myShare.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-muted-foreground">
                   <span>To Receive from Friends:</span>
-                  <span className="font-mono font-normal text-positive">₹{newSplitCalculations.toReceive.toLocaleString('en-IN')}</span>
+                  <span className="font-mono font-normal text-positive">
+                    ₹{newSplitCalculations.toReceive.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 {!newSplitCalculations.isValid && newSplitCalculations.totalPaid > 0 && (
                   <p className="text-negative text-3xs font-normal pt-1 border-t border-border/40">
-                    ⚠️ Split amounts total ₹{newSplitCalculations.totalShares.toLocaleString('en-IN')}. Must equal ₹{newSplitCalculations.totalPaid.toLocaleString('en-IN')}.
+                    ⚠️ Split amounts total ₹
+                    {newSplitCalculations.totalShares.toLocaleString('en-IN')}. Must equal ₹
+                    {newSplitCalculations.totalPaid.toLocaleString('en-IN')}.
                   </p>
                 )}
               </div>
 
               {/* Notes Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Notes</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Notes
+                </span>
                 <input
                   type="text"
                   value={newNotes}
@@ -1296,7 +1476,9 @@ export default function SplitExpensesPage() {
             <form onSubmit={handleEditSplitSubmit} className="space-y-3 text-xs font-normal">
               {/* Split Name Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Split Name</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Split Name
+                </span>
                 <input
                   type="text"
                   value={editSplitName}
@@ -1308,7 +1490,9 @@ export default function SplitExpensesPage() {
 
               {/* Total Amount Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Total Paid</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Total Paid
+                </span>
                 <div className="flex-1 flex items-center bg-transparent border-b border-white/[0.12] focus-within:border-primary text-xs font-mono text-foreground py-1 px-0">
                   <span className="mr-1 text-muted-foreground font-normal">₹</span>
                   <input
@@ -1325,7 +1509,9 @@ export default function SplitExpensesPage() {
 
               {/* Date Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Date</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Date
+                </span>
                 <input
                   type="date"
                   value={editDate}
@@ -1337,7 +1523,9 @@ export default function SplitExpensesPage() {
 
               {/* Paid From Account Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Paid From</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Paid From
+                </span>
                 <select
                   value={editAccount}
                   onChange={(e) => setEditAccount(e.target.value)}
@@ -1354,7 +1542,9 @@ export default function SplitExpensesPage() {
 
               {/* Category Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Category</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Category
+                </span>
                 <select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
@@ -1370,13 +1560,17 @@ export default function SplitExpensesPage() {
 
               {/* Split Method */}
               <div className="flex items-center justify-between pt-1">
-                <span className="text-2xs text-muted-foreground uppercase font-normal">Split Method</span>
+                <span className="text-2xs text-muted-foreground uppercase font-normal">
+                  Split Method
+                </span>
                 <div className="flex bg-secondary rounded-lg p-0.5 border border-border/60">
                   <button
                     type="button"
                     onClick={() => setEditSplitMethod('equal')}
                     className={`px-3 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
-                      editSplitMethod === 'equal' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                      editSplitMethod === 'equal'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     Equal
@@ -1385,7 +1579,9 @@ export default function SplitExpensesPage() {
                     type="button"
                     onClick={() => setEditSplitMethod('custom')}
                     className={`px-3 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
-                      editSplitMethod === 'custom' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                      editSplitMethod === 'custom'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     Custom
@@ -1396,10 +1592,14 @@ export default function SplitExpensesPage() {
               {/* Members list */}
               <div className="space-y-2 pt-1 border-t border-border/40">
                 <div className="flex items-center justify-between">
-                  <span className="text-2xs text-muted-foreground uppercase font-normal">Split With</span>
+                  <span className="text-2xs text-muted-foreground uppercase font-normal">
+                    Split With
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setEditSplitMembers([...editSplitMembers, { name: '', share: '' }])}
+                    onClick={() =>
+                      setEditSplitMembers([...editSplitMembers, { name: '', share: '' }])
+                    }
                     className="text-xs text-primary font-normal hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <PlusCircle size={13} /> Add Person
@@ -1410,7 +1610,9 @@ export default function SplitExpensesPage() {
                 <div className="flex items-center justify-between py-1 px-1 text-xs">
                   <span className="font-normal text-foreground">You (Your Share)</span>
                   {editSplitMethod === 'equal' ? (
-                    <span className="font-mono text-primary font-normal">₹{editSplitCalculations.myShare.toLocaleString('en-IN')}</span>
+                    <span className="font-mono text-primary font-normal">
+                      ₹{editSplitCalculations.myShare.toLocaleString('en-IN')}
+                    </span>
                   ) : (
                     <div className="flex items-center gap-1">
                       <span>₹</span>
@@ -1426,7 +1628,10 @@ export default function SplitExpensesPage() {
 
                 {/* Other Members */}
                 {editSplitMembers.map((member, index) => (
-                  <div key={`edit-mem-${index}`} className="flex items-center gap-2 py-1 px-1 text-xs">
+                  <div
+                    key={`edit-mem-${index}`}
+                    className="flex items-center gap-2 py-1 px-1 text-xs"
+                  >
                     <input
                       type="text"
                       value={member.name}
@@ -1474,26 +1679,36 @@ export default function SplitExpensesPage() {
               <div className="py-2 space-y-1 text-2xs border-t border-border/40">
                 <div className="flex justify-between items-center text-muted-foreground">
                   <span>Account Outflow:</span>
-                  <span className="font-mono font-normal text-foreground">₹{editSplitCalculations.totalPaid.toLocaleString('en-IN')}</span>
+                  <span className="font-mono font-normal text-foreground">
+                    ₹{editSplitCalculations.totalPaid.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-muted-foreground">
                   <span>Your Expense:</span>
-                  <span className="font-mono font-normal text-primary">₹{editSplitCalculations.myShare.toLocaleString('en-IN')}</span>
+                  <span className="font-mono font-normal text-primary">
+                    ₹{editSplitCalculations.myShare.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-muted-foreground">
                   <span>To Receive from Friends:</span>
-                  <span className="font-mono font-normal text-positive">₹{editSplitCalculations.toReceive.toLocaleString('en-IN')}</span>
+                  <span className="font-mono font-normal text-positive">
+                    ₹{editSplitCalculations.toReceive.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 {!editSplitCalculations.isValid && editSplitCalculations.totalPaid > 0 && (
                   <p className="text-negative text-3xs font-normal pt-1 border-t border-border/40">
-                    ⚠️ Split amounts total ₹{editSplitCalculations.totalShares.toLocaleString('en-IN')}. Must equal ₹{editSplitCalculations.totalPaid.toLocaleString('en-IN')}.
+                    ⚠️ Split amounts total ₹
+                    {editSplitCalculations.totalShares.toLocaleString('en-IN')}. Must equal ₹
+                    {editSplitCalculations.totalPaid.toLocaleString('en-IN')}.
                   </p>
                 )}
               </div>
 
               {/* Notes Row */}
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">Notes</span>
+                <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
+                  Notes
+                </span>
                 <input
                   type="text"
                   value={editNotes}
@@ -1524,7 +1739,6 @@ export default function SplitExpensesPage() {
             </form>
           </Modal>
         )}
-
       </div>
     </AppLayout>
   );
