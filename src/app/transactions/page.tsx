@@ -282,6 +282,22 @@ function TransactionsPageContent() {
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressActiveRef = useRef(false);
 
+  useEffect(() => {
+    const handleAppBack = (event: Event) => {
+      if (!isSelectionMode) return;
+
+      event.preventDefault();
+      setIsSelectionMode(false);
+      setSelectedTxnIds([]);
+      if (pathname !== '/transactions' || window.location.search) {
+        router.push('/transactions');
+      }
+    };
+
+    window.addEventListener('app-back', handleAppBack);
+    return () => window.removeEventListener('app-back', handleAppBack);
+  }, [isSelectionMode, pathname, router]);
+
   const handleItemTouchStart = (txnId: string) => {
     isLongPressActiveRef.current = false;
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
@@ -2054,7 +2070,7 @@ function TransactionsPageContent() {
           <>
             {/* DAILY TAB */}
             {activeTab === 'daily' && (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {groupedDailyTransactions.length === 0 ? (
                   <p className="text-center text-sm text-muted-foreground py-10 font-medium">
                     No records found for this period.
@@ -2140,7 +2156,7 @@ function TransactionsPageContent() {
                                   onMouseUp={handleTouchEndOrCancel}
                                   onMouseLeave={handleTouchEndOrCancel}
                                   onClick={() => handleTxnClick(txn)}
-                                  className={`flex items-center justify-between py-2 ${isSelectionMode ? 'pl-5' : 'pl-10'} pr-2 transition cursor-pointer group relative ${
+                                  className={`flex items-center justify-between py-2 ${isSelectionMode ? 'pl-5' : 'pl-10'} pr-0 transition cursor-pointer group relative ${
                                     isSelected
                                       ? 'bg-primary/20 border-l-4 border-l-primary'
                                       : isTrip
@@ -2661,8 +2677,8 @@ function TransactionsPageContent() {
           </div>
 
           {/* Content Area */}
-          <div className="min-h-0 w-full flex-1 overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <form onSubmit={handleSaveEdit} className="flex flex-col">
+          <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <form onSubmit={handleSaveEdit} className="flex min-h-full flex-1 flex-col">
               {/* Transaction Type Selector */}
               <div className="grid grid-cols-3 gap-1.5 px-4 mt-1.5">
                 {(['income', 'expense', 'transfer'] as const).map((t) => {
@@ -2694,9 +2710,9 @@ function TransactionsPageContent() {
               </div>
 
               {/* Vertical Form Fields (Gap of 20dp between selector and form) */}
-              <div className="flex flex-col mt-2">
+              <div className="flex flex-col mt-1">
                 {/* Date Row */}
-                <div className="relative flex items-center h-12 border-b border-white/[0.08] px-4">
+                <div className="relative flex items-center h-10 border-b border-white/[0.08] px-4">
                   <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
                     Date
                   </span>
@@ -2726,7 +2742,7 @@ function TransactionsPageContent() {
                 </div>
 
                 {/* Amount Row */}
-                <div className="relative flex items-center h-12 border-b border-white/[0.08] px-4">
+                <div className="relative flex items-center h-10 border-b border-white/[0.08] px-4">
                   <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
                     Amount
                   </span>
@@ -2757,7 +2773,7 @@ function TransactionsPageContent() {
                 {editForm.type === 'transfer' ? (
                   <>
                     {/* From Account (Source Account) */}
-                    <div className="relative flex items-center h-12 border-b border-white/[0.08] px-4">
+                    <div className="relative flex items-center h-10 border-b border-white/[0.08] px-4">
                       <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
                         Account
                       </span>
@@ -2783,7 +2799,7 @@ function TransactionsPageContent() {
                     </div>
 
                     {/* To Account (Destination Account) */}
-                    <div className="relative flex items-center h-12 border-b border-white/[0.08] px-4">
+                    <div className="relative flex items-center h-10 border-b border-white/[0.08] px-4">
                       <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
                         To Account
                       </span>
@@ -2818,7 +2834,7 @@ function TransactionsPageContent() {
                     {/* Category Row - Tap to select category from bottom grid */}
                     <div
                       onClick={() => setEditPickerMode('category')}
-                      className="relative flex items-center h-12 border-b border-white/[0.08] px-4 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                      className="relative flex items-center h-10 border-b border-white/[0.08] px-4 cursor-pointer hover:bg-white/[0.04] transition-colors"
                     >
                       <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
                         Category
@@ -2860,7 +2876,7 @@ function TransactionsPageContent() {
                     {/* Account Row - Tap to select account from bottom grid */}
                     <div
                       onClick={() => setEditPickerMode('account')}
-                      className="relative flex items-center h-12 border-b border-white/[0.08] px-4 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                      className="relative flex items-center h-10 border-b border-white/[0.08] px-4 cursor-pointer hover:bg-white/[0.04] transition-colors"
                     >
                       <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
                         Account
@@ -2879,7 +2895,7 @@ function TransactionsPageContent() {
                 )}
 
                 {/* Note Row */}
-                <div className="relative flex items-start py-3 border-b border-white/[0.08] px-4 min-h-12">
+                <div className="relative flex items-start py-2 border-b border-white/[0.08] px-4 min-h-10">
                   <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal mt-0.5">
                     Note
                   </span>
@@ -2900,7 +2916,7 @@ function TransactionsPageContent() {
               </div>
 
               {/* Description & Camera Section (Gap of 20dp between form and description) */}
-              <div className="mt-2 flex flex-col">
+              <div className="mt-1 flex flex-col">
                 <div className="relative flex h-10 items-center border-b border-white/[0.08] px-4">
                   <input
                     type="text"
@@ -2984,7 +3000,7 @@ function TransactionsPageContent() {
                       setEditingTransaction(null);
                       setEditForm(null);
                     }}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border border-negative/35 bg-negative-subtle text-negative transition-colors hover:bg-negative/15"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-negative transition-colors hover:bg-negative/15"
                     title="Delete transaction"
                     aria-label="Delete transaction"
                   >
@@ -2993,7 +3009,7 @@ function TransactionsPageContent() {
                   <button
                     type="button"
                     onClick={closeTransactionEditor}
-                    className="h-12 px-4 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                    className="h-10 px-3 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
                   >
                     <X size={18} />
                     <span>Cancel</span>
@@ -3002,7 +3018,7 @@ function TransactionsPageContent() {
                   <button
                     type="button"
                     onClick={handleSaveClick}
-                    className="flex-1 h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+                    className="flex-1 h-10 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
                   >
                     <Check size={18} />
                     <span>Save Transaction</span>
@@ -3011,10 +3027,10 @@ function TransactionsPageContent() {
 
                 {/* Space Under Save Transaction Button Used For Category & Account Selection */}
                 {editForm && !isEditAmountFocused && !isEditNoteFocused && (
-                  <div className="pt-3 border-t border-white/[0.08] space-y-2 pb-4">
+                  <div className="mt-auto flex flex-col pt-3 border-t border-white/[0.08] space-y-2">
                     {/* 1. CLEAN SUBTLE FLOATING CHIPS GRID (CATEGORIES - NO SCROLLBAR) */}
                     {editPickerMode === 'category' && (
-                      <div className="space-y-2">
+                      <div className="flex min-h-0 flex-1 flex-col space-y-2">
                         <div className="flex items-center justify-between px-0.5">
                           <p className="text-xs font-semibold text-white">Choose category</p>
                           <p className="text-[11px] text-[#A5A6AD]">
@@ -3022,7 +3038,7 @@ function TransactionsPageContent() {
                           </p>
                         </div>
 
-                        <div className="max-h-72 overflow-y-auto rounded-lg border border-border/80 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border/80">
                           <table className="w-full table-fixed border-collapse" aria-label="Categories">
                             <tbody>
                               {Array.from({ length: Math.ceil(editCategories.length / 4) }).map(
@@ -3066,14 +3082,6 @@ function TransactionsPageContent() {
                           </table>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => router.push('/categories')}
-                          className="flex w-full items-center justify-center rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-xs font-medium text-[#A5A6AD] transition-colors hover:border-primary/40 hover:text-primary"
-                        >
-                          <Plus size={14} className="mr-1.5" />
-                          Manage categories
-                        </button>
                       </div>
                     )}
 
@@ -3119,7 +3127,7 @@ function TransactionsPageContent() {
 
                     {/* 2. CLEAN SUBTLE FLOATING CHIPS GRID (ACCOUNTS - 3 IN A ROW, NO MONEY DISPLAY, NO SCROLLBAR) */}
                     {editPickerMode === 'account' && (
-                      <div className="max-h-72 overflow-y-auto rounded-lg border border-border/80 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                      <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border/80">
                         <table className="w-full table-fixed border-collapse" aria-label="Accounts">
                           <tbody>
                             {Array.from({ length: Math.ceil(accounts.length / 3) }).map(
@@ -3682,7 +3690,7 @@ function TransactionsPageContent() {
             type="button"
             onClick={handleBulkDelete}
             disabled={selectedTxnIds.length === 0}
-            className="fixed bottom-24 right-6 md:bottom-24 md:right-8 w-12 h-12 bg-negative text-negative-foreground rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-40 transition-all z-50 cursor-pointer"
+            className="fixed bottom-36 right-4 md:bottom-24 md:right-6 w-12 h-12 bg-negative text-negative-foreground rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-40 transition-all z-50 cursor-pointer"
             title={`Delete ${selectedTxnIds.length} selected transaction(s)`}
           >
             <Trash2 size={22} />

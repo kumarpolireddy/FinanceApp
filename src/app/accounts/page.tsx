@@ -460,11 +460,10 @@ export default function AccountsPage() {
       groups[key].items.push(acc);
       groups[key].total += acc.balance;
 
-      const isLiab = type === 'credit' || type === 'loan' || catName.toLowerCase().includes('borrow') || catName.toLowerCase().includes('debt') || catName.toLowerCase().includes('card');
-      if (isLiab) {
-        totalLiabilities += Math.abs(acc.balance);
-      } else {
+      if (acc.balance >= 0) {
         totalAssets += acc.balance;
+      } else {
+        totalLiabilities += Math.abs(acc.balance);
       }
     });
 
@@ -719,7 +718,7 @@ export default function AccountsPage() {
                           }}
                           onMouseUp={handleAccountPressEnd}
                           onMouseLeave={handleAccountPressEnd}
-                          className={`flex justify-between items-center px-1 py-3 hover:bg-secondary/60 active:bg-secondary/70 transition cursor-pointer ${
+                          className={`flex justify-between items-center px-1 py-3 border-b border-border/30 last:border-b-0 hover:bg-secondary/60 active:bg-secondary/70 transition cursor-pointer ${
                             draggingId === acc.id
                               ? 'relative z-20 opacity-90 drop-shadow-xl'
                               : dragTargetId === acc.id

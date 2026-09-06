@@ -1931,84 +1931,67 @@ interface CreditCardBalances {
 
 export function calculateCreditCardBalances(
   acc: Account,
-  allTransactions: Transaction[]
+  allTransactions: Transaction[],
+  asOfDate: Date = new Date()
 ): CreditCardBalances {
   if (acc.type !== 'credit') return { payable: 0, outstanding: 0 };
 
-  const cycleDay = parseInt(acc.billingCycle || '4', 10) || 4;
+  const parsedCycleDay = parseInt(acc.billingCycle || '4', 10);
+  const cycleDay = Math.min(Math.max(Number.isFinite(parsedCycleDay) ? parsedCycleDay : 4, 1), 28);
+  const today = new Date(asOfDate.getFullYear(), asOfDate.getMonth(), asOfDate.getDate());
+  const currentCycleStart =
+    today.getDate() >= cycleDay
+      ? new Date(today.getFullYear(), today.getMonth(), cycleDay)
+      : new Date(today.getFullYear(), today.getMonth() - 1, cycleDay);
+  const accountKeys = new Set([acc.id, acc.sourceUid].filter((key): key is string => Boolean(key)));
+  const cardTxns = allTransactions.filter(
+    (t) => accountKeys.has(t.account) || (t.toAccount ? accountKeys.has(t.toAccount) : false)
+  );
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-
-  let cycleStart: Date;
-  if (now.getDate() >= cycleDay) {
-    cycleStart = new Date(currentYear, currentMonth, cycleDay);
-  } else {
-    cycleStart = new Date(currentYear, currentMonth - 1, cycleDay);
-  }
-
-  const cardTxns = allTransactions.filter((t) => t.account === acc.id || t.toAccount === acc.id);
-
-  let expensesBefore = 0;
-  let paymentsBefore = 0;
-  let expensesDuring = 0;
-  let paymentsDuring = 0;
+  let completedCycleCharges = 0;
+  let completedCyclePayments = 0;
+  let currentCycleCharges = 0;
+  let currentCyclePayments = 0;
 
   cardTxns.forEach((t) => {
-    const parts = t.date.split('-');
-    const txnDate = new Date(
-      parseInt(parts[0], 10),
-      parseInt(parts[1], 10) - 1,
-      parseInt(parts[2], 10)
-    );
+    const txnDate = new Date(`${t.date.slice(0, 10)}T00:00:00`);
+    if (Number.isNaN(txnDate.getTime()) || txnDate > today) return;
 
     let isPayment = false;
-    let amount = t.type === 'expense' ? getTransactionAccountAmount(t) : t.amount;
+    const amount =
+      t.type === 'expense'
+        ? getTransactionAccountAmount(t)
+        : Math.max(0, Number(t.amount) || 0);
 
     if (t.type === 'income') {
       isPayment = true;
     } else if (t.type === 'transfer') {
-      if (t.toAccount === acc.id) {
+      if (t.toAccount && accountKeys.has(t.toAccount)) {
         isPayment = true;
       }
     }
 
-    if (txnDate >= cycleStart) {
+    if (txnDate >= currentCycleStart) {
       if (isPayment) {
-        paymentsDuring += amount;
+        currentCyclePayments += amount;
       } else {
-        expensesDuring += amount;
+        currentCycleCharges += amount;
       }
     } else {
       if (isPayment) {
-        paymentsBefore += amount;
+        completedCyclePayments += amount;
       } else {
-        expensesBefore += amount;
+        completedCycleCharges += amount;
       }
     }
   });
 
-  // Calculate the statement balance from the closed billing cycle. Preserve
-  // any overpayment as card credit so it can reduce current-cycle spending.
-  const previousCycleNet = expensesBefore - paymentsBefore;
-  const initialPayable = Math.max(previousCycleNet, 0);
-  const previousCycleCredit = Math.max(-previousCycleNet, 0);
-
-  // Payments made during the current cycle reduce the older cycle's Balance Payable first
-  let payable = initialPayable - paymentsDuring;
-  let remainingPayment = previousCycleCredit;
-
-  if (payable < 0) {
-    remainingPayment += -payable;
-    payable = 0;
-  }
-
-  // Outstanding is the card's full unpaid balance: the remaining statement
-  // payable plus unbilled/current-cycle spending. Any payment left after
-  // clearing the statement reduces current-cycle spending.
-  const currentCycleOutstanding = Math.max(expensesDuring - remainingPayment, 0);
-  const outstanding = payable + currentCycleOutstanding;
+  const statementNet = completedCycleCharges - completedCyclePayments;
+  const statementDue = Math.max(statementNet, 0);
+  const carriedCredit = Math.max(-statementNet, 0);
+  const payable = Math.max(statementDue - currentCyclePayments, 0);
+  const paymentAfterDue = Math.max(currentCyclePayments - statementDue, 0);
+  const outstanding = Math.max(currentCycleCharges - carriedCredit - paymentAfterDue, 0);
 
   return {
     payable,
