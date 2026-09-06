@@ -45,7 +45,7 @@ export default function MetricCard({
   return (
     <div
       onClick={onClick}
-      className={`metric-card ${compact ? 'metric-card-compact' : ''} relative border flex flex-col h-full transition-all duration-200 ${
+      className={`relative border flex flex-col h-full transition-all duration-200 ${
         compact
           ? 'min-h-[72px] items-center justify-center rounded-lg p-2.5 text-center'
           : 'min-h-[140px] justify-between rounded-2xl p-5 md:p-6'
@@ -58,7 +58,7 @@ export default function MetricCard({
       } ${surfaceStyle} ${className}`}
     >
       <div className={`flex items-start ${compact ? 'justify-center' : 'justify-between'}`}>
-        <p className="metric-label text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
+        <p className="text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
           {label}
         </p>
         {icon && (
@@ -72,7 +72,7 @@ export default function MetricCard({
         className={`${compact ? 'mt-1 flex-none items-center justify-center' : 'mt-2 flex-1 justify-end'} flex flex-col`}
       >
         <p
-          className={`metric-value tabular-nums tracking-tight ${
+          className={`tabular-nums tracking-tight ${
             largeValue
               ? 'font-extrabold text-foreground'
               : variant === 'hero'

@@ -258,7 +258,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div 
         onTouchStart={handleGlobalTouchStart}
         onTouchEnd={handleGlobalTouchEnd}
-        className="mobile-app flex flex-col h-[100dvh] min-h-[100dvh] max-w-md mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none"
+        className="flex flex-col h-[100dvh] min-h-[100dvh] max-w-md mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none shadow-2xl shadow-black/20"
       >
         <AlarmListener />
         
@@ -290,7 +290,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <>
                 <button
                   onClick={handleTripButtonClick}
-                  className={`px-2 py-1 rounded text-xs font-medium transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[85px] ${
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[85px] ${
                     activeTrip
                       ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse'
                       : 'bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20'
@@ -302,7 +302,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
                 <button
                   onClick={() => router.push('/trips')}
-                  className="px-1.5 py-1 rounded text-xs font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5 hover:bg-muted/40"
+                  className="px-1.5 py-1 rounded text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5 hover:bg-muted/40"
                   title="View all trips"
                 >
                   <span>Trips</span>
@@ -405,7 +405,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
         {/* Mobile Bottom Tab Bar */}
         {!hideMobileBottomNav && !pathname.startsWith('/add-expense') && !pathname.startsWith('/ai-advisor') && (
-          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card/95 backdrop-blur-xl border-t border-border/80 flex justify-around items-center z-50 pb-safe">
+          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card/95 backdrop-blur-xl border-t border-border/80 flex justify-around items-center z-50 pb-safe shadow-2xl">
             {TABS.map((tab) => {
               const IconComponent = tab.icon;
               const isActive = activeTab === tab.id;
@@ -414,13 +414,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <button
                   key={tab.id}
                   onClick={() => handleTabNavigation(tab.path)}
-                  aria-current={isActive ? 'page' : undefined}
                   className={`flex-1 h-full flex flex-col justify-center items-center gap-1 transition-all ${
                     isActive ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <IconComponent size={18} className={isActive ? 'stroke-[2.5px]' : 'stroke-[1.8px]'} />
-                  <span className="text-xs font-medium">{tab.label}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{tab.label}</span>
                 </button>
               );
             })}
