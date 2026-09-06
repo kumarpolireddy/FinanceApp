@@ -43,6 +43,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [hideMobileBottomNav, setHideMobileBottomNav] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [hideAddTransaction, setHideAddTransaction] = useState(false);
   const [isSpecificAccountTransactions, setIsSpecificAccountTransactions] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
@@ -85,6 +86,33 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     window.addEventListener('app-bottom-nav-visibility', handleBottomNavVisibility);
     return () => window.removeEventListener('app-bottom-nav-visibility', handleBottomNavVisibility);
+  }, []);
+
+  useEffect(() => {
+    const isTextEntryElement = (target: EventTarget | null): boolean => {
+      return (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement
+      );
+    };
+
+    const handleFocusIn = (event: FocusEvent) => {
+      if (isTextEntryElement(event.target)) setIsKeyboardOpen(true);
+    };
+
+    const handleFocusOut = () => {
+      window.setTimeout(() => {
+        setIsKeyboardOpen(isTextEntryElement(document.activeElement));
+      }, 0);
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
   }, []);
 
   const handleTripButtonClick = () => {
@@ -404,8 +432,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
         )}
 
         {/* Mobile Bottom Tab Bar */}
-        {!hideMobileBottomNav && !pathname.startsWith('/add-expense') && !pathname.startsWith('/ai-advisor') && (
-          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card/95 backdrop-blur-xl border-t border-border/80 flex justify-around items-center z-50 pb-safe shadow-2xl">
+        {!hideMobileBottomNav &&
+          isMainTab &&
+          !isKeyboardOpen &&
+          !pathname.startsWith('/add-expense') &&
+          !pathname.startsWith('/ai-advisor') && (
+          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card border-t border-border/80 flex justify-around items-center z-[60] pb-safe shadow-2xl">
             {TABS.map((tab) => {
               const IconComponent = tab.icon;
               const isActive = activeTab === tab.id;
