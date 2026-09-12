@@ -128,14 +128,14 @@ export default function AlarmAlertModal({ alarm, onClose }: AlarmAlertModalProps
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/20 bg-gradient-to-b from-slate-900/90 via-slate-900/95 to-slate-950 p-6 sm:p-8 shadow-2xl shadow-emerald-500/10 text-white">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/20 bg-gradient-to-b from-slate-900/90 via-slate-900/95 to-slate-950 p-6 sm:p-8 shadow-card-lg shadow-emerald-500/10 text-white">
         {/* Animated Glow Halo */}
         <div className="absolute -top-24 -left-24 w-60 h-60 bg-emerald-500/20 rounded-full blur-3xl animate-pulse pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-60 h-60 bg-sky-500/20 rounded-full blur-3xl animate-pulse pointer-events-none" />
 
         {/* Top Header Controls */}
         <div className="flex items-center justify-between mb-6">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-white/10 text-white/90 border border-white/10">
+          <span className="inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-white/10 text-white/90 border border-white/10">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             Alarm Triggered
           </span>
@@ -172,7 +172,7 @@ export default function AlarmAlertModal({ alarm, onClose }: AlarmAlertModalProps
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-8 space-y-3">
+        <div className="mt-8 space-y-4">
           <button
             onClick={handleAction}
             className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-base shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95"
@@ -181,7 +181,7 @@ export default function AlarmAlertModal({ alarm, onClose }: AlarmAlertModalProps
             Take Action Now
           </button>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center rounded-2xl bg-white/10 border border-white/15 p-1">
               <select
                 value={snoozeMinutes}
@@ -195,7 +195,7 @@ export default function AlarmAlertModal({ alarm, onClose }: AlarmAlertModalProps
               </select>
               <button
                 onClick={handleSnooze}
-                className="w-1/2 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold text-xs transition-colors"
+                className="w-1/2 flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold text-xs transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Snooze

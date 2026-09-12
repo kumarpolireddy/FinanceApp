@@ -27,7 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             __html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('wealthiq_theme') || 'dark';
+                  const theme = localStorage.getItem('wealthiq_theme') || 'light';
                   let resolved = theme;
                   if (theme === 'system') {
                     resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     }
                   }
                 } catch (e) {
-                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.add('light');
                 }
               })();
             `,

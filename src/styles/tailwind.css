@@ -2,65 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #1a1a1a;
-  --foreground: #f1f1ef;
-  --primary: #60a5fa;
-  --primary-foreground: #08111f;
-  --secondary: #242424;
-  --secondary-foreground: #d6d3d1;
-  --accent: #60a5fa;
-  --accent-foreground: #08111f;
-  --muted: #2b2b2b;
-  --muted-foreground: #a8a29e;
-  --card: #202020;
-  --card-foreground: #f1f1ef;
-  --border: #3a3a3a;
-  --input: #181818;
-  --ring: #60a5fa;
-  --radius: 0.75rem;
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --positive: #34d399;
-  --negative: #fb7185;
-  --warning: #fbbf24;
-  --info: #60a5fa;
-}
 
+:root,
 .light {
-  --background: #f6f8fc;
-  --foreground: #172033;
-  --primary: #3B82F6;
-  --primary-foreground: #FFFFFF;
-  --secondary: #e9eef8;
-  --secondary-foreground: #536078;
-  --accent: #3B82F6;
-  --accent-foreground: #FFFFFF;
-  --muted: #e9eef8;
-  --muted-foreground: #66738a;
-  --card: #ffffff;
-  --card-foreground: #172033;
-  --border: #dce3f0;
-  --input: #ffffff;
-  --ring: #3B82F6;
-  --radius: 0.25rem;
-  --positive: #059669;
-  --negative: #DC2626;
-  --warning: #D97706;
-  --info: #2563EB;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --background: #292a2d;
+  --foreground: #f2f2f3;
+  --primary: #a2bffc;
+  --primary-foreground: #24324c;
+  --secondary: #393a3e;
+  --secondary-foreground: #c0c1c6;
+  --accent: #a2bffc;
+  --accent-foreground: #24324c;
+  --muted: #414247;
+  --muted-foreground: #adaeb6;
+  --card: #333438;
+  --card-foreground: #f2f2f3;
+  --border: #45464b;
+  --input: #333438;
+  --ring: #a2bffc;
+  --radius: 0.5rem;
+  --positive: #8bd0ab;
+  --negative: #eca0ad;
+  --warning: #dfbb78;
+  --info: #a2bffc;
 }
 
-/* Softer application-wide typography hierarchy for improved mobile readability. */
-.font-black,
-.font-extrabold {
-  font-weight: 400 !important;
-}
-
-.font-bold {
-  font-weight: 400 !important;
-}
-
-.font-semibold {
-  font-weight: 400 !important;
+.dark {
+  --background: #292a2d;
+  --foreground: #f2f2f3;
+  --primary: #a2bffc;
+  --primary-foreground: #24324c;
+  --secondary: #393a3e;
+  --secondary-foreground: #c0c1c6;
+  --accent: #a2bffc;
+  --accent-foreground: #24324c;
+  --muted: #414247;
+  --muted-foreground: #adaeb6;
+  --card: #333438;
+  --card-foreground: #f2f2f3;
+  --border: #45464b;
+  --input: #333438;
+  --ring: #a2bffc;
+  --radius: 0.5rem;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --positive: #8bd0ab;
+  --negative: #eca0ad;
+  --warning: #dfbb78;
+  --info: #a2bffc;
 }
 
 /* Bills uses a deliberately restrained palette: neutral surfaces, one accent,
@@ -216,7 +205,7 @@
 
   body {
     background-color: var(--background);
-    background-image: radial-gradient(circle at 50% -20%, rgba(96, 165, 250, 0.06), transparent 38%);
+    background-image: none;
     color: var(--foreground);
     font-family: var(--font-sans);
     font-size: 0.9375rem;
@@ -387,7 +376,7 @@
   .nav-item-active {
     background-color: rgba(96, 165, 250, 0.1);
     color: var(--primary);
-    border-left: 2px solid var(--primary);
+    box-shadow: inset 3px 0 0 var(--primary);
   }
 
   .badge-income {
@@ -480,8 +469,8 @@
   background-color: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 10px 14px;
-  box-shadow: 0 16px 36px rgba(2, 8, 23, 0.34);
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -659,4 +648,53 @@
   --negative: #c94b45;
   --warning: #b7791f;
   --info: #2878a8;
+}
+
+/* Shared visual system: 8px spacing, quiet surfaces, readable labels. */
+.light { color-scheme: light; }
+.dark { color-scheme: dark; }
+.theme-clean-light { color-scheme: light; }
+body { font-variant-numeric: tabular-nums; }
+.accounts-screen .text-negative {
+  text-shadow: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+.accounts-screen .bg-negative-subtle,
+.accounts-screen .bg-positive-subtle,
+.accounts-screen .bg-warning-subtle,
+.accounts-screen .border-negative-subtle,
+.accounts-screen .border-positive-subtle,
+.accounts-screen .border-warning-subtle,
+.accounts-screen [class*="shadow-negative"],
+.accounts-screen [class*="shadow-positive"],
+.accounts-screen [class*="shadow-warning"] {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+button, input, select, textarea { font-size: inherit; }
+button { font-weight: 500; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea {
+  border-radius: 8px;
+}
+input::placeholder, textarea::placeholder { color: var(--muted-foreground); opacity: 0.8; }
+label { line-height: 1.5; }
+svg.lucide { stroke-width: 1.75; }
+.light .text-slate-200, .light .text-slate-300 { color: var(--foreground) !important; }
+.light .text-slate-400, .light .text-slate-500 { color: var(--muted-foreground) !important; }
+.light .bg-slate-900, .light .bg-slate-950 { background-color: var(--card); }
+.light .card-glow-primary, .light .card-glow-negative, .light .card-glow-warning {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.03);
+}
+.gradient-text-primary {
+  background: none;
+  color: var(--primary);
+  -webkit-text-fill-color: currentColor;
+}
+.skeleton-pulse {
+  background-image: linear-gradient(90deg, var(--muted) 25%, var(--card) 50%, var(--muted) 75%);
+}
+@layer utilities {
+  .text-2xs, .text-3xs { font-size: 0.75rem; line-height: 1rem; }
 }

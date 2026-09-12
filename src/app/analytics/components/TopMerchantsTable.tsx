@@ -161,7 +161,7 @@ export default function TopMerchantsTable({
       </div>
 
       {/* Date & Subtitle Controls Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-t border-border/20 pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-t border-border/20 pt-3">
         {/* Left: Active Month Display */}
         <div className="text-xs font-bold text-foreground select-none uppercase tracking-wider py-1.5">
           📅 {MONTH_SHORT[selectedMonth]} {selectedYear}
@@ -171,7 +171,7 @@ export default function TopMerchantsTable({
       </div>
 
       {/* Filter Bar */}
-      <div className="mb-4 bg-[#0b0f1a]/10 p-2 border border-border/40 rounded-xl">
+      <div className="mb-4 bg-card/10 p-2 border border-border/40 rounded-xl">
         <ChartFilterBar
           selectedRange={selectedRange}
           setSelectedRange={setSelectedRange}

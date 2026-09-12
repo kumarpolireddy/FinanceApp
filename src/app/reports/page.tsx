@@ -271,14 +271,14 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card border border-border text-2xs font-bold text-foreground hover:bg-muted/80 transition"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-2xs font-bold text-foreground hover:bg-muted/80 transition"
             >
               <Printer size={13} />
               Print Report
             </button>
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-2xs font-bold hover:bg-primary/95 transition-all shadow-md"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-2xs font-bold hover:bg-primary/95 transition-all shadow-md"
             >
               <Download size={13} />
               Export CSV
@@ -287,15 +287,15 @@ export default function ReportsPage() {
         </div>
 
         {/* Filter Controls */}
-        <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-4 backdrop-blur-md flex flex-wrap gap-4 items-center justify-between print-hide">
+        <div className="bg-card/40 border border-border/30 rounded-2xl p-4 backdrop-blur-md flex flex-wrap gap-4 items-center justify-between print-hide">
           <div className="flex items-center gap-2 text-2xs font-semibold text-muted-foreground uppercase tracking-wider">
             <Filter size={12} className="text-primary" />
             Filters
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-4">
             {/* Range filter */}
-            <div className="flex items-center gap-2 bg-[#0b0f1a] border border-border rounded-xl px-2 py-1.5">
+            <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-2 py-1.5">
               <Calendar size={12} className="text-muted-foreground" />
               <select
                 value={dateRange}
@@ -310,7 +310,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Account filter */}
-            <div className="flex items-center gap-2 bg-[#0b0f1a] border border-border rounded-xl px-2 py-1.5">
+            <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-2 py-1.5">
               <Wallet size={12} className="text-muted-foreground" />
               <select
                 value={selectedAccountId}
@@ -331,7 +331,7 @@ export default function ReportsPage() {
         {/* KPI Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 print-full-width">
           {/* Asset Card */}
-          <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+          <div className="bg-card/40 border border-border/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
             <div className="space-y-1">
               <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-bold">
                 Total Assets
@@ -346,7 +346,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Liabilities Card */}
-          <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+          <div className="bg-card/40 border border-border/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
             <div className="space-y-1">
               <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-bold">
                 Total Liabilities
@@ -361,7 +361,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Net Savings Card */}
-          <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+          <div className="bg-card/40 border border-border/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
             <div className="space-y-1">
               <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-bold">
                 Net Period Savings
@@ -390,7 +390,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Net Worth Card */}
-          <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+          <div className="bg-card/40 border border-border/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
             <div className="space-y-1">
               <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-bold">
                 Current Net Worth
@@ -453,7 +453,7 @@ export default function ReportsPage() {
         <div className="print-full-width">
           {/* TAB 1: CASH FLOW */}
           {activeTab === 'cash-flow' && (
-            <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-6 space-y-6 print-border print:bg-transparent">
+            <div className="bg-card/40 border border-border/30 rounded-2xl p-6 space-y-6 print-border print:bg-transparent">
               <div className="flex justify-between items-center border-b border-border/30 pb-4">
                 <h2 className="text-base font-bold text-foreground">Cash Flow Statement</h2>
                 <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider font-mono">
@@ -478,7 +478,7 @@ export default function ReportsPage() {
                         ₹{cashFlowMetrics.income.toLocaleString('en-IN')}
                       </span>
                     </div>
-                    <div className="h-2 w-full bg-[#0b0f1a] rounded-full overflow-hidden border border-border/20">
+                    <div className="h-2 w-full bg-card rounded-full overflow-hidden border border-border/20">
                       <div className="h-full bg-[#10b981]" style={{ width: '100%' }} />
                     </div>
                   </div>
@@ -493,7 +493,7 @@ export default function ReportsPage() {
                         ₹{cashFlowMetrics.expense.toLocaleString('en-IN')}
                       </span>
                     </div>
-                    <div className="h-2 w-full bg-[#0b0f1a] rounded-full overflow-hidden border border-border/20">
+                    <div className="h-2 w-full bg-card rounded-full overflow-hidden border border-border/20">
                       <div
                         className="h-full bg-red-400"
                         style={{
@@ -514,7 +514,7 @@ export default function ReportsPage() {
                 {/* KPI Breakdown Table */}
                 <div className="overflow-x-auto border border-border/30 rounded-xl">
                   <table className="w-full text-left text-2xs border-collapse">
-                    <thead className="bg-[#0b0f1a] text-muted-foreground border-b border-border/30 font-bold uppercase tracking-wider">
+                    <thead className="bg-card text-muted-foreground border-b border-border/30 font-bold uppercase tracking-wider">
                       <tr>
                         <th className="py-2.5 px-4">Metric</th>
                         <th className="py-2.5 px-4 text-right">Value (INR)</th>
@@ -582,7 +582,7 @@ export default function ReportsPage() {
 
           {/* TAB 2: CATEGORY SPENDING */}
           {activeTab === 'category' && (
-            <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-6 space-y-4 print-border print:bg-transparent">
+            <div className="bg-card/40 border border-border/30 rounded-2xl p-6 space-y-4 print-border print:bg-transparent">
               <div className="flex justify-between items-center border-b border-border/30 pb-4 mb-2">
                 <h2 className="text-base font-bold text-foreground">Category Spending Report</h2>
                 <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider font-mono">
@@ -597,7 +597,7 @@ export default function ReportsPage() {
               ) : (
                 <div className="overflow-x-auto border border-border/30 rounded-xl">
                   <table className="w-full text-left text-2xs border-collapse">
-                    <thead className="bg-[#0b0f1a] text-muted-foreground border-b border-border/30 font-bold uppercase tracking-wider">
+                    <thead className="bg-card text-muted-foreground border-b border-border/30 font-bold uppercase tracking-wider">
                       <tr>
                         <th className="py-2.5 px-4">Category</th>
                         <th className="py-2.5 px-4 text-right">Income</th>
@@ -635,7 +635,7 @@ export default function ReportsPage() {
 
           {/* TAB 3: NET WORTH STATEMENT */}
           {activeTab === 'net-worth' && (
-            <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-6 space-y-6 print-border print:bg-transparent">
+            <div className="bg-card/40 border border-border/30 rounded-2xl p-6 space-y-6 print-border print:bg-transparent">
               <div className="flex justify-between items-center border-b border-border/30 pb-4">
                 <h2 className="text-base font-bold text-foreground">Net Worth Statement</h2>
                 <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider font-mono">
@@ -645,16 +645,16 @@ export default function ReportsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Assets Table */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <h3 className="text-2xs font-extrabold text-[#10b981] uppercase tracking-wider">
                     Assets (Cash & Bank)
                   </h3>
                   <div className="overflow-x-auto border border-border/30 rounded-xl">
                     <table className="w-full text-left text-2xs border-collapse">
-                      <thead className="bg-[#0b0f1a] text-muted-foreground border-b border-border/30 font-bold uppercase">
+                      <thead className="bg-card text-muted-foreground border-b border-border/30 font-bold uppercase">
                         <tr>
-                          <th className="py-2 px-3">Account</th>
-                          <th className="py-2 px-3 text-right">Balance</th>
+                          <th className="py-2 px-4">Account</th>
+                          <th className="py-2 px-4 text-right">Balance</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/25 font-mono">
@@ -666,15 +666,15 @@ export default function ReportsPage() {
                           )
                           .map((acc) => (
                             <tr key={acc.id}>
-                              <td className="py-2.5 px-3 font-sans text-foreground">{acc.name}</td>
-                              <td className="py-2.5 px-3 text-right text-[#10b981] font-bold">
+                              <td className="py-2.5 px-4 font-sans text-foreground">{acc.name}</td>
+                              <td className="py-2.5 px-4 text-right text-[#10b981] font-bold">
                                 ₹{acc.balance.toLocaleString('en-IN')}
                               </td>
                             </tr>
                           ))}
                         <tr className="bg-muted/10 font-bold">
-                          <td className="py-2.5 px-3 font-sans">Total Assets</td>
-                          <td className="py-2.5 px-3 text-right text-[#10b981]">
+                          <td className="py-2.5 px-4 font-sans">Total Assets</td>
+                          <td className="py-2.5 px-4 text-right text-[#10b981]">
                             ₹{netWorthMetrics.assets.toLocaleString('en-IN')}
                           </td>
                         </tr>
@@ -684,16 +684,16 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Liabilities Table */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <h3 className="text-2xs font-extrabold text-red-400 uppercase tracking-wider">
                     Liabilities (Loans)
                   </h3>
                   <div className="overflow-x-auto border border-border/30 rounded-xl">
                     <table className="w-full text-left text-2xs border-collapse">
-                      <thead className="bg-[#0b0f1a] text-muted-foreground border-b border-border/30 font-bold uppercase">
+                      <thead className="bg-card text-muted-foreground border-b border-border/30 font-bold uppercase">
                         <tr>
-                          <th className="py-2 px-3">Loan Target</th>
-                          <th className="py-2 px-3 text-right">Outstanding</th>
+                          <th className="py-2 px-4">Loan Target</th>
+                          <th className="py-2 px-4 text-right">Outstanding</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/25 font-mono">
@@ -701,8 +701,8 @@ export default function ReportsPage() {
                           .filter((acc) => acc.type === 'loan')
                           .map((acc) => (
                             <tr key={acc.id}>
-                              <td className="py-2.5 px-3 font-sans text-foreground">{acc.name}</td>
-                              <td className="py-2.5 px-3 text-right text-red-400 font-bold">
+                              <td className="py-2.5 px-4 font-sans text-foreground">{acc.name}</td>
+                              <td className="py-2.5 px-4 text-right text-red-400 font-bold">
                                 ₹{Math.abs(acc.balance).toLocaleString('en-IN')}
                               </td>
                             </tr>
@@ -711,15 +711,15 @@ export default function ReportsPage() {
                           <tr>
                             <td
                               colSpan={2}
-                              className="py-4 px-3 text-center text-muted-foreground italic text-3xs"
+                              className="py-4 px-4 text-center text-muted-foreground italic text-3xs"
                             >
                               No liability accounts configured.
                             </td>
                           </tr>
                         )}
                         <tr className="bg-muted/10 font-bold">
-                          <td className="py-2.5 px-3 font-sans">Total Liabilities</td>
-                          <td className="py-2.5 px-3 text-right text-red-400">
+                          <td className="py-2.5 px-4 font-sans">Total Liabilities</td>
+                          <td className="py-2.5 px-4 text-right text-red-400">
                             ₹{netWorthMetrics.liabilities.toLocaleString('en-IN')}
                           </td>
                         </tr>
@@ -733,7 +733,7 @@ export default function ReportsPage() {
 
           {/* TAB 4: TRANSACTION LEDGER */}
           {activeTab === 'ledger' && (
-            <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-2xl p-6 space-y-4 print-border print:bg-transparent">
+            <div className="bg-card/40 border border-border/30 rounded-2xl p-6 space-y-4 print-border print:bg-transparent">
               <div className="flex justify-between items-center border-b border-border/30 pb-4 mb-2">
                 <h2 className="text-base font-bold text-foreground">Transaction Ledger</h2>
                 <span className="text-3xs text-muted-foreground uppercase font-bold tracking-wider font-mono">
@@ -748,13 +748,13 @@ export default function ReportsPage() {
               ) : (
                 <div className="overflow-x-auto border border-border/30 rounded-xl max-h-[400px] select-scrollbar">
                   <table className="w-full text-left text-2xs border-collapse">
-                    <thead className="bg-[#0b0f1a] text-muted-foreground border-b border-border/30 font-bold uppercase sticky top-0">
+                    <thead className="bg-card text-muted-foreground border-b border-border/30 font-bold uppercase sticky top-0">
                       <tr>
-                        <th className="py-2.5 px-3">Date</th>
-                        <th className="py-2.5 px-3">Description</th>
-                        <th className="py-2.5 px-3">Category</th>
-                        <th className="py-2.5 px-3">Account</th>
-                        <th className="py-2.5 px-3 text-right">Amount</th>
+                        <th className="py-2.5 px-4">Date</th>
+                        <th className="py-2.5 px-4">Description</th>
+                        <th className="py-2.5 px-4">Category</th>
+                        <th className="py-2.5 px-4">Account</th>
+                        <th className="py-2.5 px-4 text-right">Amount</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/25 text-foreground/80 font-mono">
@@ -762,24 +762,24 @@ export default function ReportsPage() {
                         const accName = accounts.find((a) => a.id === t.account)?.name || 'Unknown';
                         return (
                           <tr key={t.id} className="hover:bg-muted/5 transition-colors">
-                            <td className="py-2 px-3 font-sans">
+                            <td className="py-2 px-4 font-sans">
                               {new Date(t.date).toLocaleDateString('en-IN', {
                                 day: '2-digit',
                                 month: 'short',
                                 year: 'numeric',
                               })}
                             </td>
-                            <td className="py-2 px-3 font-sans font-semibold text-foreground">
+                            <td className="py-2 px-4 font-sans font-semibold text-foreground">
                               {t.description}
                             </td>
-                            <td className="py-2 px-3 font-sans">
+                            <td className="py-2 px-4 font-sans">
                               <span className="px-1.5 py-0.5 rounded bg-muted border border-border/30 text-3xs">
                                 {t.category}
                               </span>
                             </td>
-                            <td className="py-2 px-3 font-sans">{accName}</td>
+                            <td className="py-2 px-4 font-sans">{accName}</td>
                             <td
-                              className={`py-2 px-3 text-right font-bold ${
+                              className={`py-2 px-4 text-right font-bold ${
                                 t.type === 'income'
                                   ? 'text-[#10b981]'
                                   : t.type === 'expense'

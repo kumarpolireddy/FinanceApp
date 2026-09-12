@@ -269,12 +269,12 @@ export default function AlarmsPage() {
     <AppLayout>
       <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Top Title Banner */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-6 rounded-3xl border border-white/10 shadow-card-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="space-y-1 z-10">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-inner">
+            <div className="flex items-center gap-4">
+              <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-inner">
                 <Clock className="w-7 h-7 animate-pulse" />
               </div>
               <div>
@@ -285,7 +285,7 @@ export default function AlarmsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 z-10">
+          <div className="flex items-center gap-4 z-10">
             {/* Master Toggle */}
             <button
               onClick={handleMasterToggle}
@@ -310,7 +310,7 @@ export default function AlarmsPage() {
 
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all transform active:scale-95"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all transform active:scale-95"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               Create Alarm
@@ -320,19 +320,19 @@ export default function AlarmsPage() {
 
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-white/10 shadow-lg flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Alarms</p>
               <p className="text-2xl font-bold text-white mt-1">
                 {alarms.filter((a) => a.enabled).length} / {alarms.length}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-4 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <Zap className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-white/10 shadow-lg flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Next Alarm</p>
               <p className="text-xl font-mono font-bold text-emerald-400 mt-1">
@@ -342,12 +342,12 @@ export default function AlarmsPage() {
                 <p className="text-2xs text-slate-400">Rings in {nextAlarmInfo.countdown}</p>
               )}
             </div>
-            <div className="p-3 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+            <div className="p-4 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
               <Clock className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-white/10 shadow-lg flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Expense Logging</p>
               <p className="text-xl font-bold text-white mt-1">
@@ -362,12 +362,12 @@ export default function AlarmsPage() {
                 )}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="p-4 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <PlusCircle className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-white/10 shadow-lg flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Audio & Sound</p>
               <p className="text-sm font-semibold text-slate-200 mt-1">
@@ -375,7 +375,7 @@ export default function AlarmsPage() {
               </p>
               <p className="text-2xs text-slate-400 capitalize">Default: {settings.defaultSound}</p>
             </div>
-            <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            <div className="p-4 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
               <Volume2 className="w-6 h-6" />
             </div>
           </div>
@@ -421,7 +421,7 @@ export default function AlarmsPage() {
             {alarms.map((alarm) => (
               <div
                 key={alarm.id}
-                className={`relative flex flex-col justify-between p-6 rounded-3xl border transition-all shadow-xl overflow-hidden group ${
+                className={`relative flex flex-col justify-between p-6 rounded-3xl border transition-all shadow-card-lg overflow-hidden group ${
                   alarm.enabled
                     ? 'bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 border-white/15 hover:border-emerald-500/40'
                     : 'bg-slate-900/40 border-white/5 opacity-60'
@@ -552,7 +552,7 @@ export default function AlarmsPage() {
             </div>
 
             {/* Credit Cards Section */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-amber-400" />
                 Credit Cards (Statement Billing Date & Payment Due Date Alarms)
@@ -564,7 +564,7 @@ export default function AlarmsPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {creditCardsWithDue.map((card) => (
-                    <div key={card.id} className="p-5 rounded-2xl bg-slate-900 border border-white/10 space-y-3">
+                    <div key={card.id} className="p-6 rounded-2xl bg-slate-900 border border-white/10 space-y-4">
                       <div>
                         <h4 className="font-bold text-white text-base">{card.name}</h4>
                         <div className="text-xs space-y-0.5 mt-1">
@@ -601,7 +601,7 @@ export default function AlarmsPage() {
                               loadData();
                               setActiveTab('alarms');
                             }}
-                            className="px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 font-semibold text-xs border border-sky-500/30 transition-colors flex items-center gap-1"
+                            className="px-4 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 font-semibold text-xs border border-sky-500/30 transition-colors flex items-center gap-1"
                           >
                             + Billing Date Alarm ({card.billingCycle}th)
                           </button>
@@ -625,7 +625,7 @@ export default function AlarmsPage() {
                               loadData();
                               setActiveTab('alarms');
                             }}
-                            className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-semibold text-xs border border-amber-500/30 transition-colors flex items-center gap-1"
+                            className="px-4 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-semibold text-xs border border-amber-500/30 transition-colors flex items-center gap-1"
                           >
                             + Payment Due Alarm ({card.dueDate}th)
                           </button>
@@ -638,7 +638,7 @@ export default function AlarmsPage() {
             </div>
 
             {/* Active Loans Due Section */}
-            <div className="space-y-3 pt-4">
+            <div className="space-y-4 pt-4">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Landmark className="w-5 h-5 text-blue-400" />
                 Active Loans & Mortgage EMI Due Reminders
@@ -650,7 +650,7 @@ export default function AlarmsPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {loansWithEMI.map((loan) => (
-                    <div key={loan.id} className="p-5 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-between">
+                    <div key={loan.id} className="p-6 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-between">
                       <div>
                         <h4 className="font-bold text-white text-base">{loan.name}</h4>
                         <p className="text-xs text-blue-400 font-semibold mt-0.5">
@@ -675,7 +675,7 @@ export default function AlarmsPage() {
                           loadData();
                           setActiveTab('alarms');
                         }}
-                        className="px-3.5 py-2 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 font-semibold text-xs border border-blue-500/30 transition-colors"
+                        className="px-4 py-2 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 font-semibold text-xs border border-blue-500/30 transition-colors"
                       >
                         Create EMI Alarm
                       </button>
@@ -698,7 +698,7 @@ export default function AlarmsPage() {
                     clearAlarmLogs();
                     loadData();
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-400 hover:text-white"
                 >
                   Clear Log History
                 </button>
@@ -786,7 +786,7 @@ export default function AlarmsPage() {
                   <button
                     key={snd}
                     onClick={() => handleTestSound(snd)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-300 text-xs font-semibold border border-white/10 transition-colors capitalize"
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-300 text-xs font-semibold border border-white/10 transition-colors capitalize"
                   >
                     <Play className="w-3.5 h-3.5" />
                     {snd}
@@ -814,7 +814,7 @@ export default function AlarmsPage() {
         {/* CREATE / EDIT ALARM MODAL */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-lg rounded-3xl bg-slate-900 border border-white/15 p-6 sm:p-8 shadow-2xl space-y-6 text-white">
+            <div className="w-full max-w-lg rounded-3xl bg-slate-900 border border-white/15 p-6 sm:p-8 shadow-card-lg space-y-6 text-white">
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <h2 className="text-xl font-bold">
                   {editingAlarm ? 'Edit Scheduled Alarm' : 'Create New Alarm'}
@@ -854,13 +854,13 @@ export default function AlarmsPage() {
                 </div>
 
                 {/* Alarm Category / Type */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">Alarm Category</label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
                     >
                       <option value="daily_expense">Daily Expense</option>
                       <option value="bill_due">Bill / Card Due</option>
@@ -875,7 +875,7 @@ export default function AlarmsPage() {
                     <select
                       value={formData.repeat}
                       onChange={(e) => setFormData({ ...formData, repeat: e.target.value as any })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
                     >
                       <option value="daily">Daily</option>
                       <option value="weekdays">Mon - Fri</option>
@@ -887,14 +887,14 @@ export default function AlarmsPage() {
                 </div>
 
                 {/* Sound Selector */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">Ringtone Sound</label>
                     <div className="flex gap-2">
                       <select
                         value={formData.sound}
                         onChange={(e) => setFormData({ ...formData, sound: e.target.value as any })}
-                        className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none capitalize"
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none capitalize"
                       >
                         <option value="chime">Chime</option>
                         <option value="digital">Digital Beep</option>
@@ -919,7 +919,7 @@ export default function AlarmsPage() {
                     <select
                       value={formData.snoozeDurationMinutes}
                       onChange={(e) => setFormData({ ...formData, snoozeDurationMinutes: Number(e.target.value) })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
                     >
                       <option value={5}>5 minutes</option>
                       <option value={10}>10 minutes</option>
@@ -941,11 +941,11 @@ export default function AlarmsPage() {
                   />
                 </div>
 
-                <div className="pt-4 flex items-center justify-end gap-3">
+                <div className="pt-4 flex items-center justify-end gap-4">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold"
+                    className="px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold"
                   >
                     Cancel
                   </button>

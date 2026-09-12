@@ -537,7 +537,7 @@ export default function AccountsPage() {
 
   if (!isMounted) {
     return (
-      <AppLayout>
+      <AppLayout className="[--background:#292a2d]">
         <div className="max-w-md mx-auto px-4 py-3 space-y-4 bg-background min-h-[80vh] flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
@@ -546,11 +546,11 @@ export default function AccountsPage() {
   }
 
   return (
-    <AppLayout>
-      <div className="w-full px-0 pt-3 pb-32 space-y-4">
+    <AppLayout className="[--background:#292a2d]">
+      <div className="accounts-screen w-full px-0 pt-3 pb-32 space-y-4">
         
         {/* Header Bar */}
-        <div className="px-2.5 sm:px-3">
+        <div className="px-2.5 sm:px-4">
           <div className="flex items-center justify-between pb-2">
             <div>
               <h1 className="text-lg font-bold text-foreground">My Accounts</h1>
@@ -583,15 +583,19 @@ export default function AccountsPage() {
           <div className="grid grid-cols-3 divide-x divide-border/60">
             <div>
               <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide block">Total Assets</span>
-              <span className="text-sm sm:text-base font-bold text-positive block mt-1">{formatVal(groupedAccounts.totalAssets)}</span>
+              <span className={`text-sm sm:text-base font-bold block mt-1 ${groupedAccounts.totalAssets > 0 ? 'text-positive' : 'text-muted-foreground'}`}>
+                {formatVal(groupedAccounts.totalAssets)}
+              </span>
             </div>
             <div>
               <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide block">Liabilities</span>
-              <span className="text-sm sm:text-base font-bold text-negative block mt-1">{formatVal(groupedAccounts.totalLiabilities)}</span>
+              <span className={`text-sm sm:text-base font-bold block mt-1 ${groupedAccounts.totalLiabilities > 0 ? 'text-negative' : 'text-muted-foreground'}`}>
+                {formatVal(groupedAccounts.totalLiabilities)}
+              </span>
             </div>
             <div>
               <span className="text-2xs font-semibold text-muted-foreground uppercase tracking-wide block">Net Worth</span>
-              <span className={`text-sm sm:text-base font-bold block mt-1 ${groupedAccounts.netWorth >= 0 ? 'text-positive' : 'text-negative'}`}>
+              <span className={`text-sm sm:text-base font-bold block mt-1 ${groupedAccounts.netWorth > 0 ? 'text-positive' : groupedAccounts.netWorth < 0 ? 'text-negative' : 'text-muted-foreground'}`}>
                 {formatVal(groupedAccounts.netWorth)}
               </span>
             </div>
@@ -599,7 +603,7 @@ export default function AccountsPage() {
         </div>
 
         {/* Classified Accounts Ledger */}
-        <div className="space-y-3 px-0">
+        <div className="space-y-4 px-0">
           {Object.entries(groupedAccounts.groups).map(([key, group]) => {
             if (group.items.length === 0) return null;
             const Icon = group.icon;
@@ -636,7 +640,7 @@ export default function AccountsPage() {
                   onMouseDown={() => handlePressStart(key, group.name)}
                   onMouseUp={handlePressEnd}
                   onMouseLeave={handlePressEnd}
-                  className={`flex justify-between items-center px-3 py-2.5 cursor-pointer bg-secondary hover:bg-secondary/80 transition select-none ${
+                  className={`flex justify-between items-center px-4 py-2.5 cursor-pointer bg-secondary hover:bg-secondary/80 transition select-none ${
                     dragTargetId === key && draggingId !== key
                       ? 'ring-2 ring-inset ring-primary'
                       : ''
@@ -646,7 +650,7 @@ export default function AccountsPage() {
                     <Icon size={16} className={`${group.color} shrink-0`} />
                     <span className="font-normal text-foreground tracking-normal text-sm truncate">{group.name}</span>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-3 ml-2 shrink-0">
+                  <div className="flex items-center gap-1 sm:gap-4 ml-2 shrink-0">
                     {isCreditGroup ? (
                         <div className="grid grid-cols-2 gap-2 sm:gap-4 text-right select-none">
                           <div className="w-[62px] sm:w-[72px]">
@@ -655,7 +659,7 @@ export default function AccountsPage() {
                             </div>
                             {showBalances && (
                               <div className="text-xs sm:text-sm font-semibold text-foreground font-mono mt-0.5">
-                                {formatVal(creditCardTotals.payable)}
+                                {formatVal(Math.max(0, Number(creditCardTotals.payable) || 0))}
                               </div>
                             )}
                           </div>
@@ -665,13 +669,13 @@ export default function AccountsPage() {
                             </div>
                             {showBalances && (
                               <div className="text-xs sm:text-sm font-semibold text-foreground font-mono mt-0.5">
-                                {formatVal(creditCardTotals.outstanding)}
+                                {formatVal(Math.max(0, Number(creditCardTotals.outstanding) || 0))}
                               </div>
                             )}
                           </div>
                         </div>
                     ) : showBalances ? (
-                        <span className={`font-mono text-sm font-bold ${group.total < 0 ? 'text-negative' : 'text-positive'}`}>
+                        <span className={`font-mono text-sm font-bold ${group.total < 0 ? 'text-negative' : group.total > 0 ? 'text-positive' : 'text-muted-foreground'}`}>
                           {formatVal(group.total)}
                         </span>
                     ) : null}
@@ -740,16 +744,16 @@ export default function AccountsPage() {
                             {acc.notes && <span className="text-[11px] text-muted-foreground/80 block truncate max-w-[200px]">{acc.notes}</span>}
                           </div>
                           {isGroupReorderMode || accountReorderGroupKey ? null : creditBalances ? (
-                            <div className="shrink-0 flex items-center gap-1 sm:gap-3 font-mono select-none">
+                            <div className="shrink-0 flex items-center gap-1 sm:gap-4 font-mono select-none">
                               <div className="grid grid-cols-2 gap-2 sm:gap-4 text-right">
                                 <div className="w-[62px] sm:w-[72px]">
                                   <span className="block text-xs sm:text-sm font-semibold text-negative">
-                                    {formatVal(creditBalances.payable)}
+                                    {formatVal(Math.max(0, Number(creditBalances.payable) || 0))}
                                   </span>
                                 </div>
                                 <div className="w-[62px] sm:w-[72px]">
                                   <span className="block text-xs sm:text-sm font-semibold text-foreground">
-                                    {formatVal(creditBalances.outstanding)}
+                                    {formatVal(Math.max(0, Number(creditBalances.outstanding) || 0))}
                                   </span>
                                 </div>
                               </div>
@@ -757,7 +761,7 @@ export default function AccountsPage() {
                           ) : (
                             <div className="shrink-0 flex gap-8 text-right font-mono select-none">
                               <div className="min-w-[80px]">
-                                <span className={`text-sm font-bold block ${acc.balance < 0 ? 'text-negative' : 'text-positive'}`}>
+                                <span className={`text-sm font-bold block ${acc.balance < 0 ? 'text-negative' : acc.balance > 0 ? 'text-positive' : 'text-muted-foreground'}`}>
                                   {formatVal(acc.balance)}
                                 </span>
                                 {key === 'loan' && (
@@ -801,7 +805,7 @@ export default function AccountsPage() {
         title="Create New Account"
         description="Set up a new bank, cash, credit card, or loan ledger"
       >
-        <form onSubmit={handleAddAccount} className="space-y-5 text-sm font-semibold">
+        <form onSubmit={handleAddAccount} className="space-y-6 text-sm font-semibold">
           <div>
             <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
               Account Name *
@@ -811,7 +815,7 @@ export default function AccountsPage() {
               required
               value={newAccName}
               onChange={(e) => setNewAccName(e.target.value)}
-              className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition"
+              className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition"
             />
           </div>
 
@@ -824,7 +828,7 @@ export default function AccountsPage() {
                 <select
                   value={newAccType}
                   onChange={(e) => setNewAccType(e.target.value as any)}
-                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary transition font-bold"
+                  className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary transition font-bold"
                 >
                   <option value="accounts">🏦 Bank Account</option>
                   <option value="cash">💵 Cash Account</option>
@@ -844,7 +848,7 @@ export default function AccountsPage() {
                 step="any"
                 value={newAccBalance}
                 onChange={(e) => setNewAccBalance(e.target.value)}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
               />
             </div>
           </div>
@@ -860,10 +864,10 @@ export default function AccountsPage() {
                   step="any"
                   value={newAccLimit}
                   onChange={(e) => setNewAccLimit(e.target.value)}
-                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                  className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
                     Cycle Start Day
@@ -874,7 +878,7 @@ export default function AccountsPage() {
                     max="31"
                     value={newAccBillingCycle}
                     onChange={(e) => setNewAccBillingCycle(e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                 </div>
                 <div>
@@ -887,7 +891,7 @@ export default function AccountsPage() {
                     max="31"
                     value={newAccDueDay}
                     onChange={(e) => setNewAccDueDay(e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                 </div>
                 <div>
@@ -899,7 +903,7 @@ export default function AccountsPage() {
                     step="any"
                     value={newAccMinPayment}
                     onChange={(e) => setNewAccMinPayment(e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                 </div>
               </div>
@@ -913,7 +917,7 @@ export default function AccountsPage() {
                   max="30"
                   value={newAccNotifyDays}
                   onChange={(e) => setNewAccNotifyDays(e.target.value)}
-                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                  className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                 />
               </div>
             </div>
@@ -929,7 +933,7 @@ export default function AccountsPage() {
                 step="0.01"
                 value={newAccInterest}
                 onChange={(e) => setNewAccInterest(e.target.value)}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
               />
             </div>
           )}
@@ -942,11 +946,11 @@ export default function AccountsPage() {
               value={newAccNotes}
               onChange={(e) => setNewAccNotes(e.target.value)}
               rows={2}
-              className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-medium"
+              className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-medium"
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-4 pt-2">
             <button
               type="button"
               onClick={() => setIsAddModalOpen(false)}
@@ -973,7 +977,7 @@ export default function AccountsPage() {
           <button
             type="button"
             onClick={handleChooseModifyOrder}
-            className="w-full flex items-center gap-3 px-3 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
+            className="w-full flex items-center gap-4 px-4 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
           >
             <GripVertical size={18} className="text-primary" />
             <div>
@@ -986,7 +990,7 @@ export default function AccountsPage() {
           <button
             type="button"
             onClick={handleChooseRenameGroup}
-            className="w-full flex items-center gap-3 px-3 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
+            className="w-full flex items-center gap-4 px-4 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
           >
             <Pencil size={18} className="text-primary" />
             <div>
@@ -1009,7 +1013,7 @@ export default function AccountsPage() {
           <button
             type="button"
             onClick={handleChooseModifySelectedAccountOrder}
-            className="w-full flex items-center gap-3 px-3 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
+            className="w-full flex items-center gap-4 px-4 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
           >
             <GripVertical size={18} className="text-primary" />
             <div>
@@ -1019,7 +1023,7 @@ export default function AccountsPage() {
           <button
             type="button"
             onClick={handleChooseRenameAccount}
-            className="w-full flex items-center gap-3 px-3 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
+            className="w-full flex items-center gap-4 px-4 py-3 bg-secondary hover:bg-muted text-foreground rounded-lg text-left"
           >
             <Pencil size={18} className="text-primary" />
             <div>
@@ -1071,7 +1075,7 @@ export default function AccountsPage() {
                     key={key}
                     data-reorder-type="group"
                     data-reorder-id={key}
-                    className={`flex items-center justify-between p-3 border rounded-xl transition ${
+                    className={`flex items-center justify-between p-4 border rounded-xl transition ${
                       draggingId === key
                         ? 'bg-primary/10 border-primary/40 opacity-70'
                         : dragTargetId === key
@@ -1109,7 +1113,7 @@ export default function AccountsPage() {
                   key={acc.id}
                   data-reorder-type="account"
                   data-reorder-id={acc.id}
-                  className={`flex items-center justify-between p-3 border rounded-xl transition ${
+                  className={`flex items-center justify-between p-4 border rounded-xl transition ${
                     draggingId === acc.id
                       ? 'bg-primary/10 border-primary/40 opacity-70'
                       : dragTargetId === acc.id
@@ -1168,10 +1172,10 @@ export default function AccountsPage() {
               autoFocus
               value={renameGroupName}
               onChange={(e) => setRenameGroupName(e.target.value)}
-              className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
+              className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
             />
           </div>
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-4 pt-2">
             <button
               type="button"
               onClick={() => setRenameGroupTarget(null)}
@@ -1195,7 +1199,7 @@ export default function AccountsPage() {
         onClose={() => setEditingAccountTarget(null)}
         title="Edit Account Details"
       >
-        <form onSubmit={handleSaveAccountEdit} className="space-y-5 text-sm font-semibold">
+        <form onSubmit={handleSaveAccountEdit} className="space-y-6 text-sm font-semibold">
           <div>
             <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
               Account Name *
@@ -1205,7 +1209,7 @@ export default function AccountsPage() {
               required
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
+              className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
             />
           </div>
 
@@ -1218,7 +1222,7 @@ export default function AccountsPage() {
                 <select
                   value={editType}
                   onChange={(e) => setEditType(e.target.value as any)}
-                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary transition font-bold"
+                  className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary transition font-bold"
                 >
                   <option value="accounts">🏦 Bank Account</option>
                   <option value="cash">💵 Cash Account</option>
@@ -1238,7 +1242,7 @@ export default function AccountsPage() {
                 step="any"
                 value={editBalance}
                 onChange={(e) => setEditBalance(e.target.value)}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
               />
             </div>
           </div>
@@ -1254,10 +1258,10 @@ export default function AccountsPage() {
                   step="any"
                   value={editCreditLimit}
                   onChange={(e) => setEditCreditLimit(e.target.value)}
-                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                  className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
                     Cycle Start Day
@@ -1268,7 +1272,7 @@ export default function AccountsPage() {
                     max="31"
                     value={editBillingCycle}
                     onChange={(e) => setEditBillingCycle(e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                 </div>
                 <div>
@@ -1281,7 +1285,7 @@ export default function AccountsPage() {
                     max="31"
                     value={editDueDate}
                     onChange={(e) => setEditDueDate(e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                 </div>
                 <div>
@@ -1293,7 +1297,7 @@ export default function AccountsPage() {
                     step="any"
                     value={editMinPayment}
                     onChange={(e) => setEditMinPayment(e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                 </div>
               </div>
@@ -1307,7 +1311,7 @@ export default function AccountsPage() {
                   max="30"
                   value={editNotifyDays}
                   onChange={(e) => setEditNotifyDays(e.target.value)}
-                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                  className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
                 />
               </div>
             </div>
@@ -1323,7 +1327,7 @@ export default function AccountsPage() {
                 step="0.01"
                 value={editInterestRate}
                 onChange={(e) => setEditInterestRate(e.target.value)}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
               />
             </div>
           )}
@@ -1336,11 +1340,11 @@ export default function AccountsPage() {
               value={editNotes}
               onChange={(e) => setEditNotes(e.target.value)}
               rows={2}
-              className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-medium"
+              className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-medium"
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-4 pt-2">
             <button
               type="button"
               onClick={() => setEditingAccountTarget(null)}

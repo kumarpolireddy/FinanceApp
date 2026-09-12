@@ -536,7 +536,7 @@ export default function SplitExpensesPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-2xl mx-auto px-3.5 py-3 space-y-4 bg-background min-h-[90vh]">
+      <div className="max-w-2xl mx-auto px-4 py-3 space-y-4 bg-background min-h-[90vh]">
         {/* Header Navigation */}
         <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
           <div className="flex items-center gap-2">
@@ -556,7 +556,7 @@ export default function SplitExpensesPage() {
 
           <button
             onClick={() => setIsAddSplitModalOpen(true)}
-            className="px-3 py-1 bg-primary text-primary-foreground text-xs font-normal rounded-lg hover:opacity-90 transition flex items-center gap-1 cursor-pointer shadow-xs"
+            className="px-4 py-1 bg-primary text-primary-foreground text-xs font-normal rounded-lg hover:opacity-90 transition flex items-center gap-1 cursor-pointer shadow-xs"
           >
             <PlusCircle size={14} />
             <span>Add Split</span>
@@ -564,7 +564,7 @@ export default function SplitExpensesPage() {
         </div>
 
         {/* Top Summary Banner */}
-        <div className="grid grid-cols-3 bg-secondary/40 border border-border/60 rounded-xl p-3 text-center gap-2 shadow-xs">
+        <div className="grid grid-cols-3 bg-secondary/40 border border-border/60 rounded-xl p-4 text-center gap-2 shadow-xs">
           <div>
             <span className="text-[10px] text-muted-foreground font-normal uppercase block">
               Total To Receive
@@ -614,7 +614,7 @@ export default function SplitExpensesPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('all')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer ${
+                  className={`flex-1 py-1.5 px-4 rounded-lg text-xs font-normal transition cursor-pointer ${
                     statusFilter === 'all'
                       ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -625,7 +625,7 @@ export default function SplitExpensesPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('pending')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
+                  className={`flex-1 py-1.5 px-4 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
                     statusFilter === 'pending'
                       ? 'bg-negative text-white shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -637,7 +637,7 @@ export default function SplitExpensesPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('settled')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
+                  className={`flex-1 py-1.5 px-4 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
                     statusFilter === 'settled'
                       ? 'bg-positive text-white shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -652,7 +652,7 @@ export default function SplitExpensesPage() {
             {/* People List Categorized */}
             <div className="space-y-4">
               {filteredPeople.length === 0 ? (
-                <div className="bg-secondary border border-border/60 rounded-xl p-8 text-center space-y-3">
+                <div className="bg-secondary border border-border/60 rounded-xl p-8 text-center space-y-4">
                   <Users size={32} className="mx-auto text-muted-foreground/40" />
                   <p className="text-sm font-normal text-foreground">No Split Expenses Found</p>
                   <p className="text-xs text-muted-foreground">
@@ -697,9 +697,9 @@ export default function SplitExpensesPage() {
                             <div
                               key={person.personName}
                               onClick={() => setSelectedPerson(person.personName)}
-                              className="bg-secondary border border-border/60 hover:border-primary/40 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition active:scale-[0.99] shadow-xs"
+                              className="bg-secondary border border-border/60 hover:border-primary/40 rounded-xl p-4 flex items-center justify-between gap-4 cursor-pointer transition active:scale-[0.99] shadow-xs"
                             >
-                              <div className="flex items-center gap-3 min-w-0">
+                              <div className="flex items-center gap-4 min-w-0">
                                 <div className="w-10 h-10 rounded-full bg-negative/10 border border-negative/20 flex items-center justify-center text-negative shrink-0">
                                   <UserCheck size={18} />
                                 </div>
@@ -724,7 +724,7 @@ export default function SplitExpensesPage() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-3 shrink-0 text-right">
+                              <div className="flex items-center gap-4 shrink-0 text-right">
                                 <div>
                                   <span className="text-xs text-muted-foreground block">
                                     You need to receive
@@ -765,9 +765,9 @@ export default function SplitExpensesPage() {
                             <div
                               key={person.personName}
                               onClick={() => setSelectedPerson(person.personName)}
-                              className="bg-secondary border border-border/60 hover:border-primary/40 rounded-xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition active:scale-[0.99] shadow-xs"
+                              className="bg-secondary border border-border/60 hover:border-primary/40 rounded-xl p-4 flex items-center justify-between gap-4 cursor-pointer transition active:scale-[0.99] shadow-xs"
                             >
-                              <div className="flex items-center gap-3 min-w-0">
+                              <div className="flex items-center gap-4 min-w-0">
                                 <div className="w-10 h-10 rounded-full bg-positive/10 border border-positive/20 flex items-center justify-center text-positive shrink-0">
                                   <CheckCircle2 size={18} />
                                 </div>
@@ -792,7 +792,7 @@ export default function SplitExpensesPage() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-3 shrink-0 text-right">
+                              <div className="flex items-center gap-4 shrink-0 text-right">
                                 <div>
                                   <span className="text-xs font-normal text-positive shrink-0">
                                     Paid
@@ -817,7 +817,7 @@ export default function SplitExpensesPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('all')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer ${
+                  className={`flex-1 py-1.5 px-4 rounded-lg text-xs font-normal transition cursor-pointer ${
                     statusFilter === 'all'
                       ? 'bg-primary text-primary-foreground shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -828,7 +828,7 @@ export default function SplitExpensesPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('pending')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
+                  className={`flex-1 py-1.5 px-4 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
                     statusFilter === 'pending'
                       ? 'bg-negative text-white shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -842,7 +842,7 @@ export default function SplitExpensesPage() {
                 <button
                   type="button"
                   onClick={() => setStatusFilter('settled')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
+                  className={`flex-1 py-1.5 px-4 rounded-lg text-xs font-normal transition cursor-pointer flex items-center justify-center gap-1 ${
                     statusFilter === 'settled'
                       ? 'bg-positive text-white shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
@@ -872,7 +872,7 @@ export default function SplitExpensesPage() {
                     if (pendingItems.length === 0) return null;
 
                     return (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <div className="flex items-center justify-between px-1 border-b border-border/30 pb-1.5">
                           <h3 className="text-xs font-normal text-negative uppercase tracking-wider flex items-center gap-1.5">
                             <Clock size={13} />
@@ -907,7 +907,7 @@ export default function SplitExpensesPage() {
                           return (
                             <div
                               key={s.id}
-                              className="bg-negative/10 border border-negative/30 hover:border-negative/50 rounded-xl p-3.5 space-y-2.5 shadow-xs"
+                              className="bg-negative/10 border border-negative/30 hover:border-negative/50 rounded-xl p-4 space-y-2.5 shadow-xs"
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -985,7 +985,7 @@ export default function SplitExpensesPage() {
                                       item.memberPending
                                     )
                                   }
-                                  className="px-3 py-1 bg-primary text-primary-foreground text-xs font-normal rounded-lg hover:opacity-90 transition flex items-center gap-1 cursor-pointer"
+                                  className="px-4 py-1 bg-primary text-primary-foreground text-xs font-normal rounded-lg hover:opacity-90 transition flex items-center gap-1 cursor-pointer"
                                 >
                                   <span>Record Payment</span>
                                 </button>
@@ -1011,7 +1011,7 @@ export default function SplitExpensesPage() {
                     if (settledItems.length === 0) return null;
 
                     return (
-                      <div className="space-y-3 pt-2">
+                      <div className="space-y-4 pt-2">
                         <div className="flex items-center justify-between px-1 border-b border-border/30 pb-1.5">
                           <h3 className="text-xs font-normal text-positive uppercase tracking-wider flex items-center gap-1.5">
                             <CheckCircle2 size={13} />
@@ -1041,7 +1041,7 @@ export default function SplitExpensesPage() {
                           return (
                             <div
                               key={s.id}
-                              className="bg-positive/10 border border-positive/30 hover:border-positive/50 rounded-xl p-3.5 space-y-2.5 shadow-xs"
+                              className="bg-positive/10 border border-positive/30 hover:border-positive/50 rounded-xl p-4 space-y-2.5 shadow-xs"
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -1138,7 +1138,7 @@ export default function SplitExpensesPage() {
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 required
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:border-primary"
+                className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-sm font-mono text-foreground focus:outline-none focus:border-primary"
               />
             </div>
 
@@ -1150,7 +1150,7 @@ export default function SplitExpensesPage() {
                 value={paymentAccount}
                 onChange={(e) => setPaymentAccount(e.target.value)}
                 required
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs font-normal text-foreground focus:outline-none focus:border-primary appearance-none cursor-pointer"
+                className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-xs font-normal text-foreground focus:outline-none focus:border-primary appearance-none cursor-pointer"
               >
                 {accounts.map((acc) => (
                   <option key={acc.id} value={acc.id}>
@@ -1168,7 +1168,7 @@ export default function SplitExpensesPage() {
                 type="text"
                 value={paymentNotes}
                 onChange={(e) => setPaymentNotes(e.target.value)}
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary"
+                className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-xs text-foreground focus:outline-none focus:border-primary"
               />
             </div>
 
@@ -1176,7 +1176,7 @@ export default function SplitExpensesPage() {
               <button
                 type="button"
                 onClick={() => setIsPaymentModalOpen(false)}
-                className="px-3.5 py-1.5 bg-secondary text-foreground text-xs font-normal rounded-lg hover:bg-muted/40 transition cursor-pointer"
+                className="px-4 py-1.5 bg-secondary text-foreground text-xs font-normal rounded-lg hover:bg-muted/40 transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -1198,9 +1198,9 @@ export default function SplitExpensesPage() {
             title="Add New Split Expense"
             size="lg"
           >
-            <form onSubmit={handleAddSplitSubmit} className="space-y-3 text-xs font-normal">
+            <form onSubmit={handleAddSplitSubmit} className="space-y-4 text-xs font-normal">
               {/* Split Name Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Split Name
                 </span>
@@ -1214,7 +1214,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Total Amount Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Total Paid
                 </span>
@@ -1233,7 +1233,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Date Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Date
                 </span>
@@ -1247,7 +1247,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Paid From Account Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Paid From
                 </span>
@@ -1258,7 +1258,7 @@ export default function SplitExpensesPage() {
                   className="flex-1 bg-transparent border-b border-white/[0.12] focus:border-primary text-xs text-foreground focus:outline-none py-1 px-0 font-normal appearance-none cursor-pointer"
                 >
                   {accounts.map((acc) => (
-                    <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                    <option key={acc.id} value={acc.id} className="bg-card text-[#F2F2F4]">
                       {acc.name}
                     </option>
                   ))}
@@ -1266,7 +1266,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Category Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Category
                 </span>
@@ -1276,7 +1276,7 @@ export default function SplitExpensesPage() {
                   className="flex-1 bg-transparent border-b border-white/[0.12] focus:border-primary text-xs text-foreground focus:outline-none py-1 px-0 font-normal appearance-none cursor-pointer"
                 >
                   {availableCategories.map((cat) => (
-                    <option key={cat} value={cat} className="bg-[#1F2027] text-[#F2F2F4]">
+                    <option key={cat} value={cat} className="bg-card text-[#F2F2F4]">
                       {cat}
                     </option>
                   ))}
@@ -1292,7 +1292,7 @@ export default function SplitExpensesPage() {
                   <button
                     type="button"
                     onClick={() => setNewSplitMethod('equal')}
-                    className={`px-3 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
+                    className={`px-4 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
                       newSplitMethod === 'equal'
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1303,7 +1303,7 @@ export default function SplitExpensesPage() {
                   <button
                     type="button"
                     onClick={() => setNewSplitMethod('custom')}
-                    className={`px-3 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
+                    className={`px-4 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
                       newSplitMethod === 'custom'
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1430,7 +1430,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Notes Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Notes
                 </span>
@@ -1446,7 +1446,7 @@ export default function SplitExpensesPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddSplitModalOpen(false)}
-                  className="px-3.5 py-1.5 bg-secondary text-foreground text-xs font-normal rounded-lg hover:bg-muted/40 transition cursor-pointer"
+                  className="px-4 py-1.5 bg-secondary text-foreground text-xs font-normal rounded-lg hover:bg-muted/40 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1473,9 +1473,9 @@ export default function SplitExpensesPage() {
             title="Edit Split Expense"
             size="lg"
           >
-            <form onSubmit={handleEditSplitSubmit} className="space-y-3 text-xs font-normal">
+            <form onSubmit={handleEditSplitSubmit} className="space-y-4 text-xs font-normal">
               {/* Split Name Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Split Name
                 </span>
@@ -1489,7 +1489,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Total Amount Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Total Paid
                 </span>
@@ -1508,7 +1508,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Date Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Date
                 </span>
@@ -1522,7 +1522,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Paid From Account Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Paid From
                 </span>
@@ -1533,7 +1533,7 @@ export default function SplitExpensesPage() {
                   className="flex-1 bg-transparent border-b border-white/[0.12] focus:border-primary text-xs text-foreground focus:outline-none py-1 px-0 font-normal appearance-none cursor-pointer"
                 >
                   {accounts.map((acc) => (
-                    <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                    <option key={acc.id} value={acc.id} className="bg-card text-[#F2F2F4]">
                       {acc.name}
                     </option>
                   ))}
@@ -1541,7 +1541,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Category Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Category
                 </span>
@@ -1551,7 +1551,7 @@ export default function SplitExpensesPage() {
                   className="flex-1 bg-transparent border-b border-white/[0.12] focus:border-primary text-xs text-foreground focus:outline-none py-1 px-0 font-normal appearance-none cursor-pointer"
                 >
                   {availableCategories.map((cat) => (
-                    <option key={cat} value={cat} className="bg-[#1F2027] text-[#F2F2F4]">
+                    <option key={cat} value={cat} className="bg-card text-[#F2F2F4]">
                       {cat}
                     </option>
                   ))}
@@ -1567,7 +1567,7 @@ export default function SplitExpensesPage() {
                   <button
                     type="button"
                     onClick={() => setEditSplitMethod('equal')}
-                    className={`px-3 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
+                    className={`px-4 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
                       editSplitMethod === 'equal'
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1578,7 +1578,7 @@ export default function SplitExpensesPage() {
                   <button
                     type="button"
                     onClick={() => setEditSplitMethod('custom')}
-                    className={`px-3 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
+                    className={`px-4 py-1 text-xs rounded-md font-normal transition cursor-pointer ${
                       editSplitMethod === 'custom'
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1705,7 +1705,7 @@ export default function SplitExpensesPage() {
               </div>
 
               {/* Notes Row */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground w-28 shrink-0 font-normal">
                   Notes
                 </span>
@@ -1724,7 +1724,7 @@ export default function SplitExpensesPage() {
                     setIsEditSplitModalOpen(false);
                     setEditingSplit(null);
                   }}
-                  className="px-3.5 py-1.5 bg-secondary text-foreground text-xs font-normal rounded-lg hover:bg-muted/40 transition cursor-pointer"
+                  className="px-4 py-1.5 bg-secondary text-foreground text-xs font-normal rounded-lg hover:bg-muted/40 transition cursor-pointer"
                 >
                   Cancel
                 </button>

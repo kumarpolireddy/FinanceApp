@@ -181,8 +181,8 @@ export default function IncomeExpenseChartInner({
   const avgSavings = avgIncome - avgExpense;
 
   return (
-    <div className="h-full rounded-2xl border border-border bg-card p-5">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="h-full rounded-2xl border border-border bg-card p-6">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-base font-semibold text-foreground">Income vs Expenses</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -193,10 +193,10 @@ export default function IncomeExpenseChartInner({
         <select
           value={activeRange}
           onChange={(e) => setActiveRange(e.target.value as RangeOption)}
-          className="w-full rounded-lg border border-border bg-[#0b0f1a] px-3 py-2 text-sm text-slate-200 sm:w-44 focus:outline-none focus:border-primary transition-all"
+          className="w-full rounded-lg border border-border bg-card px-4 py-2 text-sm text-slate-200 sm:w-44 focus:outline-none focus:border-primary transition-all"
         >
           {RANGE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value} className="bg-[#0b0f1a] text-slate-200">
+            <option key={option.value} value={option.value} className="bg-card text-slate-200">
               {option.label}
             </option>
           ))}
@@ -259,7 +259,7 @@ export default function IncomeExpenseChartInner({
         </ResponsiveContainer>
       )}
 
-      <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border pt-4">
+      <div className="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-4">
         <div className="text-center">
           <p className="text-sm font-bold text-positive">{formatNumber(avgIncome)}</p>
           <p className="text-xs text-muted-foreground">Avg Daily Income</p>

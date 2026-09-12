@@ -28,6 +28,7 @@ import {
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  className?: string;
 }
 
 const TABS = [
@@ -37,7 +38,7 @@ const TABS = [
   { id: 'more', label: 'More', path: '/more', icon: Menu }
 ];
 
-export default function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ children, className = '' }: AppLayoutProps) {
   const pathname = usePathname() || '';
   const router = useRouter();
   
@@ -286,12 +287,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div 
         onTouchStart={handleGlobalTouchStart}
         onTouchEnd={handleGlobalTouchEnd}
-        className="flex flex-col h-[100dvh] min-h-[100dvh] max-w-md mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none shadow-2xl shadow-black/20"
+        className={`${className} flex flex-col h-[100dvh] min-h-[100dvh] max-w-3xl mx-auto bg-background text-foreground overflow-hidden font-sans border-x border-border/40 relative select-none `}
       >
         <AlarmListener />
         
         {/* Mobile Header */}
-        <header className="fixed top-0 left-0 right-0 w-full max-w-md mx-auto h-14 bg-card/95 backdrop-blur-xl border-b border-border/80 flex items-center justify-between px-3 z-50 shadow-sm">
+        <header className="fixed top-0 left-0 right-0 w-full max-w-3xl mx-auto h-14 bg-card/95 backdrop-blur-xl border-b border-border/80 flex items-center justify-between px-4 z-50 shadow-sm">
           <div className="flex items-center gap-1.5 shrink-0">
             {!isMainTab && pathname !== '/' ? (
               <button 
@@ -385,7 +386,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   type="text"
                   value={newTripName}
                   onChange={(e) => setNewTripName(e.target.value)}
-                  className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
+                  className="w-full text-sm bg-background border border-border rounded-lg px-4 py-2 text-foreground focus:outline-none focus:border-primary"
                   required
                   autoFocus
                 />
@@ -398,7 +399,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   type="text"
                   value={newTripDestination}
                   onChange={(e) => setNewTripDestination(e.target.value)}
-                  className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
+                  className="w-full text-sm bg-background border border-border rounded-lg px-4 py-2 text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
               <div>
@@ -409,7 +410,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   type="number"
                   value={newTripBudget}
                   onChange={(e) => setNewTripBudget(e.target.value)}
-                  className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
+                  className="w-full text-sm bg-background border border-border rounded-lg px-4 py-2 text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
               <div className="flex gap-2 pt-2">
@@ -437,7 +438,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           !isKeyboardOpen &&
           !pathname.startsWith('/add-expense') &&
           !pathname.startsWith('/ai-advisor') && (
-          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-16 bg-card border-t border-border/80 flex justify-around items-center z-[60] pb-safe shadow-2xl">
+          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-3xl mx-auto h-16 bg-card border-t border-border/80 flex justify-around items-center z-[60] pb-safe shadow-card-lg">
             {TABS.map((tab) => {
               const IconComponent = tab.icon;
               const isActive = activeTab === tab.id;
@@ -451,7 +452,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   }`}
                 >
                   <IconComponent size={18} className={isActive ? 'stroke-[2.5px]' : 'stroke-[1.8px]'} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">{tab.label}</span>
+                  <span className="text-xs font-medium">{tab.label}</span>
                 </button>
               );
             })}
@@ -465,15 +466,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   // Desktop / Tablet layout (Standard SideBar)
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className={`${className} flex min-h-screen bg-background`}>
       <AlarmListener />
       <Sidebar />
-      <main className="flex-1 min-w-0 overflow-auto relative bg-gradient-to-b from-transparent to-black/5">
+      <main className="flex-1 min-w-0 overflow-auto relative bg-background">
         {children}
         {showFAB && !hideAddTransaction && (
           <button
             onClick={() => router.push('/add-expense')}
-            className="fixed bottom-8 right-28 w-14 h-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xl shadow-primary/25 transition-all active:scale-95 hover:scale-105 hover:brightness-110 z-40 cursor-pointer"
+            className="fixed bottom-8 right-28 w-14 h-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-card-lg shadow-primary/25 transition-all active:scale-95 hover:scale-105 hover:brightness-110 z-40 cursor-pointer"
             aria-label="Add transaction"
           >
             <Plus size={28} />

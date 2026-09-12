@@ -1,0 +1,221 @@
+/* Route-local presentation: does not change the saved application theme. */
+.transactions-screen {
+  color-scheme: dark;
+  --background: #292a2d;
+  --foreground: #f2f2f3;
+  --card: #333438;
+  --card-foreground: #f2f2f3;
+  --secondary: #393a3e;
+  --secondary-foreground: #c0c1c6;
+  --muted: #414247;
+  --muted-foreground: #adaeb6;
+  --border: #45464b;
+  --input: #333438;
+  --primary: #a2bffc;
+  --primary-foreground: #24324c;
+  --accent: #a2bffc;
+  --accent-foreground: #24324c;
+  --ring: #a2bffc;
+  --positive: #8bd0ab;
+  --negative: #eca0ad;
+  --info: #a2bffc;
+  --warning: #dfbb78;
+}
+
+.transactions-screen .transactions-tabs {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.transactions-tabs > div { gap: 8px; }
+.transactions-summary,
+.transactions-date-card { box-shadow: 0 4px 16px rgb(0 0 0 / 8%); }
+.transactions-summary > div { min-width: 0; }
+.transactions-summary > div:last-child { padding-left: 8px; }
+.transactions-summary > div > span:last-child {
+  overflow-wrap: anywhere;
+  letter-spacing: -0.025em;
+  line-height: 1.4;
+}
+.transactions-date-heading { min-height: 40px; }
+.transactions-date-heading > div:first-child > span:first-child { font-size: 20px; }
+.transactions-date-heading > div:first-child > span:nth-child(2) {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 500;
+}
+.transaction-row + .transaction-row { border-top: 1px solid rgb(150 163 181 / 9%); }
+.transaction-amount { max-width: 45%; overflow-wrap: anywhere; }
+.transaction-trip { max-width: 22%; overflow: hidden; }
+.transactions-toolbar select { font-size: 16px; font-weight: 600; }
+.transactions-toolbar option { background: var(--card); color: var(--foreground); }
+.transactions-toolbar button[title="Toggle Filters"],
+.transactions-toolbar button[title="Show Account Graph"] {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--card);
+  border-color: var(--border);
+}
+
+/* Existing shell controls retain their handlers and navigation destinations. */
+.transactions-screen > header {
+  background: var(--background);
+  padding-inline: 16px;
+  box-shadow: none;
+  gap: 8px;
+}
+.transactions-screen > header > div:first-child:has(> div[aria-hidden]) { display: none; }
+.transactions-screen > header > div:nth-child(2) {
+  justify-content: flex-start;
+  padding-inline: 0;
+  gap: 8px;
+}
+.transactions-screen > header h1 { font-size: 16px; letter-spacing: -0.025em; }
+.transactions-screen > header > div:nth-child(2) > svg { display: none; }
+.transactions-screen > header button { min-height: 32px; border-radius: 8px; }
+.transactions-screen > header button[title="View all trips"] { font-weight: 500; }
+.transactions-screen > nav {
+  background: var(--background);
+  border-color: var(--border);
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 8%);
+}
+.transactions-screen > nav button { gap: 8px; }
+.transactions-screen > nav button.text-primary { background: rgb(138 180 255 / 6%); }
+.transactions-screen > nav svg { stroke-width: 1.75; }
+.transactions-screen button[aria-label="Add transaction"],
+.transactions-screen button[aria-label="Open AI Assistant"] {
+  width: 48px;
+  height: 48px;
+  bottom: 80px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+}
+.transactions-screen button[aria-label="Add transaction"] { right: 80px; }
+.transactions-screen button[aria-label="Open AI Assistant"] {
+  right: 16px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+.transactions-screen button[aria-label="Open AI Assistant"] svg { width: 20px; height: 20px; }
+@media (min-width: 768px) {
+  .transactions-screen button[aria-label="Add transaction"],
+  .transactions-screen button[aria-label="Open AI Assistant"] { bottom: 24px; }
+}
+@media (max-width: 359px) {
+  .transactions-content { padding-inline: 8px; }
+  .transactions-summary { padding: 16px 8px; }
+  .transactions-summary > div > span:last-child { font-size: 14px; }
+  .transactions-toolbar > div > div:first-child { gap: 0; }
+}
+
+/* Neutral grey refinement, scoped to this screen and its existing controls. */
+.transactions-screen .transactions-content > * + * { margin-top: 24px; }
+.transactions-screen .transactions-toolbar > div { padding-block: 0; }
+.transactions-screen .transactions-toolbar > div > div:first-child {
+  padding: 4px;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.transactions-screen .transactions-toolbar select {
+  height: 40px;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.transactions-screen .transactions-toolbar button { font-weight: 500; }
+.transactions-screen .transactions-tabs button {
+  min-width: 48px;
+  min-height: 40px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.transactions-screen .transactions-tabs button.text-primary {
+  background: rgb(162 191 252 / 9%);
+  box-shadow: inset 0 -2px 0 rgb(162 191 252 / 65%);
+}
+.transactions-screen .transactions-summary {
+  padding: 12px 8px;
+  gap: 8px;
+  text-align: center;
+}
+.transactions-screen .transactions-summary > div:last-child { padding-left: 0; }
+.transactions-screen .transactions-summary > div > span:first-child {
+  font-size: 12px;
+  font-weight: 500;
+}
+.transactions-screen .transactions-summary > div > span:last-child {
+  font-size: clamp(15px, 2.5vw, 22px);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.transactions-screen .transactions-date-card {
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 5%);
+}
+.transactions-screen .transactions-date-heading { padding-bottom: 16px; }
+.transactions-screen .transaction-row {
+  min-height: 64px;
+  padding: 12px 0 12px 32px;
+  gap: 24px;
+}
+.transactions-screen .transaction-row > div:first-of-type > div:first-child {
+  line-height: 1.4;
+}
+.transactions-screen .transaction-row > div:first-of-type > div:last-child {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+.transactions-screen .transaction-amount { font-weight: 600; line-height: 1.5; }
+.transactions-screen .transaction-amount > span { font-weight: 600; }
+.transactions-screen svg.lucide { stroke-width: 1.75; }
+.transactions-screen > header { border-bottom-color: rgb(173 174 182 / 14%); }
+.transactions-screen > header > div:last-child { gap: 8px; }
+.transactions-screen > header button {
+  box-shadow: none;
+  font-weight: 500;
+}
+.transactions-screen > nav {
+  padding: 8px;
+  background: var(--background);
+  box-shadow: 0 -4px 16px rgb(0 0 0 / 5%);
+}
+.transactions-screen > nav button { border-radius: 12px; }
+.transactions-screen > nav button.text-primary {
+  background: rgb(162 191 252 / 8%);
+  color: var(--primary);
+}
+.transactions-screen > nav button span { font-size: 11px; font-weight: 500; }
+.transactions-screen button[aria-label="Add transaction"] {
+  background: #adc4f0;
+  color: #28354c;
+}
+.transactions-screen button[aria-label="Add transaction"] svg { width: 22px; height: 22px; }
+@media (min-width: 768px) {
+  .transactions-screen .transactions-date-card { padding: 24px; }
+  .transactions-screen .transactions-summary { padding: 24px; }
+}
+@media (max-width: 359px) {
+  .transactions-screen .transactions-tabs { padding: 8px 4px; }
+  .transactions-screen .transactions-tabs > div { gap: 4px; }
+  .transactions-screen .transactions-toolbar select { font-size: 14px; }
+  .transactions-screen .transactions-summary { padding: 16px 8px; }
+}
+
+/* Edge-to-edge cards with compact transaction spacing. */
+.transactions-screen .transactions-content {
+  max-width: none;
+  padding-inline: 0;
+}
+.transactions-screen .transactions-toolbar { padding-inline: 16px; }
+.transactions-screen .transactions-date-card + .transactions-date-card {
+  margin-top: 8px;
+}
+.transactions-screen .transactions-date-heading { padding-bottom: 8px; }

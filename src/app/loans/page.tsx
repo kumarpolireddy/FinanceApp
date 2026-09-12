@@ -971,10 +971,10 @@ export default function LoansPage() {
 
   return (
     <AppLayout>
-      <div className="loans-mobile-ui min-h-full bg-background px-3 py-2 sm:p-6 space-y-2 sm:space-y-5 max-w-5xl mx-auto pb-24">
+      <div className="loans-mobile-ui min-h-full bg-background px-4 py-2 sm:p-6 space-y-2 sm:space-y-6 max-w-5xl mx-auto pb-24">
         {/* 1. PAGE HEADER */}
-        <div className="hidden md:flex items-center justify-between gap-3 py-1">
-          <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center justify-between gap-4 py-1">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
               className="p-2 rounded-xl bg-secondary/80 text-foreground hover:bg-secondary border border-border/60 transition active:scale-95 flex items-center justify-center"
@@ -1001,7 +1001,7 @@ export default function LoansPage() {
                 }
                 setShowSimulatorModal(true);
               }}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-secondary/80 hover:bg-secondary text-foreground text-xs font-bold border border-border/80 transition flex items-center gap-1.5 shadow-sm active:scale-95"
+              className="p-2 sm:px-4 sm:py-2 rounded-xl bg-secondary/80 hover:bg-secondary text-foreground text-xs font-bold border border-border/80 transition flex items-center gap-1.5 shadow-sm active:scale-95"
               title="Prepayment Simulator"
             >
               <span className="hidden sm:inline">Simulator</span>
@@ -1009,7 +1009,7 @@ export default function LoansPage() {
 
             <button
               onClick={handleOpenAdd}
-              className="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-95 transition flex items-center gap-1.5 shadow-md active:scale-95"
+              className="px-4 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-95 transition flex items-center gap-1.5 shadow-md active:scale-95"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span className="hidden sm:inline">Add Loan</span>
@@ -1019,7 +1019,7 @@ export default function LoansPage() {
 
         {/* 2. DEBT OVERVIEW */}
         <div className="py-1">
-          <div className="flex items-end justify-between gap-3">
+          <div className="flex items-end justify-between gap-4">
             <div className="space-y-1">
             <div className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">
               Total Outstanding
@@ -1058,7 +1058,7 @@ export default function LoansPage() {
 
         {/* 5 & 7. LOAN ACCOUNT SECTION & SEARCH / SORT / FILTER */}
         <div className="space-y-1.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-4">
             <div className="flex items-center justify-between w-full sm:w-auto">
               <h2 className="text-base font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 Your Loans
@@ -1069,7 +1069,7 @@ export default function LoansPage() {
 
               <button
                 onClick={handleOpenAdd}
-                className="sm:hidden flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm"
+                className="sm:hidden flex items-center gap-1 px-4 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" /> Add Loan
               </button>
@@ -1229,7 +1229,7 @@ export default function LoansPage() {
                     setActiveLoanDetails(acc);
                     setActiveDetailTab('overview');
                   }}
-                  className="flex items-center justify-between gap-4 py-3 px-3 sm:p-5 border-b border-border/60 cursor-pointer group bg-secondary hover:bg-secondary/80 transition"
+                  className="flex items-center justify-between gap-4 py-3 px-4 sm:p-6 border-b border-border/60 cursor-pointer group bg-secondary hover:bg-secondary/80 transition"
                   title="Click to view all loan details"
                 >
                   <div className="min-w-0">
@@ -1451,7 +1451,7 @@ export default function LoansPage() {
 
                 {/* Specs Details Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+                  <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
                     <h4 className="font-extrabold text-xs uppercase text-primary tracking-wider flex items-center gap-1.5">
                       <FileText className="w-4 h-4" /> Financial Specifications
                     </h4>
@@ -1501,7 +1501,7 @@ export default function LoansPage() {
                     </div>
                   </div>
 
-                  <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+                  <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
                     <h4 className="font-extrabold text-xs uppercase text-primary tracking-wider flex items-center gap-1.5">
                       <CreditCard className="w-4 h-4" /> Additional & Payment Details
                     </h4>
@@ -1545,7 +1545,7 @@ export default function LoansPage() {
                 </div>
 
                 {/* Actions Bar inside Modal */}
-                <div className="bg-secondary/40 p-4 rounded-2xl border border-border/60 flex flex-wrap items-center justify-between gap-3">
+                <div className="bg-secondary/40 p-4 rounded-2xl border border-border/60 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-2 flex-1">
                     {activeLoanDetails.isInformal ? (
                       <button
@@ -1602,7 +1602,7 @@ export default function LoansPage() {
                         setActiveLoanDetails(null);
                         handleOpenEdit(loan);
                       }}
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground border border-border transition flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground border border-border transition flex items-center gap-1.5"
                     >
                       <Edit2 className="w-3.5 h-3.5" /> Edit
                     </button>
@@ -1612,7 +1612,7 @@ export default function LoansPage() {
                         setActiveLoanDetails(null);
                         setDeleteAccountTarget(loan);
                       }}
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition flex items-center gap-1.5"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Delete
                     </button>
@@ -1637,33 +1637,33 @@ export default function LoansPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="bg-secondary/60 sticky top-0 text-muted-foreground uppercase text-3xs font-extrabold tracking-wider border-b border-border">
                       <tr>
-                        <th className="p-3">#</th>
-                        <th className="p-3">Due Date</th>
-                        <th className="p-3">Opening</th>
-                        <th className="p-3">EMI</th>
-                        <th className="p-3">Principal</th>
-                        <th className="p-3">Interest</th>
-                        <th className="p-3">Closing</th>
-                        <th className="p-3">Status</th>
+                        <th className="p-4">#</th>
+                        <th className="p-4">Due Date</th>
+                        <th className="p-4">Opening</th>
+                        <th className="p-4">EMI</th>
+                        <th className="p-4">Principal</th>
+                        <th className="p-4">Interest</th>
+                        <th className="p-4">Closing</th>
+                        <th className="p-4">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/30 font-mono text-2xs">
                       {activeLoanSchedule.map((row) => (
                         <tr key={row.num} className="hover:bg-secondary/20 transition">
-                          <td className="p-3 font-bold text-muted-foreground">{row.num}</td>
-                          <td className="p-3 font-sans text-foreground">{row.dueDateStr}</td>
-                          <td className="p-3">₹{row.opening.toLocaleString('en-IN')}</td>
-                          <td className="p-3 font-bold text-foreground">
+                          <td className="p-4 font-bold text-muted-foreground">{row.num}</td>
+                          <td className="p-4 font-sans text-foreground">{row.dueDateStr}</td>
+                          <td className="p-4">₹{row.opening.toLocaleString('en-IN')}</td>
+                          <td className="p-4 font-bold text-foreground">
                             ₹{row.emi.toLocaleString('en-IN')}
                           </td>
-                          <td className="p-3 text-emerald-400">
+                          <td className="p-4 text-emerald-400">
                             ₹{row.principal.toLocaleString('en-IN')}
                           </td>
-                          <td className="p-3 text-amber-400">
+                          <td className="p-4 text-amber-400">
                             ₹{row.interest.toLocaleString('en-IN')}
                           </td>
-                          <td className="p-3">₹{row.closing.toLocaleString('en-IN')}</td>
-                          <td className="p-3 font-sans">
+                          <td className="p-4">₹{row.closing.toLocaleString('en-IN')}</td>
+                          <td className="p-4 font-sans">
                             <span
                               className={`px-2 py-0.5 rounded-full text-4xs font-black uppercase tracking-wider ${
                                 row.status === 'Paid'
@@ -1688,7 +1688,7 @@ export default function LoansPage() {
             {activeDetailTab === 'ledger' && (
               <div className="space-y-6">
                 {/* Repayments Recorded List */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h4 className="font-extrabold text-xs uppercase text-primary tracking-wider">
                       Recorded Repayment Logs
@@ -1704,7 +1704,7 @@ export default function LoansPage() {
                       {activeLoanRepayments.map((r) => (
                         <div
                           key={r.id}
-                          className="p-3 flex items-center justify-between text-xs hover:bg-secondary/30 transition"
+                          className="p-4 flex items-center justify-between text-xs hover:bg-secondary/30 transition"
                         >
                           <div>
                             <div className="font-bold text-foreground font-mono">
@@ -1746,7 +1746,7 @@ export default function LoansPage() {
                 </div>
 
                 {/* Monthly Ledger Table */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <h4 className="font-extrabold text-xs uppercase text-primary tracking-wider">
                     Calculated Monthly Interest & Principal Ledger
                   </h4>
@@ -1754,27 +1754,27 @@ export default function LoansPage() {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-secondary/60 sticky top-0 text-muted-foreground uppercase text-3xs font-extrabold tracking-wider border-b border-border">
                         <tr>
-                          <th className="p-3">Period</th>
-                          <th className="p-3">Opening</th>
-                          <th className="p-3">Accrued Interest</th>
-                          <th className="p-3">Payments</th>
-                          <th className="p-3">Closing Principal</th>
+                          <th className="p-4">Period</th>
+                          <th className="p-4">Opening</th>
+                          <th className="p-4">Accrued Interest</th>
+                          <th className="p-4">Payments</th>
+                          <th className="p-4">Closing Principal</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/30 font-mono text-2xs">
                         {activeLoanLedger.map((row, idx) => (
                           <tr key={idx} className="hover:bg-secondary/20 transition">
-                            <td className="p-3 font-sans font-bold text-foreground">
+                            <td className="p-4 font-sans font-bold text-foreground">
                               {row.period}
                             </td>
-                            <td className="p-3">₹{row.openingPrincipal.toLocaleString('en-IN')}</td>
-                            <td className="p-3 text-amber-400">
+                            <td className="p-4">₹{row.openingPrincipal.toLocaleString('en-IN')}</td>
+                            <td className="p-4 text-amber-400">
                               ₹{row.interestAccrued.toLocaleString('en-IN')}
                             </td>
-                            <td className="p-3 text-emerald-400">
+                            <td className="p-4 text-emerald-400">
                               ₹{row.paymentsMade.toLocaleString('en-IN')}
                             </td>
-                            <td className="p-3 font-bold text-foreground">
+                            <td className="p-4 font-bold text-foreground">
                               ₹{row.closingPrincipal.toLocaleString('en-IN')}
                             </td>
                           </tr>
@@ -1787,7 +1787,7 @@ export default function LoansPage() {
             )}
 
             {/* Modal Bottom Actions */}
-            <div className="pt-4 border-t border-border flex justify-end gap-3">
+            <div className="pt-4 border-t border-border flex justify-end gap-4">
               <button
                 onClick={() => setActiveLoanDetails(null)}
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-secondary text-foreground hover:bg-secondary/80 transition"
@@ -1847,7 +1847,7 @@ export default function LoansPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Scenario A: Reduce Tenure */}
-                <div className="bg-card border border-emerald-500/30 rounded-2xl p-4 space-y-3 relative overflow-hidden">
+                <div className="bg-card border border-emerald-500/30 rounded-2xl p-4 space-y-4 relative overflow-hidden">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-emerald-400 uppercase">
                       Option 1: Reduce Tenure
@@ -1877,7 +1877,7 @@ export default function LoansPage() {
                 </div>
 
                 {/* Scenario B: Reduce EMI */}
-                <div className="bg-card border border-primary/30 rounded-2xl p-4 space-y-3 relative overflow-hidden">
+                <div className="bg-card border border-primary/30 rounded-2xl p-4 space-y-4 relative overflow-hidden">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-primary uppercase">
                       Option 2: Reduce Monthly EMI
@@ -2079,7 +2079,7 @@ export default function LoansPage() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-border flex justify-end gap-3">
+          <div className="pt-4 border-t border-border flex justify-end gap-4">
             <button
               type="button"
               onClick={() => setShowAccountForm(false)}
@@ -2089,7 +2089,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
+              className="px-6 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
             >
               {editingId ? 'Update Loan' : 'Create Loan'}
             </button>
@@ -2150,7 +2150,7 @@ export default function LoansPage() {
             </select>
           </div>
 
-          <div className="pt-4 border-t border-border flex justify-end gap-3">
+          <div className="pt-4 border-t border-border flex justify-end gap-4">
             <button
               type="button"
               onClick={() => setPayingLoan(null)}
@@ -2160,7 +2160,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
+              className="px-6 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
             >
               Confirm EMI Payment
             </button>
@@ -2206,11 +2206,11 @@ export default function LoansPage() {
             <label className="text-xs font-bold text-muted-foreground uppercase">
               Payment Strategy
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
                 onClick={() => setPrepayStrategy('tenure')}
-                className={`p-3 rounded-xl border text-xs font-bold text-center transition ${
+                className={`p-4 rounded-xl border text-xs font-bold text-center transition ${
                   prepayStrategy === 'tenure'
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-card text-muted-foreground'
@@ -2221,7 +2221,7 @@ export default function LoansPage() {
               <button
                 type="button"
                 onClick={() => setPrepayStrategy('emi')}
-                className={`p-3 rounded-xl border text-xs font-bold text-center transition ${
+                className={`p-4 rounded-xl border text-xs font-bold text-center transition ${
                   prepayStrategy === 'emi'
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-card text-muted-foreground'
@@ -2263,7 +2263,7 @@ export default function LoansPage() {
             />
           </div>
 
-          <div className="pt-4 border-t border-border flex justify-end gap-3">
+          <div className="pt-4 border-t border-border flex justify-end gap-4">
             <button
               type="button"
               onClick={() => setPrepayingLoan(null)}
@@ -2273,7 +2273,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-white hover:opacity-90 transition shadow-md"
+              className="px-6 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-white hover:opacity-90 transition shadow-md"
             >
               Confirm Prepayment
             </button>
@@ -2344,7 +2344,7 @@ export default function LoansPage() {
             />
           </div>
 
-          <div className="pt-4 border-t border-border flex justify-end gap-3">
+          <div className="pt-4 border-t border-border flex justify-end gap-4">
             <button
               type="button"
               onClick={() => setFriendRepayingLoan(null)}
@@ -2354,7 +2354,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
+              className="px-6 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
             >
               Save Repayment
             </button>
@@ -2403,7 +2403,7 @@ export default function LoansPage() {
             />
           </div>
 
-          <div className="pt-4 border-t border-border flex justify-end gap-3">
+          <div className="pt-4 border-t border-border flex justify-end gap-4">
             <button
               type="button"
               onClick={() => setEditingRepayment(null)}
@@ -2413,7 +2413,7 @@ export default function LoansPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
+              className="px-6 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition shadow-md"
             >
               Update Repayment
             </button>
@@ -2434,7 +2434,7 @@ export default function LoansPage() {
             dated {deletingRepayment?.date}? The loan balance and interest ledger will be
             automatically recalculated.
           </p>
-          <div className="pt-4 border-t border-border flex justify-end gap-3">
+          <div className="pt-4 border-t border-border flex justify-end gap-4">
             <button
               onClick={() => setDeletingRepayment(null)}
               className="px-4 py-2 rounded-xl text-xs font-bold bg-secondary text-foreground hover:bg-secondary/80 transition"
@@ -2443,7 +2443,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={handleDeleteRepayment}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:opacity-90 transition shadow-md"
+              className="px-6 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:opacity-90 transition shadow-md"
             >
               Delete Repayment
             </button>
@@ -2463,7 +2463,7 @@ export default function LoansPage() {
             <strong className="text-foreground">{deleteAccountTarget?.name}</strong>? This action
             cannot be undone.
           </p>
-          <div className="pt-4 border-t border-border flex justify-end gap-3">
+          <div className="pt-4 border-t border-border flex justify-end gap-4">
             <button
               onClick={() => setDeleteAccountTarget(null)}
               className="px-4 py-2 rounded-xl text-xs font-bold bg-secondary text-foreground hover:bg-secondary/80 transition"
@@ -2472,7 +2472,7 @@ export default function LoansPage() {
             </button>
             <button
               onClick={handleDeleteExecute}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:opacity-90 transition shadow-md"
+              className="px-6 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white hover:opacity-90 transition shadow-md"
             >
               Delete Account
             </button>

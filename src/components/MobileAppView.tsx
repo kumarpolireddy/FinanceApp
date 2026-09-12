@@ -623,7 +623,7 @@ export default function MobileAppView() {
         
         {/* Month Navigation for Daily/Calendar */}
         {(activeTab === 'daily' || activeTab === 'calendar') && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button onClick={() => shiftMonth(-1)} className="p-1 rounded-lg hover:bg-muted/50 transition">
               <ChevronLeft size={16} />
             </button>
@@ -642,7 +642,7 @@ export default function MobileAppView() {
 
         {/* 1. DAILY TRANSACTION LEDGER */}
         {activeTab === 'daily' && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             
             {/* Trip Quick Action & Trips Link */}
             <div className="px-4 pt-2.5 grid grid-cols-3 items-center">
@@ -651,7 +651,7 @@ export default function MobileAppView() {
               <div className="flex justify-center">
                 <button
                   onClick={handleTripButtonClick}
-                  className={`px-3 py-1 rounded-md text-sm font-extrabold transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[140px] ${
+                  className={`px-4 py-1 rounded-md text-sm font-extrabold transition-all duration-200 shadow-sm cursor-pointer text-center truncate max-w-[140px] ${
                     activeTrip
                       ? 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30 animate-pulse'
                       : 'bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20'
@@ -691,7 +691,7 @@ export default function MobileAppView() {
 
             {/* Income/Expense Monthly summary banner */}
             {dailySubTab !== 'annually' && (
-              <div className="mx-4 bg-muted/20 border border-border rounded-xl p-3 grid grid-cols-3 text-center gap-2">
+              <div className="mx-4 bg-muted/20 border border-border rounded-xl p-4 grid grid-cols-3 text-center gap-2">
                 <div>
                   <span className="text-3xs text-muted-foreground font-semibold uppercase tracking-wider block">Income</span>
                   <span className="text-xs font-bold text-positive">{formatVal(monthSummary.income)}</span>
@@ -733,7 +733,7 @@ export default function MobileAppView() {
                     return (
                       <div key={day} className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                         {/* Day Header */}
-                        <div className="flex justify-between items-center px-3 py-2 bg-muted/10 border-b border-border">
+                        <div className="flex justify-between items-center px-4 py-2 bg-muted/10 border-b border-border">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black text-foreground">{day}</span>
                             <span className="text-3xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-bold uppercase">{weekDay}</span>
@@ -768,7 +768,7 @@ export default function MobileAppView() {
                                 onMouseUp={handleTouchEndOrCancel}
                                 onMouseLeave={handleTouchEndOrCancel}
                                 onClick={() => handleTxnClick(tx)}
-                                className={`flex justify-between items-center p-3 transition cursor-pointer ${
+                                className={`flex justify-between items-center p-4 transition cursor-pointer ${
                                   isSelected
                                     ? 'bg-primary/20 border-l-4 border-l-primary'
                                     : isTrip
@@ -843,7 +843,7 @@ export default function MobileAppView() {
             {dailySubTab === 'monthly' && (
               <div className="px-4 space-y-6">
                 {/* Expense Categories */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <h3 className="text-3xs font-extrabold text-negative tracking-wider uppercase">Expense Categories</h3>
                   {monthlyCategorySummary.expense.length === 0 ? (
                     <p className="text-3xs text-muted-foreground">No expenses recorded.</p>
@@ -867,7 +867,7 @@ export default function MobileAppView() {
                 </div>
 
                 {/* Income Categories */}
-                <div className="space-y-3 pt-2">
+                <div className="space-y-4 pt-2">
                   <h3 className="text-3xs font-extrabold text-positive tracking-wider uppercase">Income Categories</h3>
                   {monthlyCategorySummary.income.length === 0 ? (
                     <p className="text-3xs text-muted-foreground">No income recorded.</p>
@@ -894,7 +894,7 @@ export default function MobileAppView() {
 
             {/* Sub-tab: ANNUALLY BREAKDOWN */}
             {dailySubTab === 'annually' && (
-              <div className="px-4 space-y-3">
+              <div className="px-4 space-y-4">
                 <h3 className="text-3xs font-extrabold text-foreground tracking-wider uppercase mb-1">
                   Monthly summary for {selectedYear}
                 </h3>
@@ -902,7 +902,7 @@ export default function MobileAppView() {
                   {annualMonthlySummary.map(m => {
                     const hasData = m.income > 0 || m.expense > 0;
                     return (
-                      <div key={m.name} className="flex justify-between items-center p-3 text-xs font-semibold">
+                      <div key={m.name} className="flex justify-between items-center p-4 text-xs font-semibold">
                         <div className="w-12">
                           <span className="text-foreground font-black uppercase">{m.name}</span>
                         </div>
@@ -954,7 +954,7 @@ export default function MobileAppView() {
             {/* Table-like Calendar Grid Container */}
             <div className="mx-4 bg-card border border-border rounded-xl overflow-hidden shadow-sm">
               {/* Weekday Headers */}
-              <div className="grid grid-cols-7 text-center border-b border-border bg-[#0b0f1a]/80 divide-x divide-border/60 py-2">
+              <div className="grid grid-cols-7 text-center border-b border-border bg-card/80 divide-x divide-border/60 py-2">
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((w, idx) => (
                   <span 
                     key={w} 
@@ -1001,7 +1001,7 @@ export default function MobileAppView() {
 
             {/* Selected day transactions details */}
             {selectedCalendarDay !== null && (
-              <div className="px-4 space-y-3">
+              <div className="px-4 space-y-4">
                 <div className="flex justify-between items-center border-b border-border pb-1">
                   <h4 className="text-xs font-bold text-foreground">
                     Transactions for {selectedCalendarDay} {MONTH_NAMES[selectedMonth]}
@@ -1025,7 +1025,7 @@ export default function MobileAppView() {
                         <div 
                           key={tx.id}
                           onClick={() => openEdit(tx)}
-                          className="flex justify-between items-center p-3 hover:bg-muted/10 transition cursor-pointer"
+                          className="flex justify-between items-center p-4 hover:bg-muted/10 transition cursor-pointer"
                         >
                           <div className="min-w-0 pr-2">
                             <div className="flex items-center gap-1.5">
@@ -1057,7 +1057,7 @@ export default function MobileAppView() {
 
         {/* 3. ACCOUNTS TAB */}
         {activeTab === 'accounts' && (
-          <div className="px-4 space-y-5">
+          <div className="px-4 space-y-6">
             {/* Asset Liability Totals */}
             <div className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-4">
               <div className="grid grid-cols-2 gap-4 divide-x divide-border">
@@ -1095,8 +1095,8 @@ export default function MobileAppView() {
                   </div>
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm divide-y divide-border/60">
                     {group.items.map(acc => (
-                      <div key={acc.id} className="flex justify-between items-center p-3">
-                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <div key={acc.id} className="flex justify-between items-center p-4">
+                        <div className="flex items-center gap-4 min-w-0 pr-2">
                           <div 
                             className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                             style={{ backgroundColor: acc.color || '#ccc' }}
@@ -1132,7 +1132,7 @@ export default function MobileAppView() {
                     href="/trips"
                     className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <Plane size={18} className="text-primary" />
                       <div>
                         <span className="text-xs font-semibold text-foreground block">Trips & Travel Mode</span>
@@ -1145,7 +1145,7 @@ export default function MobileAppView() {
                     onClick={() => setMoreSubView('config')}
                     className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <SettingsIcon size={18} className="text-primary" />
                       <span className="text-xs font-semibold text-foreground">Configuration Setting</span>
                     </div>
@@ -1155,7 +1155,7 @@ export default function MobileAppView() {
                     onClick={() => setMoreSubView('pc')}
                     className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <Globe size={18} className="text-primary" />
                       <span className="text-xs font-semibold text-foreground">PC Manager Server</span>
                     </div>
@@ -1165,7 +1165,7 @@ export default function MobileAppView() {
                     onClick={() => setMoreSubView('recycle_bin')}
                     className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <Trash2 size={18} className="text-negative" />
                       <span className="text-xs font-semibold text-foreground">Recycle Bin</span>
                     </div>
@@ -1175,7 +1175,7 @@ export default function MobileAppView() {
                     onClick={() => setMoreSubView('backup')}
                     className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <Download size={18} className="text-primary" />
                       <span className="text-xs font-semibold text-foreground">Backup & Restore</span>
                     </div>
@@ -1185,7 +1185,7 @@ export default function MobileAppView() {
                     onClick={() => setMoreSubView('help')}
                     className="w-full flex justify-between items-center p-4 hover:bg-muted/10 transition text-left"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <HelpCircle size={18} className="text-primary" />
                       <span className="text-xs font-semibold text-foreground">Help Guide & Support</span>
                     </div>
@@ -1212,7 +1212,7 @@ export default function MobileAppView() {
                     <select
                       value={config.startScreen}
                       onChange={(e) => updateConfig('startScreen', e.target.value)}
-                      className="w-full text-xs bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
+                      className="w-full text-xs bg-card border border-border rounded-lg px-4 py-2 text-foreground font-semibold outline-none"
                     >
                       <option value="daily">Daily Ledger</option>
                       <option value="calendar">Calendar View</option>
@@ -1226,7 +1226,7 @@ export default function MobileAppView() {
                     <select
                       value={config.mainCurrency}
                       onChange={(e) => updateConfig('mainCurrency', e.target.value)}
-                      className="w-full text-xs bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
+                      className="w-full text-xs bg-card border border-border rounded-lg px-4 py-2 text-foreground font-semibold outline-none"
                     >
                       <option value="INR">INR (₹)</option>
                       <option value="USD">USD ($)</option>
@@ -1241,7 +1241,7 @@ export default function MobileAppView() {
                     <select
                       value={config.monthlyStartDate}
                       onChange={(e) => updateConfig('monthlyStartDate', parseInt(e.target.value, 10))}
-                      className="w-full text-xs bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
+                      className="w-full text-xs bg-card border border-border rounded-lg px-4 py-2 text-foreground font-semibold outline-none"
                     >
                       <option value={1}>1st of Month</option>
                       <option value={5}>5th of Month</option>
@@ -1256,7 +1256,7 @@ export default function MobileAppView() {
                     <select
                       value={config.carryOver}
                       onChange={(e) => updateConfig('carryOver', e.target.value)}
-                      className="w-full text-xs bg-[#0b0f1a] border border-border rounded-lg px-3 py-2 text-foreground font-semibold outline-none"
+                      className="w-full text-xs bg-card border border-border rounded-lg px-4 py-2 text-foreground font-semibold outline-none"
                     >
                       <option value="off">Off (Reset monthly)</option>
                       <option value="on">On (Carry balance forward)</option>
@@ -1329,7 +1329,7 @@ export default function MobileAppView() {
                       {recycled.map((item) => (
                         <div 
                           key={item.id}
-                          className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-2 shadow-xs"
+                          className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-2 shadow-xs"
                         >
                           <div className="space-y-0.5 min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
@@ -1384,7 +1384,7 @@ export default function MobileAppView() {
             {moreSubView === 'backup' && (
               <div className="space-y-4 pt-2">
                 <h3 className="text-3xs font-extrabold text-foreground tracking-wider uppercase px-1">Database Backup</h3>
-                <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm text-center">
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4 shadow-sm text-center">
                   <p className="text-3xs text-muted-foreground leading-relaxed">
                     Export a backup file of your local WealthIQ database containing all transaction history, accounts, and categories.
                   </p>
@@ -1532,10 +1532,10 @@ export default function MobileAppView() {
 
       {/* ================= ADD/EDIT SLIDE-UP MODAL ================= */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#1F2027] flex flex-col text-[#F2F2F4] select-text animate-fade-in overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-card flex flex-col text-[#F2F2F4] select-text animate-fade-in overflow-hidden">
           
           {/* Top Header */}
-          <div className="flex items-center justify-between h-14 px-5 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
+          <div className="flex items-center justify-between h-14 px-6 bg-card shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
             <div className="flex items-center">
               <button 
                 type="button"
@@ -1564,20 +1564,20 @@ export default function MobileAppView() {
             <form onSubmit={handleSave} className="flex flex-col">
               
               {/* Type Selector */}
-              <div className="grid grid-cols-3 gap-2.5 px-5 mt-2">
+              <div className="grid grid-cols-3 gap-2.5 px-6 mt-2">
                 {(['income', 'expense', 'transfer'] as const).map((t) => {
                   const isActive = formType === t;
                   let activeStyle = '';
                   if (isActive) {
                     if (t === 'income') {
-                      activeStyle = 'border border-[#22C55E] text-[#22C55E] bg-[#16171C]';
+                      activeStyle = 'border border-[#22C55E] text-[#22C55E] bg-muted';
                     } else if (t === 'expense') {
-                      activeStyle = 'border border-[#EF4444] text-[#EF4444] bg-[#16171C]';
+                      activeStyle = 'border border-[#EF4444] text-[#EF4444] bg-muted';
                     } else {
-                      activeStyle = 'border border-[#3B82F6] text-[#3B82F6] bg-[#16171C]';
+                      activeStyle = 'border border-[#3B82F6] text-[#3B82F6] bg-muted';
                     }
                   } else {
-                    activeStyle = 'border border-transparent text-[#A5A6AD] bg-[#16171C]';
+                    activeStyle = 'border border-transparent text-muted-foreground bg-muted';
                   }
 
                   return (
@@ -1597,8 +1597,8 @@ export default function MobileAppView() {
               <div className="flex flex-col mt-5">
                 
                 {/* Date Row */}
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Date</span>
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
+                  <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">Date</span>
                   <div className="flex-1 flex justify-start text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
                     {formDate ? (() => {
                       const d = new Date(formDate);
@@ -1623,8 +1623,8 @@ export default function MobileAppView() {
                 </div>
 
                 {/* Amount Row */}
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Amount</span>
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
+                  <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">Amount</span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                     <span className="mr-1">₹</span>
                     <input
@@ -1659,8 +1659,8 @@ export default function MobileAppView() {
                 {/* Account Row */}
                 {formType === 'transfer' ? (
                   <>
-                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                      <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
+                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
+                      <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">Account</span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
                         <span>{accounts.find(a => a.id === formAccount)?.name || ''}</span>
                       </div>
@@ -1671,15 +1671,15 @@ export default function MobileAppView() {
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       >
                         {accounts.map((acc) => (
-                          <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                          <option key={acc.id} value={acc.id} className="bg-card text-[#F2F2F4]">
                             {acc.name}
                           </option>
                         ))}
                       </select>
                     </div>
 
-                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                      <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">To Account</span>
+                    <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
+                      <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">To Account</span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
                         <span>{accounts.find(a => a.id === formToAccount)?.name || ''}</span>
                       </div>
@@ -1691,7 +1691,7 @@ export default function MobileAppView() {
                       >
                         <option value="" disabled className="text-muted-foreground">Select destination...</option>
                         {accounts.filter((acc) => acc.id !== formAccount).map((acc) => (
-                          <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                          <option key={acc.id} value={acc.id} className="bg-card text-[#F2F2F4]">
                             {acc.name}
                           </option>
                         ))}
@@ -1703,9 +1703,9 @@ export default function MobileAppView() {
                     {/* Category Row - Tap to select category from bottom grid */}
                     <div
                       onClick={() => setMobileQuickPickerMode('category')}
-                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6 cursor-pointer hover:bg-white/[0.04] transition-colors"
                     >
-                      <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Category</span>
+                      <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">Category</span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                         <span className={formCategory ? 'text-white font-semibold' : 'text-slate-500'}>
                           {formCategory || ''}
@@ -1716,9 +1716,9 @@ export default function MobileAppView() {
                     {/* Account Row - Tap to select account from bottom grid */}
                     <div
                       onClick={() => setMobileQuickPickerMode('account')}
-                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                      className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6 cursor-pointer hover:bg-white/[0.04] transition-colors"
                     >
-                      <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">Account</span>
+                      <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">Account</span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                         <span className={formAccount ? 'text-white font-semibold' : 'text-slate-500'}>
                           {accounts.find((a) => a.id === formAccount)?.name || ''}
@@ -1729,8 +1729,8 @@ export default function MobileAppView() {
                 )}
 
                 {/* Note Row */}
-                <div className="relative flex items-start py-4 border-b border-white/[0.08] px-5 min-h-[54px]">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal mt-0.5">Note</span>
+                <div className="relative flex items-start py-4 border-b border-white/[0.08] px-6 min-h-[54px]">
+                  <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal mt-0.5">Note</span>
                   <textarea
                     value={formNotes}
                     onChange={(e) => setFormNotes(e.target.value)}
@@ -1756,7 +1756,7 @@ export default function MobileAppView() {
 
               {/* Description & Camera Section */}
               <div className="flex flex-col mt-5">
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
                   <input
                     type="text"
                     value={formDescription}
@@ -1766,13 +1766,13 @@ export default function MobileAppView() {
                     placeholder="Description"
                     className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 pr-8"
                   />
-                  <Camera size={20} className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />
+                  <Camera size={20} className="text-muted-foreground hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5" />
                 </div>
               </div>
 
               {/* Bottom Action Grid */}
-              <div className="px-5 mt-5">
-                <div className="flex items-center gap-3">
+              <div className="px-6 mt-5">
+                <div className="flex items-center gap-4">
                   <button
                     type="button"
                     onClick={() => {
@@ -1781,7 +1781,7 @@ export default function MobileAppView() {
                       setFormNotes('');
                       setFormCategory('');
                     }}
-                    className="h-12 px-5 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                    className="h-12 px-6 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
                   >
                     <X size={18} />
                     <span>Cancel</span>
@@ -1798,7 +1798,7 @@ export default function MobileAppView() {
 
                 {/* Space Under Save Transaction Button Used For Category & Account Selection */}
                 {!isAmountFocused && !isNoteFocused && (
-                  <div className="pt-4 border-t border-white/[0.08] space-y-3 pb-8">
+                  <div className="pt-4 border-t border-white/[0.08] space-y-4 pb-8">
                     {/* 1. CLEAN SUBTLE FLOATING CHIPS GRID (CATEGORIES - NO SCROLLBAR) */}
                     {mobileQuickPickerMode === 'category' && (
                       <div className="grid grid-cols-4 gap-2 max-h-72 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1815,7 +1815,7 @@ export default function MobileAppView() {
                               className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
                                 isSelected
                                   ? 'bg-primary border border-primary text-slate-950 font-bold'
-                                  : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
+                                  : 'bg-muted border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
                               }`}
                             >
                               <span className="truncate block">{cat.name}</span>
@@ -1846,7 +1846,7 @@ export default function MobileAppView() {
                               className={`px-2.5 py-2.5 rounded-xl text-center font-medium transition-all cursor-pointer text-xs truncate ${
                                 isSelected
                                   ? 'bg-white/10 border border-white/30 text-white font-bold'
-                                  : 'bg-[#16171C] border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
+                                  : 'bg-muted border border-white/[0.08] text-slate-300 hover:border-white/20 hover:bg-white/[0.04]'
                               }`}
                             >
                               <span className="truncate block font-bold">{acc.name}</span>
@@ -1867,7 +1867,7 @@ export default function MobileAppView() {
       {/* ================= START TRIP SLIDE-UP MODAL ================= */}
       {isTripInputPromptOpen && (
         <div className="absolute inset-0 bg-black/60 z-50 flex items-end">
-          <div className="w-full bg-card border-t border-border rounded-t-2xl p-5 space-y-4 animate-slide-up">
+          <div className="w-full bg-card border-t border-border rounded-t-2xl p-6 space-y-4 animate-slide-up">
             <div className="flex justify-between items-center border-b border-border pb-3">
               <h2 className="text-base font-extrabold text-foreground">New Trip</h2>
               <button 
@@ -1885,13 +1885,13 @@ export default function MobileAppView() {
                   type="text"
                   value={tripInputName}
                   onChange={(e) => setTripInputName(e.target.value)}
-                  className="w-full bg-[#0b0f1a] border border-border rounded-lg px-3 py-2.5 text-foreground font-bold outline-none"
+                  className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-foreground font-bold outline-none"
                   required
                   autoFocus
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-4 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsTripInputPromptOpen(false)}
@@ -1913,7 +1913,7 @@ export default function MobileAppView() {
 
       {/* Floating Multi-Select Header/Footer Bar */}
       {isSelectionMode && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-4 py-2.5 flex items-center gap-3 animate-slide-up text-foreground">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-card border border-border/80 shadow-card-lg rounded-2xl px-4 py-2.5 flex items-center gap-4 animate-slide-up text-foreground">
           <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full shrink-0">
             {selectedTxnIds.length} Selected
           </span>

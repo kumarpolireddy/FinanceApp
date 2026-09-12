@@ -159,15 +159,15 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`relative flex flex-col bg-card/95 backdrop-blur-xl border-r border-border/80 flex-shrink-0 transition-all duration-200 shadow-xl shadow-black/10 ${
-        collapsed ? 'w-16' : 'w-60'
+      className={`relative flex flex-col bg-card/95 backdrop-blur-xl border-r border-border/80 flex-shrink-0 transition-all duration-200  ${
+        collapsed ? 'w-16' : 'w-64'
       }`}
       style={{ minHeight: '100vh' }}
     >
       {/* Logo */}
       <div
         className={`flex items-center border-b border-border flex-shrink-0 ${
-          collapsed ? 'justify-center px-0 py-4' : 'px-5 py-4 gap-2.5'
+          collapsed ? 'justify-center px-0 py-4' : 'px-6 py-4 gap-2'
         }`}
         style={{ height: 64 }}
       >
@@ -189,11 +189,11 @@ export default function Sidebar() {
       </button>
 
       {/* Nav Groups */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2.5 space-y-5">
+      <nav className="flex-1 overflow-y-auto py-4 px-4 space-y-6">
         {NAV_GROUPS.map((group) => (
           <div key={group.id}>
             {!collapsed && (
-              <p className="text-2xs font-bold tracking-[0.16em] text-muted-foreground uppercase px-2.5 mb-1.5">
+              <p className="text-2xs font-bold tracking-[0.08em] text-muted-foreground uppercase px-4 mb-1.5">
                 {group.label}
               </p>
             )}
@@ -206,7 +206,7 @@ export default function Sidebar() {
                     <Link
                       href={item.href}
                       title={collapsed ? item.label : undefined}
-                      className={`group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-150 relative ${
+                      className={`group flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 relative ${
                         active
                           ? 'nav-item-active text-primary'
                           : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -246,7 +246,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom Items */}
-      <div className="border-t border-border/80 px-2.5 py-3 space-y-0.5">
+      <div className="border-t border-border/80 px-4 py-3 space-y-0.5">
         {BOTTOM_ITEMS.map((item) => {
           const ItemIcon = item.icon;
           return (
@@ -254,7 +254,7 @@ export default function Sidebar() {
               key={item.id}
               href={item.href}
               title={collapsed ? item.label : undefined}
-              className={`group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-150 relative ${
+              className={`group flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-150 relative ${
                 collapsed ? 'justify-center' : ''
               }`}
             >
@@ -291,7 +291,7 @@ export default function Sidebar() {
           <Link
             href="/settings"
             title={collapsed ? 'Settings' : undefined}
-            className={`w-full group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-150 relative ${
+            className={`w-full group flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 relative ${
               isSettingsActive
                 ? 'nav-item-active text-primary'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -304,11 +304,11 @@ export default function Sidebar() {
 
         {/* User Profile */}
         <div
-          className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 mt-1 relative group bg-muted/30 ${
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 mt-1 relative group bg-muted/30 ${
             collapsed ? 'justify-center' : ''
           }`}
         >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-info flex items-center justify-center flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
             <span className="text-xs font-bold text-white">{initials}</span>
           </div>
           {!collapsed && (
@@ -337,7 +337,7 @@ export default function Sidebar() {
                 }
               }}
               title="Sign Out"
-              className="absolute -top-1 -right-1 p-0.5 bg-[#0f172a] rounded-full border border-border text-muted-foreground hover:text-negative opacity-0 group-hover:opacity-100 transition"
+              className="absolute -top-1 -right-1 p-0.5 bg-card rounded-full border border-border text-muted-foreground hover:text-negative opacity-0 group-hover:opacity-100 transition"
             >
               <LogOut size={10} />
             </button>

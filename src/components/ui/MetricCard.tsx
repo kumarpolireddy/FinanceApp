@@ -32,9 +32,9 @@ export default function MetricCard({
 }: MetricCardProps) {
   const variantStyles: Record<string, string> = {
     default: 'bg-card/95 border-border shadow-card',
-    positive: 'bg-card/95 border-border bg-positive-subtle border-positive-subtle shadow-card',
-    negative: 'bg-card/95 border-border bg-negative-subtle border-negative-subtle card-glow-negative',
-    warning: 'bg-card/95 border-border bg-warning-subtle border-warning-subtle card-glow-warning',
+    positive: 'bg-card/95 border-border  shadow-card',
+    negative: 'bg-card/95 border-border shadow-card',
+    warning: 'bg-card/95 border-border shadow-card',
     hero: 'bg-card border-border card-glow-primary',
   };
 
@@ -47,8 +47,8 @@ export default function MetricCard({
       onClick={onClick}
       className={`relative border flex flex-col h-full transition-all duration-200 ${
         compact
-          ? 'min-h-[72px] items-center justify-center rounded-lg p-2.5 text-center'
-          : 'min-h-[140px] justify-between rounded-2xl p-5 md:p-6'
+          ? 'min-h-[72px] items-center justify-center rounded-xl p-4 text-center'
+          : 'min-h-[140px] justify-between rounded-2xl p-6 md:p-6'
       } ${
         onClick
           ? compact
@@ -58,7 +58,7 @@ export default function MetricCard({
       } ${surfaceStyle} ${className}`}
     >
       <div className={`flex items-start ${compact ? 'justify-center' : 'justify-between'}`}>
-        <p className="text-2xs font-semibold tracking-wider text-muted-foreground uppercase">
+        <p className="text-xs font-medium text-muted-foreground">
           {label}
         </p>
         {icon && (

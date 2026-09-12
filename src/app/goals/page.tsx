@@ -237,7 +237,7 @@ export default function GoalsPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
           {/* Active Goals */}
-          <div className="bg-[#0b0f1a] border border-border rounded-2xl p-5 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-lg" />
             <p className="text-2xs font-semibold tracking-wider text-slate-400 uppercase">
               Active Goals
@@ -247,7 +247,7 @@ export default function GoalsPage() {
           </div>
 
           {/* Total Saved */}
-          <div className="bg-[#0b0f1a] border border-border rounded-2xl p-5 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-positive/5 rounded-full blur-lg" />
             <p className="text-2xs font-semibold tracking-wider text-slate-400 uppercase">
               Total Saved
@@ -259,7 +259,7 @@ export default function GoalsPage() {
           </div>
 
           {/* Remaining Target */}
-          <div className="bg-[#0b0f1a] border border-border rounded-2xl p-5 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-warning/5 rounded-full blur-lg" />
             <p className="text-2xs font-semibold tracking-wider text-slate-400 uppercase">
               Remaining Funds
@@ -271,7 +271,7 @@ export default function GoalsPage() {
           </div>
 
           {/* Overall Progress */}
-          <div className="bg-[#0b0f1a] border border-border rounded-2xl p-5 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-lg" />
             <p className="text-2xs font-semibold tracking-wider text-slate-400 uppercase">
               Overall Progress
@@ -290,7 +290,7 @@ export default function GoalsPage() {
         </div>
 
         {/* Goals Grid */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl p-5">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-card-lg p-6">
           <h2 className="text-base font-semibold text-foreground mb-4">Savings Progress</h2>
 
           {goals.length === 0 ? (
@@ -323,7 +323,7 @@ export default function GoalsPage() {
                 return (
                   <div
                     key={goal.id}
-                    className="border border-border bg-[#0b0f1a]/40 rounded-xl p-5 flex flex-col justify-between gap-4 hover:border-primary/20 transition-all relative overflow-hidden group"
+                    className="border border-border bg-card/40 rounded-xl p-6 flex flex-col justify-between gap-4 hover:border-primary/20 transition-all relative overflow-hidden group"
                   >
                     {/* Background Glow */}
                     <div
@@ -332,7 +332,7 @@ export default function GoalsPage() {
                     />
 
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                         <div
                           className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-md"
                           style={{
@@ -393,7 +393,7 @@ export default function GoalsPage() {
                     </div>
 
                     {/* Quick Contribution Button */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-3xs border-t border-border/40 pt-3 mt-1">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-3xs border-t border-border/40 pt-3 mt-1">
                       <span className="text-slate-400">
                         {limitRemaining > 0
                           ? `₹${fmt(limitRemaining)} remaining`
@@ -401,7 +401,7 @@ export default function GoalsPage() {
                       </span>
                       <button
                         onClick={() => handleOpenDeposit(goal)}
-                        className="w-full sm:w-auto px-3 py-1 bg-muted hover:bg-muted/80 text-foreground font-semibold rounded-lg border border-border flex items-center justify-center gap-1 transition"
+                        className="w-full sm:w-auto px-4 py-1 bg-muted hover:bg-muted/80 text-foreground font-semibold rounded-lg border border-border flex items-center justify-center gap-1 transition"
                       >
                         <TrendingUp size={10} />
                         Add/Remove Funds
@@ -435,7 +435,7 @@ export default function GoalsPage() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
+                className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
               />
             </div>
 
@@ -449,7 +449,7 @@ export default function GoalsPage() {
                 onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })}
                 required
                 min="1"
-                className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
+                className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
               />
             </div>
 
@@ -463,7 +463,7 @@ export default function GoalsPage() {
                 onChange={(e) => setFormData({ ...formData, currentAmount: e.target.value })}
                 required
                 min="0"
-                className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
+                className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
               />
             </div>
 
@@ -476,7 +476,7 @@ export default function GoalsPage() {
                 value={formData.targetDate}
                 onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
                 required
-                className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium"
+                className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium"
               />
             </div>
 
@@ -485,7 +485,7 @@ export default function GoalsPage() {
               <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                 Choose Icon
               </label>
-              <div className="flex flex-wrap gap-2 p-2.5 border border-border/80 bg-[#0b0f1a]/40 rounded-xl">
+              <div className="flex flex-wrap gap-2 p-2.5 border border-border/80 bg-card/40 rounded-xl">
                 {ICON_PRESETS.map((ico) => (
                   <button
                     key={ico}
@@ -508,7 +508,7 @@ export default function GoalsPage() {
               <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                 Choose Color Theme
               </label>
-              <div className="flex flex-wrap gap-2 p-2.5 border border-border/80 bg-[#0b0f1a]/40 rounded-xl">
+              <div className="flex flex-wrap gap-2 p-2.5 border border-border/80 bg-card/40 rounded-xl">
                 {COLOR_PRESETS.map((color) => (
                   <button
                     key={color}
@@ -530,7 +530,7 @@ export default function GoalsPage() {
             <button
               type="button"
               onClick={() => setIsGoalModalOpen(false)}
-              className="px-4 py-2 border border-border bg-[#0b0f1a] hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
+              className="px-4 py-2 border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
             >
               Cancel
             </button>
@@ -556,7 +556,7 @@ export default function GoalsPage() {
             <label className="block text-xs font-semibold text-slate-400 mb-1.5">
               Operation Type
             </label>
-            <div className="grid grid-cols-2 gap-2 p-1 border border-border bg-[#0b0f1a] rounded-lg">
+            <div className="grid grid-cols-2 gap-2 p-1 border border-border bg-card rounded-lg">
               <button
                 type="button"
                 onClick={() => setDepositType('deposit')}
@@ -590,7 +590,7 @@ export default function GoalsPage() {
               onChange={(e) => setDepositAmount(e.target.value)}
               required
               min="1"
-              className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
+              className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
             />
           </div>
 
@@ -598,7 +598,7 @@ export default function GoalsPage() {
             <button
               type="button"
               onClick={() => setIsDepositModalOpen(false)}
-              className="px-4 py-2 border border-border bg-[#0b0f1a] hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
+              className="px-4 py-2 border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
             >
               Cancel
             </button>

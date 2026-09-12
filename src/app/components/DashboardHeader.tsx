@@ -274,7 +274,7 @@ export default function DashboardHeader({
   return (
     <div className="flex flex-col gap-4 border-b border-border/70 pb-5 md:flex-row md:items-end md:justify-between">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-3 sm:gap-5">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Financial Dashboard</h1>
           <div className="flex items-center gap-2">
             <button
@@ -305,7 +305,7 @@ export default function DashboardHeader({
               {showNotifications && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                  <div className="absolute left-0 top-full mt-2 z-50 bg-[#0b0f1a] border border-border rounded-xl shadow-2xl p-4 w-72 text-xs space-y-2">
+                  <div className="absolute left-0 top-full mt-2 z-50 bg-card border border-border rounded-xl shadow-card-lg p-4 w-72 text-xs space-y-2">
                     <p className="font-bold text-slate-400 mb-1 border-b border-border pb-1.5">
                       Notifications
                     </p>
@@ -355,17 +355,17 @@ export default function DashboardHeader({
           <select
             value={selectedAccountId || ''}
             onChange={(e) => setSelectedAccountId && setSelectedAccountId(e.target.value)}
-            className="h-10 w-full appearance-none rounded-lg border border-border bg-card px-3 py-2 pr-9 text-sm font-medium text-foreground transition-colors hover:border-primary/40 focus:border-primary focus:outline-none sm:w-auto"
+            className="h-10 w-full appearance-none rounded-lg border border-border bg-card px-4 py-2 pr-9 text-sm font-medium text-foreground transition-colors hover:border-primary/40 focus:border-primary focus:outline-none sm:w-auto"
             aria-label="Select Account"
           >
-            <option value="" className="bg-[#0b0f1a] text-slate-200 text-sm">
+            <option value="" className="bg-card text-slate-200 text-sm">
               All Accounts
             </option>
             {accounts.map((acc) => (
               <option
                 key={acc.id}
                 value={acc.id}
-                className="bg-[#0b0f1a] text-slate-200 font-medium text-sm"
+                className="bg-card text-slate-200 font-medium text-sm"
               >
                 {acc.name} (₹{acc.balance.toLocaleString('en-IN')})
               </option>
@@ -389,7 +389,7 @@ export default function DashboardHeader({
 
           <button
             onClick={() => setIsPickerOpen(!isPickerOpen)}
-            className="flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            className="flex h-8 items-center gap-1.5 rounded-md px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
           >
             {MONTH_NAMES[selectedMonth].slice(0, 3)} {selectedYear}
             <ChevronDown size={14} className="text-muted-foreground" />
@@ -406,10 +406,10 @@ export default function DashboardHeader({
           {isPickerOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setIsPickerOpen(false)} />
-              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 bg-[#0b0f1a] border border-border rounded-xl shadow-2xl p-4 grid grid-cols-2 gap-4 w-72">
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 bg-card border border-border rounded-xl shadow-card-lg p-4 grid grid-cols-2 gap-4 w-72">
                 {/* Month Selection */}
                 <div className="space-y-1 max-h-56 overflow-y-auto pr-1 select-scrollbar">
-                  <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-[#0b0f1a] z-10">
+                  <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-card z-10">
                     Month
                   </p>
                   {MONTH_NAMES.map((m, i) => (
@@ -419,7 +419,7 @@ export default function DashboardHeader({
                         updateDate(i, selectedYear);
                         setIsPickerOpen(false);
                       }}
-                      className={`w-full text-left text-sm px-3 py-2.5 rounded-md transition ${
+                      className={`w-full text-left text-sm px-4 py-2.5 rounded-md transition ${
                         selectedMonth === i
                           ? 'bg-primary text-white font-semibold'
                           : 'text-slate-300 hover:bg-muted/50 hover:text-foreground'
@@ -431,7 +431,7 @@ export default function DashboardHeader({
                 </div>
                 {/* Year Selection */}
                 <div className="space-y-1 max-h-56 overflow-y-auto pl-1 select-scrollbar border-l border-border">
-                  <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-[#0b0f1a] z-10">
+                  <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-card z-10">
                     Year
                   </p>
                   {availableYears.map((y) => (
@@ -441,7 +441,7 @@ export default function DashboardHeader({
                         updateDate(selectedMonth, y);
                         setIsPickerOpen(false);
                       }}
-                      className={`w-full text-left text-sm px-3 py-2.5 rounded-md transition ${
+                      className={`w-full text-left text-sm px-4 py-2.5 rounded-md transition ${
                         selectedYear === y
                           ? 'bg-primary text-white font-semibold'
                           : 'text-slate-300 hover:bg-muted/50 hover:text-foreground'

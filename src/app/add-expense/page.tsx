@@ -387,9 +387,9 @@ export default function AddExpensePage() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#1F2027] flex flex-col text-[#F2F2F4] select-text animate-fade-in overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-card flex flex-col text-[#F2F2F4] select-text animate-fade-in overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between h-14 px-5 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
+      <div className="flex items-center justify-between h-14 px-6 bg-card shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
         <div className="flex items-center">
           <button
             type="button"
@@ -407,20 +407,20 @@ export default function AddExpensePage() {
       <div className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto pb-12">
         <form onSubmit={handleSubmit} className="flex flex-col">
           {/* Transaction Type Selector */}
-          <div className="grid grid-cols-3 gap-2.5 px-5 mt-2">
+          <div className="grid grid-cols-3 gap-2.5 px-6 mt-2">
             {(['income', 'expense', 'transfer'] as const).map((t) => {
               const isActive = type === t;
               let activeStyle = '';
               if (isActive) {
                 if (t === 'income') {
-                  activeStyle = 'border border-[#22C55E] text-[#22C55E] bg-[#16171C]';
+                  activeStyle = 'border border-[#22C55E] text-[#22C55E] bg-muted';
                 } else if (t === 'expense') {
-                  activeStyle = 'border border-[#EF4444] text-[#EF4444] bg-[#16171C]';
+                  activeStyle = 'border border-[#EF4444] text-[#EF4444] bg-muted';
                 } else {
-                  activeStyle = 'border border-[#3B82F6] text-[#3B82F6] bg-[#16171C]';
+                  activeStyle = 'border border-[#3B82F6] text-[#3B82F6] bg-muted';
                 }
               } else {
-                activeStyle = 'border border-transparent text-[#A5A6AD] bg-[#16171C]';
+                activeStyle = 'border border-transparent text-muted-foreground bg-muted';
               }
 
               return (
@@ -443,8 +443,8 @@ export default function AddExpensePage() {
           {/* Vertical Form Fields (Gap of 20dp between selector and form) */}
           <div className="flex flex-col mt-5">
             {/* Date Row */}
-            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
+              <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">
                 Date
               </span>
               <div className="flex-1 flex justify-start text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
@@ -460,8 +460,8 @@ export default function AddExpensePage() {
             </div>
 
             {/* Amount Row */}
-            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
+              <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">
                 Amount
               </span>
               <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
@@ -503,8 +503,8 @@ export default function AddExpensePage() {
             {type === 'transfer' ? (
               <>
                 {/* From Account */}
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
+                  <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">
                     Account
                   </span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
@@ -517,7 +517,7 @@ export default function AddExpensePage() {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   >
                     {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                      <option key={acc.id} value={acc.id} className="bg-card text-[#F2F2F4]">
                         {acc.name}
                       </option>
                     ))}
@@ -525,8 +525,8 @@ export default function AddExpensePage() {
                 </div>
 
                 {/* To Account */}
-                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
+                  <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">
                     To Account
                   </span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
@@ -544,7 +544,7 @@ export default function AddExpensePage() {
                     {accounts
                       .filter((acc) => acc.id !== account)
                       .map((acc) => (
-                        <option key={acc.id} value={acc.id} className="bg-[#1F2027] text-[#F2F2F4]">
+                        <option key={acc.id} value={acc.id} className="bg-card text-[#F2F2F4]">
                           {acc.name}
                         </option>
                       ))}
@@ -556,9 +556,9 @@ export default function AddExpensePage() {
                 {/* Category Row - Tap to select category from bottom grid */}
                 <div
                   onClick={() => openBottomPicker('category')}
-                  className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                  className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6 cursor-pointer hover:bg-white/[0.04] transition-colors"
                 >
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                  <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">
                     Category
                   </span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
@@ -572,9 +572,9 @@ export default function AddExpensePage() {
                 {category && (
                   <div
                     onClick={() => openBottomPicker('subcategory')}
-                    className="relative flex h-[54px] cursor-pointer items-center border-b border-white/[0.08] px-5 transition-colors hover:bg-white/[0.04]"
+                    className="relative flex h-[54px] cursor-pointer items-center border-b border-white/[0.08] px-6 transition-colors hover:bg-white/[0.04]"
                   >
-                    <span className="w-[110px] shrink-0 text-[15px] font-normal text-[#A5A6AD]">
+                    <span className="w-[110px] shrink-0 text-[15px] font-normal text-muted-foreground">
                       Subcategory
                     </span>
                     <div className="flex min-w-0 flex-1 items-center text-[17px] font-medium text-[#F2F2F4]">
@@ -592,9 +592,9 @@ export default function AddExpensePage() {
                 {/* Account Row - Tap to select account from bottom grid */}
                 <div
                   onClick={() => openBottomPicker('account')}
-                  className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5 cursor-pointer hover:bg-white/[0.04] transition-colors"
+                  className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6 cursor-pointer hover:bg-white/[0.04] transition-colors"
                 >
-                  <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal">
+                  <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">
                     Account
                   </span>
                   <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
@@ -607,8 +607,8 @@ export default function AddExpensePage() {
             )}
 
             {/* Note Row */}
-            <div className="relative flex items-start py-4 border-b border-white/[0.08] px-5 min-h-[54px]">
-              <span className="text-[15px] text-[#A5A6AD] w-[110px] shrink-0 font-normal mt-0.5">
+            <div className="relative flex items-start py-4 border-b border-white/[0.08] px-6 min-h-[54px]">
+              <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal mt-0.5">
                 Note
               </span>
               <textarea
@@ -643,7 +643,7 @@ export default function AddExpensePage() {
 
           {/* Description & Camera Section */}
           <div className="flex flex-col mt-5">
-            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-5">
+            <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
               <input
                 ref={descriptionInputRef}
                 type="text"
@@ -656,18 +656,18 @@ export default function AddExpensePage() {
               />
               <Camera
                 size={20}
-                className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5"
+                className="text-muted-foreground hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5"
               />
             </div>
           </div>
 
           {/* Bottom Action Grid */}
           <div className="mt-5">
-            <div className="flex items-center gap-3 px-5">
+            <div className="flex items-center gap-4 px-6">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="h-12 px-5 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                className="h-12 px-6 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
               >
                 <X size={18} />
                 <span>Cancel</span>
@@ -687,7 +687,7 @@ export default function AddExpensePage() {
             {!isAmountFocused && !isNoteFocused && (
               <div
                 ref={bottomPickerRef}
-                className="mt-3 scroll-mt-3 space-y-3 border-t border-white/[0.08] pb-8 pt-4"
+                className="mt-3 scroll-mt-3 space-y-4 border-t border-white/[0.08] pb-8 pt-4"
               >
                 {/* 1. CLEAN SUBTLE FLOATING CHIPS GRID (CATEGORIES - NO SCROLLBAR) */}
                 {bottomPickerMode === 'category' && (
@@ -794,7 +794,7 @@ export default function AddExpensePage() {
                     <button
                       type="button"
                       onClick={() => setIsAddSubcategoryOpen(true)}
-                      className="flex w-full items-center justify-center rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-xs font-medium text-[#A5A6AD] transition-colors hover:border-primary/40 hover:text-primary"
+                      className="flex w-full items-center justify-center rounded-lg border border-dashed border-white/15 px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
                     >
                       <PlusCircle size={14} className="mr-1.5" />
                       Add subcategory
@@ -858,7 +858,7 @@ export default function AddExpensePage() {
           onClose={() => setIsAddCategoryOpen(false)}
           title="Create Custom Category"
         >
-          <form onSubmit={handleAddCategorySubmit} className="space-y-3.5 text-2xs">
+          <form onSubmit={handleAddCategorySubmit} className="space-y-4 text-2xs">
             <div>
               <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
                 Category Name *
@@ -935,7 +935,7 @@ export default function AddExpensePage() {
           onClose={() => setIsAddSubcategoryOpen(false)}
           title="Create Custom Subcategory"
         >
-          <form onSubmit={handleAddSubcategorySubmit} className="space-y-3.5 text-2xs">
+          <form onSubmit={handleAddSubcategorySubmit} className="space-y-4 text-2xs">
             <div>
               <p className="text-muted-foreground mb-2">
                 Creating subcategory for:{' '}

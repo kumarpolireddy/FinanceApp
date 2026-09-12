@@ -460,9 +460,9 @@ export default function BillsPage() {
     <AppLayout>
       <div className="bills-minimal min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header Banner */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 py-2 sm:py-3 relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 py-2 sm:py-3 relative overflow-hidden">
           <div className="space-y-1 z-10">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <div className="text-primary">
                 <Receipt className="w-6 h-6" />
               </div>
@@ -485,7 +485,7 @@ export default function BillsPage() {
 
         {/* 1. Summary Metrics - Single Row of 3 Cards */}
         <div className="grid grid-cols-3 border-y border-border/70 divide-x divide-border/70">
-          <div className="py-4 px-3 sm:px-5 flex items-center justify-between gap-3">
+          <div className="py-4 px-4 sm:px-6 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-medium text-muted-foreground">Next 7 days</p>
               <p className="text-base sm:text-xl font-mono font-semibold text-foreground mt-1 truncate">
@@ -497,7 +497,7 @@ export default function BillsPage() {
             </div>
           </div>
 
-          <div className="py-4 px-3 sm:px-5 flex items-center justify-between gap-3">
+          <div className="py-4 px-4 sm:px-6 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-medium text-muted-foreground">Overdue</p>
               <p className="text-base sm:text-xl font-mono font-semibold text-foreground mt-1 truncate">
@@ -509,7 +509,7 @@ export default function BillsPage() {
             </div>
           </div>
 
-          <div className="py-4 px-3 sm:px-5 flex items-center justify-between gap-3">
+          <div className="py-4 px-4 sm:px-6 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-medium text-muted-foreground">Due today</p>
               <p className="text-base sm:text-xl font-mono font-semibold text-foreground mt-1 truncate">
@@ -523,7 +523,7 @@ export default function BillsPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-5 overflow-x-auto border-b border-border/70">
+        <div className="flex gap-6 overflow-x-auto border-b border-border/70">
           {[
             { id: 'bills', label: 'Upcoming', icon: Receipt, count: activeBillCount },
             { id: 'calendar', label: 'Calendar View', icon: CalendarIcon },
@@ -592,10 +592,10 @@ export default function BillsPage() {
                     key={bill.id}
                     className="py-5 px-1 sm:px-2 hover:bg-muted/20 transition-colors flex flex-col justify-between space-y-4"
                   >
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {/* Top Bar: Icon, Name & Status Badge */}
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           <div className="text-muted-foreground">
                             {getBillIcon(bill.type)}
                           </div>
@@ -694,7 +694,7 @@ export default function BillsPage() {
                       <div className="grid grid-cols-[1fr_auto_auto] gap-2 pt-3">
                         <button
                           onClick={() => handleOpenMarkPaid(bill)}
-                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold transition"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold transition"
                         >
                           <Check className="w-3.5 h-3.5" />
                           Mark paid
@@ -761,7 +761,7 @@ export default function BillsPage() {
         {activeTab === 'calendar' && (
           <div className="space-y-4">
             {/* Calendar Header Controls */}
-            <div className="flex items-center justify-between bg-card p-3 sm:p-4 rounded-xl border border-border/60">
+            <div className="flex items-center justify-between bg-card p-4 sm:p-4 rounded-xl border border-border/60">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -803,7 +803,7 @@ export default function BillsPage() {
 
             {/* Table-like Calendar Grid Container */}
             <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-              <div className="grid grid-cols-7 text-center text-[10px] font-extrabold text-muted-foreground uppercase py-2 border-b border-border bg-[#0b0f1a]/80 divide-x divide-border/60">
+              <div className="grid grid-cols-7 text-center text-[10px] font-extrabold text-muted-foreground uppercase py-2 border-b border-border bg-card/80 divide-x divide-border/60">
                 <span>Sun</span>
                 <span>Mon</span>
                 <span>Tue</span>
@@ -872,7 +872,7 @@ export default function BillsPage() {
 
             {/* Selected Date Bills Details */}
             {selectedCalendarDate && (
-              <div className="p-4 rounded-xl bg-card border border-primary/30 space-y-3 animate-fade-in">
+              <div className="p-4 rounded-xl bg-card border border-primary/30 space-y-4 animate-fade-in">
                 <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                     <CalendarDays className="w-4 h-4 text-primary" />
@@ -892,7 +892,7 @@ export default function BillsPage() {
                     .map((b) => (
                       <div
                         key={b.id}
-                        className="p-3 rounded-lg bg-secondary/60 border border-border/40 flex items-center justify-between text-xs"
+                        className="p-4 rounded-lg bg-secondary/60 border border-border/40 flex items-center justify-between text-xs"
                       >
                         <div className="space-y-0.5">
                           <h4 className="font-bold text-foreground text-sm">{b.name}</h4>
@@ -900,7 +900,7 @@ export default function BillsPage() {
                             {b.type} • Due {b.dueTime || '09:00'}
                           </p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           <span className="text-sm font-mono font-bold text-foreground">
                             ₹{b.amount.toLocaleString('en-IN')}
                           </span>
@@ -918,7 +918,7 @@ export default function BillsPage() {
         {/* TAB 4: PAYMENT HISTORY */}
         {activeTab === 'history' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-white/5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-2xl border border-white/5">
               <div>
                 <h3 className="text-base font-bold text-white">Payment History Log</h3>
                 <p className="text-2xs text-slate-400">All completed EMI payments, credit card statement dues, and bill payments</p>
@@ -935,7 +935,7 @@ export default function BillsPage() {
                   <button
                     key={f.id}
                     onClick={() => setHistoryTypeFilter(f.id as any)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                    className={`px-4 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
                       historyTypeFilter === f.id
                         ? 'bg-emerald-500 text-slate-950 font-bold'
                         : 'bg-white/5 text-slate-400 hover:text-white'
@@ -956,17 +956,17 @@ export default function BillsPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-white/5 text-slate-400 font-semibold border-b border-white/10">
                     <tr>
-                      <th className="p-3.5">Payment Name</th>
-                      <th className="p-3.5">Type</th>
-                      <th className="p-3.5">Amount</th>
-                      <th className="p-3.5">Payment Date</th>
-                      <th className="p-3.5">Verification</th>
+                      <th className="p-4">Payment Name</th>
+                      <th className="p-4">Type</th>
+                      <th className="p-4">Amount</th>
+                      <th className="p-4">Payment Date</th>
+                      <th className="p-4">Verification</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-slate-200">
                     {filteredHistory.map((h) => (
                       <tr key={h.id} className="hover:bg-white/5 transition-colors">
-                        <td className="p-3.5 font-bold text-white flex items-center gap-2.5">
+                        <td className="p-4 font-bold text-white flex items-center gap-2.5">
                           <div className="p-1.5 rounded-lg bg-white/5 text-emerald-400 shrink-0">
                             {getBillIcon(h.type)}
                           </div>
@@ -975,14 +975,14 @@ export default function BillsPage() {
                             {h.notes && <span className="block text-3xs text-slate-400 font-normal">{h.notes}</span>}
                           </div>
                         </td>
-                        <td className="p-3.5">
+                        <td className="p-4">
                           <span className="px-2.5 py-0.5 rounded-md text-2xs font-semibold bg-slate-800 text-slate-300">
                             {h.type}
                           </span>
                         </td>
-                        <td className="p-3.5 font-mono font-bold text-white text-sm">₹{h.amount.toLocaleString('en-IN')}</td>
-                        <td className="p-3.5 font-mono text-slate-300">{h.paidDate}</td>
-                        <td className="p-3.5">
+                        <td className="p-4 font-mono font-bold text-white text-sm">₹{h.amount.toLocaleString('en-IN')}</td>
+                        <td className="p-4 font-mono text-slate-300">{h.paidDate}</td>
+                        <td className="p-4">
                           <span className="px-2.5 py-1 rounded-md text-2xs font-bold bg-emerald-500/15 text-emerald-400">
                             ✓ Paid
                           </span>
@@ -1006,7 +1006,7 @@ export default function BillsPage() {
             </div>
 
             {/* Auto Reminders Section - Clean Flat Layout */}
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div className="flex items-center gap-2">
                 <span className="text-base">🔔</span>
                 <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
@@ -1015,7 +1015,7 @@ export default function BillsPage() {
               </div>
 
               {/* Credit Card Dues */}
-              <div className="py-3 border-b border-border/30 space-y-3">
+              <div className="py-3 border-b border-border/30 space-y-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-0.5 min-w-0">
                     <span className="text-sm font-semibold text-foreground block">
@@ -1101,7 +1101,7 @@ export default function BillsPage() {
               </div>
 
               {/* EMI / Loan Dues */}
-              <div className="py-3 border-b border-border/30 space-y-3">
+              <div className="py-3 border-b border-border/30 space-y-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-0.5 min-w-0">
                     <span className="text-sm font-semibold text-foreground block">
@@ -1189,7 +1189,7 @@ export default function BillsPage() {
 
             {/* Notification Time & System Options */}
             <div className="space-y-4 pt-2">
-              <div className="flex flex-wrap items-center justify-between gap-3 py-2 border-b border-border/30">
+              <div className="flex flex-wrap items-center justify-between gap-4 py-2 border-b border-border/30">
                 <div>
                   <span className="text-sm font-semibold text-foreground block">Notification Time</span>
                 </div>
@@ -1201,18 +1201,18 @@ export default function BillsPage() {
                     setSettings(updated);
                     saveBillSettings(updated);
                   }}
-                  className="px-3 py-1.5 rounded-md bg-secondary border border-border text-foreground font-mono text-sm focus:outline-none focus:border-primary"
+                  className="px-4 py-1.5 rounded-md bg-secondary border border-border text-foreground font-mono text-sm focus:outline-none focus:border-primary"
                 />
               </div>
 
-              <div className="pt-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="pt-3 flex flex-wrap items-center justify-between gap-4">
                 <button
                   onClick={async () => {
                     const granted = await requestLocalNotificationPermissions();
                     if (granted) toast.success('Device notification permission granted!');
                     else toast.error('Notification permission denied by system.');
                   }}
-                  className="px-3.5 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs border border-primary/20 transition"
+                  className="px-4 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs border border-primary/20 transition"
                 >
                   Request Notification Permission
                 </button>
@@ -1224,7 +1224,7 @@ export default function BillsPage() {
                       loadAllData();
                     }
                   }}
-                  className="px-3.5 py-2 rounded-md bg-negative/10 hover:bg-negative/20 text-negative font-bold text-xs border border-negative/20 transition"
+                  className="px-4 py-2 rounded-md bg-negative/10 hover:bg-negative/20 text-negative font-bold text-xs border border-negative/20 transition"
                 >
                   Reset Reminders
                 </button>
@@ -1236,7 +1236,7 @@ export default function BillsPage() {
         {/* MODAL: ADD / EDIT PAYMENT REMINDER */}
         {showAddModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-slate-900 border border-white/15 p-6 sm:p-8 shadow-2xl space-y-6 text-white">
+            <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-slate-900 border border-white/15 p-6 sm:p-8 shadow-card-lg space-y-6 text-white">
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <h2 className="text-xl font-bold">
                   {editingBill ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
@@ -1258,7 +1258,7 @@ export default function BillsPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">Amount (₹)</label>
                     <input
@@ -1275,7 +1275,7 @@ export default function BillsPage() {
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value as BillType })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
                     >
                       {[
                         'Credit Card',
@@ -1297,7 +1297,7 @@ export default function BillsPage() {
                 </div>
 
                 {formData.type === 'Credit Card' && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1">Minimum Due Amount (₹)</label>
                       <input
@@ -1312,7 +1312,7 @@ export default function BillsPage() {
                       <select
                         value={formData.amountType}
                         onChange={(e) => setFormData({ ...formData, amountType: e.target.value as 'fixed' | 'variable' })}
-                        className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
                       >
                         <option value="variable">Variable Amount</option>
                         <option value="fixed">Fixed Amount</option>
@@ -1321,7 +1321,7 @@ export default function BillsPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">Due Date</label>
                     <input
@@ -1345,13 +1345,13 @@ export default function BillsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">Pay From Account</label>
                     <select
                       value={formData.accountId}
                       onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
                     >
                       {accounts.map((a) => (
                         <option key={a.id} value={a.id}>{a.name}</option>
@@ -1364,7 +1364,7 @@ export default function BillsPage() {
                     <select
                       value={formData.recurrence}
                       onChange={(e) => setFormData({ ...formData, recurrence: e.target.value as BillRecurrence })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
                     >
                       <option value="one_time">One-time</option>
                       <option value="daily">Daily</option>
@@ -1417,11 +1417,11 @@ export default function BillsPage() {
                   />
                 </div>
 
-                <div className="pt-4 flex items-center justify-end gap-3">
+                <div className="pt-4 flex items-center justify-end gap-4">
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold"
+                    className="px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold"
                   >
                     Cancel
                   </button>
@@ -1440,7 +1440,7 @@ export default function BillsPage() {
         {/* MODAL: MARK AS PAID CONFIRMATION */}
         {payingBill && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-2xl space-y-6 text-white">
+            <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-card-lg space-y-6 text-white">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <h3 className="text-lg font-bold">Confirm Payment</h3>
                 <button onClick={() => setPayingBill(null)} className="text-slate-400 hover:text-white">✕</button>
@@ -1467,7 +1467,7 @@ export default function BillsPage() {
                   <select
                     value={paidAccountId}
                     onChange={(e) => setPaidAccountId(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white text-xs focus:outline-none"
                   >
                     {accounts.map((a) => (
                       <option key={a.id} value={a.id}>{a.name} (Bal: ₹{a.balance?.toLocaleString('en-IN')})</option>
@@ -1486,7 +1486,7 @@ export default function BillsPage() {
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-3">
+              <div className="pt-2 flex items-center justify-end gap-4">
                 <button
                   onClick={() => setPayingBill(null)}
                   className="px-4 py-2 rounded-xl bg-white/10 text-xs font-semibold"
@@ -1495,7 +1495,7 @@ export default function BillsPage() {
                 </button>
                 <button
                   onClick={handleConfirmMarkPaid}
-                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md"
+                  className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md"
                 >
                   Confirm & Create Transaction
                 </button>
@@ -1507,7 +1507,7 @@ export default function BillsPage() {
         {/* MODAL: SNOOZE OPTIONS */}
         {snoozingBill && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-sm rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-2xl space-y-4 text-white">
+            <div className="w-full max-w-sm rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-card-lg space-y-4 text-white">
               <h3 className="text-base font-bold">Snooze Reminder</h3>
               <p className="text-2xs text-slate-400">Snoozing delays notification without altering due date.</p>
               <div className="space-y-2">
@@ -1534,7 +1534,7 @@ export default function BillsPage() {
         {/* MODAL: EDIT VARIABLE AMOUNT (Credit Card) */}
         {editingAmountBill && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-sm rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-2xl space-y-4 text-white">
+            <div className="w-full max-w-sm rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-card-lg space-y-4 text-white">
               <h3 className="text-base font-bold">Update Bill Amount</h3>
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">New Amount (₹)</label>
@@ -1546,7 +1546,7 @@ export default function BillsPage() {
                 />
               </div>
               <div className="flex items-center justify-end gap-2">
-                <button onClick={() => setEditingAmountBill(null)} className="px-3 py-1.5 rounded-xl bg-white/10 text-xs">
+                <button onClick={() => setEditingAmountBill(null)} className="px-4 py-1.5 rounded-xl bg-white/10 text-xs">
                   Cancel
                 </button>
                 <button onClick={handleSaveEditAmount} className="px-4 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">

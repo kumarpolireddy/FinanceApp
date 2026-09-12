@@ -314,7 +314,7 @@ export default function PCManagerComponent() {
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
           PC Manager requires the application to be running natively on an Android device to start a local HTTP network server.
         </p>
-        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl p-3 text-xs max-w-md mx-auto">
+        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl p-4 text-xs max-w-md mx-auto">
           ⚠️ Running in browser mode. Deploy the app to Android via Capacitor to use PC Manager.
         </div>
       </div>
@@ -340,7 +340,7 @@ export default function PCManagerComponent() {
         </div>
 
         {running ? (
-          <div className="bg-background border border-border rounded-xl p-5 space-y-5">
+          <div className="bg-background border border-border rounded-xl p-6 space-y-6">
             <div className="space-y-2">
               <span className="text-xs text-muted-foreground font-semibold uppercase">Connection Address</span>
               <p className="text-xs text-muted-foreground">Open this URL in a desktop browser on the same Wi-Fi network:</p>
@@ -349,7 +349,7 @@ export default function PCManagerComponent() {
                   type="text"
                   readOnly
                   value={serverUrl}
-                  className="flex-grow bg-card border border-border rounded-lg px-3 py-2 text-sm font-mono text-primary outline-none"
+                  className="flex-grow bg-card border border-border rounded-lg px-4 py-2 text-sm font-mono text-primary outline-none"
                 />
                 <button
                   onClick={copyToClipboard}
@@ -405,7 +405,7 @@ export default function PCManagerComponent() {
           </div>
         )}
 
-        <div className="bg-card/50 border border-border/50 rounded-xl p-3.5 text-2xs text-muted-foreground leading-relaxed">
+        <div className="bg-card/50 border border-border/50 rounded-xl p-4 text-2xs text-muted-foreground leading-relaxed">
           💡 <strong>Tip:</strong> Keep the WealthIQ app open on this screen while accessing it from your PC. For security, stopping the PC Manager expires all active browser login sessions instantly.
         </div>
       </div>

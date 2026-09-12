@@ -66,7 +66,7 @@ export function CategorySettingsInner() {
   const [activeTab, setActiveTab] = useState<TabType>('expense');
   const [categories, setCategories] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [showIcons, setShowIcons] = useState(true);
+  const [showIcons, setShowIcons] = useState(false);
 
   // Form state
   const [name, setName] = useState('');
@@ -83,6 +83,8 @@ export function CategorySettingsInner() {
     const stored = localStorage.getItem('wealthiq_show_category_icons');
     if (stored !== null) {
       setShowIcons(stored === 'true');
+    } else {
+      setShowIcons(false);
     }
   }, []);
 
@@ -189,7 +191,7 @@ export function CategorySettingsInner() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-muted/20 border border-border rounded-lg px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-all"
+              className="w-full bg-muted/20 border border-border rounded-lg px-4 py-2.5 text-foreground text-sm focus:outline-none focus:border-primary/50 transition-all"
             />
           </div>
 
@@ -215,7 +217,7 @@ export function CategorySettingsInner() {
           {/* Preview + Actions */}
           <div className="flex items-center gap-4">
             {/* Preview */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-muted/10">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-muted/10">
               {showIcons && (
                 <div
                   className="w-4 h-4 rounded-full flex-shrink-0"
@@ -251,7 +253,7 @@ export function CategorySettingsInner() {
             <button
               key={t}
               onClick={() => setActiveTab(t)}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === t
                   ? 'bg-primary/10 text-primary border border-primary/25 shadow-sm'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
@@ -275,7 +277,7 @@ export function CategorySettingsInner() {
             type="checkbox"
             checked={showIcons}
             onChange={(e) => handleToggleIcons(e.target.checked)}
-            className="rounded border-border text-primary bg-[#0b0f1a] h-4 w-4 focus:ring-offset-background focus:ring-1 focus:ring-primary"
+            className="rounded border-border text-primary bg-card h-4 w-4 focus:ring-offset-background focus:ring-1 focus:ring-primary"
           />
           Show Category Icons
         </label>
@@ -296,13 +298,13 @@ export function CategorySettingsInner() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((cat) => (
             <div
               key={cat.id}
-              className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3 group hover:border-primary/30 transition-all"
+              className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4 group hover:border-primary/30 transition-all"
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-4 min-w-0">
                 <div
                   className="w-3.5 h-3.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: cat.color }}
@@ -355,7 +357,7 @@ export function CategorySettingsInner() {
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 required
-                className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium"
+                className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium"
               />
             </div>
 
@@ -382,7 +384,7 @@ export function CategorySettingsInner() {
             {/* Icon picker */}
             <div className="mb-4">
               <label className="block text-xs font-semibold text-slate-400 mb-1.5">Icon</label>
-              <div className="grid grid-cols-8 gap-2 max-h-36 overflow-y-auto p-1 bg-[#0b0f1a] border border-border rounded-lg">
+              <div className="grid grid-cols-8 gap-2 max-h-36 overflow-y-auto p-1 bg-card border border-border rounded-lg">
                 {PRESET_ICONS.map((i) => (
                   <button
                     key={i}
@@ -401,7 +403,7 @@ export function CategorySettingsInner() {
             </div>
 
             {/* Preview */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-muted/10 w-fit">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-muted/10 w-fit">
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0 bg-background/50 border border-border"
                 style={{ borderColor: `${editColor}40` }}
@@ -414,11 +416,11 @@ export function CategorySettingsInner() {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-4 pt-2">
               <button
                 type="button"
                 onClick={() => setEditingCategory(null)}
-                className="px-4 py-2 border border-border bg-[#0b0f1a] hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
+                className="px-4 py-2 border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
               >
                 Cancel
               </button>

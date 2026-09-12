@@ -133,7 +133,7 @@ export default function WeekdayWeekendChartInner({
       </div>
 
       {/* Month Selector Controls Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-t border-border/20 pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-t border-border/20 pt-3">
         {/* Left: Active Month Display */}
         <div className="text-xs font-bold text-foreground select-none uppercase tracking-wider py-1.5">
           📅 {MONTH_SHORT[selectedMonth]} {selectedYear}
@@ -141,7 +141,7 @@ export default function WeekdayWeekendChartInner({
       </div>
 
       {/* Filter Bar */}
-      <div className="mb-4 bg-[#0b0f1a]/10 p-2 border border-border/40 rounded-xl">
+      <div className="mb-4 bg-card/10 p-2 border border-border/40 rounded-xl">
         <ChartFilterBar
           selectedRange={selectedRange}
           setSelectedRange={setSelectedRange}
@@ -156,15 +156,15 @@ export default function WeekdayWeekendChartInner({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="bg-muted/20 border border-border rounded-xl p-3 text-center">
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="bg-muted/20 border border-border rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground mb-1">Weekday Avg</p>
           <p className="text-lg font-bold tabular-nums text-primary">
             ₹{Math.round(weekdayAvg).toLocaleString('en-IN')}
           </p>
           <p className="text-2xs text-muted-foreground">per day</p>
         </div>
-        <div className="bg-warning-subtle border border-warning-subtle rounded-xl p-3 text-center">
+        <div className="bg-warning-subtle border border-warning-subtle rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground mb-1">Weekend Avg</p>
           <p className="text-lg font-bold tabular-nums text-warning">
             ₹{Math.round(weekendAvg).toLocaleString('en-IN')}

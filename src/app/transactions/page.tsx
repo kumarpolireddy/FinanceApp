@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Search,
   Filter,
   BarChart3,
   Plus,
@@ -19,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
+import './transactions.css';
 import Modal from '@/components/ui/Modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
@@ -66,7 +68,7 @@ const MONTH_NAMES = [
 const CustomBarTooltip = ({ active, payload, label, logarithmic = false }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#0b0f1a] border border-border/80 p-2.5 rounded shadow-2xl text-xs space-y-1">
+      <div className="bg-card border border-border/80 p-2.5 rounded shadow-card-lg text-xs space-y-1">
         <p className="font-bold text-foreground">
           {typeof label === 'string' && label.match(/^\d+$/) ? `Day ${label}` : label}
         </p>
@@ -127,6 +129,12 @@ function TransactionsPageContent() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showCategoryIcons, setShowCategoryIcons] = useState(false);
+
+  const categoryLookup = useMemo(
+    () => new Map(categories.map((category) => [category.name, category])),
+    [categories]
+  );
 
   const [typeFilter, setTypeFilter] = useState<
     'all' | 'income' | 'expense' | 'transfer' | 'cash-in' | 'cash-out'
@@ -176,6 +184,15 @@ function TransactionsPageContent() {
   useEffect(() => {
     refreshActiveTrip();
   }, [refreshActiveTrip]);
+
+  useEffect(() => {
+    const updateCategoryIconVisibility = () => {
+      setShowCategoryIcons(localStorage.getItem('wealthiq_show_category_icons') === 'true');
+    };
+    updateCategoryIconVisibility();
+    window.addEventListener('storage', updateCategoryIconVisibility);
+    return () => window.removeEventListener('storage', updateCategoryIconVisibility);
+  }, []);
 
   const handleTripButtonClick = () => {
     const current = getActiveTrip();
@@ -232,7 +249,7 @@ function TransactionsPageContent() {
     'daily'
   );
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(null);
-  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [filterPanelMode, setFilterPanelMode] = useState<'search' | 'filters' | null>(null);
   const [showAccountChart, setShowAccountChart] = useState(false);
   const [accountChartView, setAccountChartView] = useState<'daily' | 'monthly'>('daily');
   const [tripBgColor, setTripBgColorState] = useState('#f59e0b');
@@ -1579,10 +1596,10 @@ function TransactionsPageContent() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-0 md:px-3.5 pt-2 pb-32 space-y-2.5 bg-background min-h-[90vh]">
+    <div className="transactions-content max-w-3xl mx-auto px-4 md:px-8 pt-4 md:pt-8 pb-32 space-y-4 bg-background min-h-[90vh]">
       {/* 1. Header Navigation: Month Selector, Search/Filter buttons */}
-      <div className="px-3.5 md:px-0">
-        <div className="flex items-center justify-between py-1 bg-transparent border-b border-border/40">
+      <div className="transactions-toolbar">
+        <div className="flex flex-wrap items-center justify-between gap-2 py-2">
           <div className="flex items-center gap-2">
             {activeTab === 'monthly' ? (
               <>
@@ -1709,35 +1726,55 @@ function TransactionsPageContent() {
             )}
 
             <button
-              onClick={() => setShowFiltersPanel(!showFiltersPanel)}
+              onClick={() => setFilterPanelMode(filterPanelMode === 'search' ? null : 'search')}
               className={`p-1.5 rounded-md transition border ${
-                showFiltersPanel
+                filterPanelMode === 'search'
+                  ? 'bg-primary/10 border-primary text-primary shadow-sm'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+              title="Search transactions"
+              aria-label="Search transactions"
+            >
+              <Search size={16} className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+
+            <button
+              onClick={() => setFilterPanelMode(filterPanelMode === 'filters' ? null : 'filters')}
+              className={`p-1.5 rounded-md transition border ${
+                filterPanelMode === 'filters'
                   ? 'bg-primary/10 border-primary text-primary shadow-sm'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'
               }`}
               title="Toggle Filters"
             >
-              <Filter size={16} />
+              <Filter size={16} className="h-4 w-4" strokeWidth={1.75} />
             </button>
           </div>
         </div>
       </div>
 
+      {/* Search-only panel */}
+      {filterPanelMode === 'search' && (
+        <div className="animate-slide-up">
+          <label className="sr-only" htmlFor="transaction-search">
+            Search transactions
+          </label>
+          <input
+            id="transaction-search"
+            type="search"
+            autoFocus
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search transactions"
+            className="w-full text-sm bg-background border border-border rounded px-2.5 py-2 text-foreground focus:outline-none focus:border-primary"
+          />
+        </div>
+      )}
+
       {/* Filters Collapsible Sheet */}
-      {showFiltersPanel && (
-        <div className="bg-secondary p-3 rounded-lg border border-border space-y-2.5 animate-slide-up">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                Search description
-              </label>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full text-sm bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
-              />
-            </div>
+      {filterPanelMode === 'filters' && (
+        <div className="bg-secondary p-4 rounded-lg border border-border space-y-2.5 animate-slide-up">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
                 Account
@@ -1745,7 +1782,7 @@ function TransactionsPageContent() {
               <select
                 value={accountFilter}
                 onChange={(e) => setAccountFilter(e.target.value)}
-                className="w-full text-sm bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
+                className="w-full appearance-none text-sm bg-background border border-border rounded-lg px-3 py-2.5 text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="all">All Accounts</option>
                 {accounts.map((acc) => (
@@ -1762,7 +1799,7 @@ function TransactionsPageContent() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full text-sm bg-background border border-border rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary"
+                className="w-full appearance-none text-sm bg-background border border-border rounded-lg px-3 py-2.5 text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="all">All Categories</option>
                 {filterCategories.map((cat) => (
@@ -1808,7 +1845,7 @@ function TransactionsPageContent() {
 
       {/* Account Bar Graph Collapsible Panel */}
       {showAccountChart && accountFilter !== 'all' && (
-        <div className="bg-secondary p-4 rounded-lg border border-border/80 space-y-3.5 animate-slide-up">
+        <div className="bg-secondary p-4 rounded-lg border border-border/80 space-y-4 animate-slide-up">
           <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
             <div className="flex items-center rounded-md bg-background/60 p-0.5 text-xs">
               <button
@@ -1834,7 +1871,7 @@ function TransactionsPageContent() {
                 Monthly
               </button>
             </div>
-            <div className="flex items-center gap-3 text-3xs font-semibold">
+            <div className="flex items-center gap-4 text-3xs font-semibold">
               <div className="flex items-center gap-1">
                 <div className="w-2.5 h-2.5 rounded-sm bg-positive" />
                 <span className="text-muted-foreground">Income</span>
@@ -1997,7 +2034,7 @@ function TransactionsPageContent() {
       )}
 
       {/* 2. Secondary View tabs: Daily, Calendar, Monthly, Total, Note */}
-      <div className="border-b border-border/30 overflow-x-auto">
+      <div className="transactions-tabs overflow-x-auto">
         <div className="flex min-w-full">
           {(['daily', 'calendar', 'monthly', 'total', 'note'] as const).map((tab) => (
             <button
@@ -2006,9 +2043,9 @@ function TransactionsPageContent() {
                 setActiveTab(tab);
                 if (tab !== 'calendar') setSelectedCalendarDay(null);
               }}
-              className={`flex-1 min-w-[70px] text-center py-2 text-sm font-bold uppercase tracking-wider transition border-b-2 shrink-0 ${
+              className={`flex-1 min-w-[56px] text-center py-2 text-xs sm:text-sm font-medium capitalize transition rounded-lg shrink-0 ${
                 activeTab === tab
-                  ? 'border-white text-white font-black'
+                  ? 'bg-primary/15 text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -2019,27 +2056,27 @@ function TransactionsPageContent() {
       </div>
 
       {/* 3. Transaction Summary Banner */}
-      <div className="grid grid-cols-3 bg-secondary/35 py-2 rounded-md border border-border/30 text-center font-mono tabular-nums text-sm">
+      <div className="transactions-summary grid grid-cols-3 gap-2 bg-card p-4 md:p-6 rounded-2xl border border-border tabular-nums text-sm">
         <div>
-          <span className="text-xs font-semibold text-muted-foreground uppercase block">
+          <span className="text-xs font-medium text-muted-foreground block">
             Income
           </span>
-          <span className="text-base font-bold text-positive block mt-0.5">
+          <span className="text-base md:text-xl font-semibold text-positive block mt-2">
             {formatVal(totals.income)}
           </span>
         </div>
-        <div className="border-x border-border/30">
-          <span className="text-xs font-semibold text-muted-foreground uppercase block">
+        <div className="border-x border-border px-2 md:px-4">
+          <span className="text-xs font-medium text-muted-foreground block">
             Expenses
           </span>
-          <span className="text-base font-bold text-negative block mt-0.5">
+          <span className="text-base md:text-xl font-semibold text-negative block mt-2">
             {formatVal(totals.expense)}
           </span>
         </div>
         <div>
-          <span className="text-xs font-semibold text-muted-foreground uppercase block">Net</span>
+          <span className="text-xs font-medium text-muted-foreground block">Net</span>
           <span
-            className={`text-base font-bold block mt-0.5 ${totals.net >= 0 ? 'text-positive' : 'text-negative'}`}
+            className={`text-base md:text-xl font-semibold block mt-2 ${totals.net >= 0 ? 'text-positive' : 'text-negative'}`}
           >
             {totals.net >= 0 ? '+' : ''}
             {formatVal(totals.net)}
@@ -2051,14 +2088,14 @@ function TransactionsPageContent() {
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="space-y-3 min-h-[300px]"
+        className="space-y-4 min-h-[300px]"
       >
         {isLoading ? (
           <div className="space-y-2.5 py-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={`loader-${i}`}
-                className="animate-pulse bg-secondary/30 h-10 border border-border/40 rounded flex items-center justify-between px-3"
+                className="animate-pulse bg-secondary/30 h-10 border border-border/40 rounded flex items-center justify-between px-4"
               >
                 <div className="h-3 w-16 bg-muted/65 rounded" />
                 <div className="h-3 w-28 bg-muted/40 rounded" />
@@ -2070,7 +2107,7 @@ function TransactionsPageContent() {
           <>
             {/* DAILY TAB */}
             {activeTab === 'daily' && (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {groupedDailyTransactions.length === 0 ? (
                   <p className="text-center text-sm text-muted-foreground py-10 font-medium">
                     No records found for this period.
@@ -2081,19 +2118,24 @@ function TransactionsPageContent() {
                     return groupedDailyTransactions.map((group) => {
                       const day = group.date.getDate();
                       const weekday = getDayName(group.date.toISOString().slice(0, 10));
+                      const isWeekend = weekday === 'Sat' || weekday === 'Sun';
 
                       return (
                         <div
                           key={group.date.toISOString()}
-                          className="bg-secondary border border-border/80 rounded-xl p-3.5 space-y-2 shadow-xs"
+                          className="transactions-date-card bg-card border border-border rounded-2xl p-4 space-y-2"
                         >
                           {/* Day Group Header */}
-                          <div className="flex items-center justify-between pb-2 border-b border-border/40">
+                          <div className="transactions-date-heading flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-border">
                             <div className="flex items-baseline gap-2">
-                              <span className="text-xl font-bold text-white leading-none">
+                              <span
+                                className={`text-xl font-bold leading-none ${isWeekend ? 'text-negative' : 'text-white'}`}
+                              >
                                 {day}
                               </span>
-                              <span className="text-xs font-semibold uppercase text-white/80">
+                              <span
+                                className={`text-xs font-semibold uppercase ${isWeekend ? 'text-negative' : 'text-white/80'}`}
+                              >
                                 {weekday}
                               </span>
                               <span className="text-sm text-muted-foreground font-normal">
@@ -2103,7 +2145,7 @@ function TransactionsPageContent() {
                                 })}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm font-semibold font-mono text-right">
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-medium tabular-nums text-right">
                               {group.incomeSum > 0 && (
                                 <span className="text-positive">{formatVal(group.incomeSum)}</span>
                               )}
@@ -2131,8 +2173,9 @@ function TransactionsPageContent() {
                               if (isTransfer) {
                                 metadata = `${accName} → ${toAccName || 'Unknown'}`;
                               } else {
-                                metadata = `${txn.category}  •  ${accName}`;
+                                metadata = `${accName}`;
                               }
+                              const categoryMeta = categoryLookup.get(txn.category || '');
 
                               const isTrip = Boolean(txn.tripId);
                               const isFirstTripStartTxn =
@@ -2156,7 +2199,7 @@ function TransactionsPageContent() {
                                   onMouseUp={handleTouchEndOrCancel}
                                   onMouseLeave={handleTouchEndOrCancel}
                                   onClick={() => handleTxnClick(txn)}
-                                  className={`flex items-center justify-between py-2 ${isSelectionMode ? 'pl-5' : 'pl-10'} pr-0 transition cursor-pointer group relative ${
+                                  className={`transaction-row flex items-center justify-between gap-2 py-4 ${isSelectionMode ? 'pl-2' : 'pl-2'} pr-2 rounded-lg transition cursor-pointer group relative ${
                                     isSelected
                                       ? 'bg-primary/20 border-l-4 border-l-primary'
                                       : isTrip
@@ -2186,11 +2229,11 @@ function TransactionsPageContent() {
                                   {/* Left: Notes / Category & Metadata */}
                                   <div className="flex-1 min-w-0 pr-2">
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                      <span className="text-sm font-normal text-foreground truncate">
+                                      <span className="text-sm font-semibold text-foreground truncate">
                                         {title}
                                       </span>
                                       {txn.isSplit && (
-                                        <span className="text-xs font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase shrink-0 max-w-[180px] truncate">
+                                        <span className="text-xs font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase shrink-0 max-w-[88px] sm:max-w-[180px] truncate">
                                           Split
                                           {txn.splitDetails?.members
                                             ? `: ${txn.splitDetails.members
@@ -2201,14 +2244,21 @@ function TransactionsPageContent() {
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-xs font-normal text-muted-foreground truncate mt-0.5">
-                                      {metadata}
+                                    <div className="text-xs font-normal text-muted-foreground truncate mt-1">
+                                      {isTransfer ? (
+                                        metadata
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1">
+                                          <span>{txn.category || 'Other'}</span>
+                                          <span> • {metadata}</span>
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
 
                                   {/* Middle: Trip Name (Show ONLY on the first transaction when trip started) */}
                                   {isTrip && isFirstTripStartTxn && (
-                                    <div className="px-3 shrink-0 text-center">
+                                    <div className="transaction-trip px-2 shrink text-center">
                                       <span
                                         className="text-sm font-bold max-w-[120px] truncate block"
                                         style={{ color: tripBgColor }}
@@ -2219,7 +2269,7 @@ function TransactionsPageContent() {
                                   )}
 
                                   {/* Right: Amount */}
-                                  <div className="text-right font-mono tabular-nums shrink-0 ml-auto pl-1">
+                                  <div className="transaction-amount text-right tabular-nums shrink-0 ml-auto pl-2">
                                     <span
                                       className={`text-sm font-bold block ${
                                         isTransfer
@@ -2268,7 +2318,7 @@ function TransactionsPageContent() {
                 {/* Table-like Calendar Grid */}
                 <div className="bg-secondary rounded-xl border border-border overflow-hidden shadow-sm flex flex-col h-[calc(100vh-270px)] min-h-[380px] md:h-[480px]">
                   {/* Table Header */}
-                  <div className="grid grid-cols-7 text-center border-b border-border bg-[#0b0f1a] divide-x divide-border/60 flex-shrink-0">
+                  <div className="grid grid-cols-7 text-center border-b border-border bg-card divide-x divide-border/60 flex-shrink-0">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                       <span
                         key={day}
@@ -2337,7 +2387,7 @@ function TransactionsPageContent() {
 
                 {/* Day-specific transactions */}
                 {selectedCalendarDay !== null && (
-                  <div className="bg-secondary border border-border/80 rounded-xl p-3.5 space-y-2 shadow-xs">
+                  <div className="transactions-date-card bg-card border border-border rounded-2xl p-4 space-y-2">
                     <div className="flex justify-between items-center pb-2 border-b border-border/40">
                       <span className="text-sm font-bold uppercase tracking-wider text-white">
                         Transactions on Day {selectedCalendarDay}
@@ -2371,11 +2421,12 @@ function TransactionsPageContent() {
                           if (isTransfer) {
                             metadata = `${accName} → ${toAccName || 'Unknown'}`;
                           } else {
-                            metadata = `${txn.category}  •  ${accName}`;
+                            metadata = `${accName}`;
                           }
                           if (txn.notes) {
                             metadata += `  •  ${txn.notes}`;
                           }
+                          const categoryMeta = categoryLookup.get(txn.category || '');
 
                           const isTrip = Boolean(txn.tripId);
 
@@ -2383,7 +2434,7 @@ function TransactionsPageContent() {
                             <div
                               key={txn.id}
                               onClick={() => startEditing(txn)}
-                              className={`flex items-center justify-between py-2 pl-10 pr-2 transition cursor-pointer ${
+                              className={`transaction-row flex items-center justify-between gap-2 py-4 px-2 rounded-lg transition cursor-pointer ${
                                 isTrip
                                   ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
                                   : 'hover:bg-secondary/45 active:bg-secondary/65'
@@ -2399,7 +2450,14 @@ function TransactionsPageContent() {
                                   )}
                                 </div>
                                 <div className="text-xs font-medium text-muted-foreground truncate mt-0.5">
-                                  {metadata}
+                                  {isTransfer ? (
+                                    metadata
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1">
+                                      <span>{txn.category || 'Other'}</span>
+                                      <span> • {metadata}</span>
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <span
@@ -2465,7 +2523,7 @@ function TransactionsPageContent() {
             {activeTab === 'total' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-slide-up text-sm">
                 {/* Expenses Breakdown */}
-                <div className="bg-secondary/40 p-3 rounded-lg border border-border/60 space-y-2.5">
+                <div className="bg-secondary/40 p-4 rounded-lg border border-border/60 space-y-2.5">
                   <h3 className="text-sm font-bold text-negative uppercase tracking-wider pb-1.5 border-b border-border">
                     Expenses Categories
                   </h3>
@@ -2498,7 +2556,7 @@ function TransactionsPageContent() {
                 </div>
 
                 {/* Income Breakdown */}
-                <div className="bg-secondary/40 p-3 rounded-lg border border-border/60 space-y-2.5">
+                <div className="bg-secondary/40 p-4 rounded-lg border border-border/60 space-y-2.5">
                   <h3 className="text-sm font-bold text-positive uppercase tracking-wider pb-1.5 border-b border-border">
                     Income Categories
                   </h3>
@@ -2534,7 +2592,7 @@ function TransactionsPageContent() {
 
             {/* NOTE TAB */}
             {activeTab === 'note' && (
-              <div className="space-y-3 animate-slide-up">
+              <div className="space-y-4 animate-slide-up">
                 {/* Add note button and Search */}
                 <div className="flex gap-2 items-center">
                   <div className="flex-1 flex gap-2 bg-secondary p-2 rounded border border-border">
@@ -2577,7 +2635,7 @@ function TransactionsPageContent() {
 
                   if (filteredNotes.length === 0) {
                     return (
-                      <div className="text-center py-12 bg-[#0b0f1a]/40 border border-border/40 rounded-xl space-y-1">
+                      <div className="text-center py-12 bg-card/40 border border-border/40 rounded-xl space-y-1">
                         <p className="text-sm text-muted-foreground">No notes found.</p>
                         <p className="text-xs text-muted-foreground/60">
                           Create a general budget checklist, shopping list, or plan.
@@ -2587,7 +2645,7 @@ function TransactionsPageContent() {
                   }
 
                   return (
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-4">
                       {filteredNotes.map((note) => (
                         <div
                           key={note.id}
@@ -2611,7 +2669,7 @@ function TransactionsPageContent() {
                               {note.content}
                             </p>
                           </div>
-                          <div className="flex justify-end items-center gap-3 mt-4 pt-3 border-t border-border/40">
+                          <div className="flex justify-end items-center gap-4 mt-4 pt-3 border-t border-border/40">
                             <button
                               onClick={() => {
                                 setEditingGeneralNote(note);
@@ -2650,9 +2708,9 @@ function TransactionsPageContent() {
 
       {/* Edit Transaction Full Screen Page */}
       {editingTransaction && editForm && (
-        <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#1F2027] text-[#F2F2F4] select-text animate-slide-up">
+        <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-card text-[#F2F2F4] select-text animate-slide-up">
           {/* Header with Always Visible Save Button */}
-          <div className="flex items-center justify-between h-14 px-4 bg-[#1F2027] shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
+          <div className="flex items-center justify-between h-14 px-4 bg-card shrink-0 border-b border-white/[0.08] sticky top-0 z-30">
             <div className="flex items-center">
               <button
                 type="button"
@@ -2686,14 +2744,14 @@ function TransactionsPageContent() {
                   let activeStyle = '';
                   if (isActive) {
                     if (t === 'income') {
-                      activeStyle = 'border border-[#22C55E] text-[#22C55E] bg-[#16171C]';
+                      activeStyle = 'border border-[#22C55E] text-[#22C55E] bg-muted';
                     } else if (t === 'expense') {
-                      activeStyle = 'border border-[#EF4444] text-[#EF4444] bg-[#16171C]';
+                      activeStyle = 'border border-[#EF4444] text-[#EF4444] bg-muted';
                     } else {
-                      activeStyle = 'border border-[#3B82F6] text-[#3B82F6] bg-[#16171C]';
+                      activeStyle = 'border border-[#3B82F6] text-[#3B82F6] bg-muted';
                     }
                   } else {
-                    activeStyle = 'border border-transparent text-[#A5A6AD] bg-[#16171C]';
+                    activeStyle = 'border border-transparent text-muted-foreground bg-muted';
                   }
 
                   return (
@@ -2713,7 +2771,7 @@ function TransactionsPageContent() {
               <div className="flex flex-col mt-1">
                 {/* Date Row */}
                 <div className="relative flex items-center h-10 border-b border-white/[0.08] px-4">
-                  <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                  <span className="text-sm text-muted-foreground w-24 shrink-0 font-normal">
                     Date
                   </span>
                   <div className="flex-1 flex justify-start text-base text-[#F2F2F4] font-medium select-none pointer-events-none">
@@ -2743,7 +2801,7 @@ function TransactionsPageContent() {
 
                 {/* Amount Row */}
                 <div className="relative flex items-center h-10 border-b border-white/[0.08] px-4">
-                  <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                  <span className="text-sm text-muted-foreground w-24 shrink-0 font-normal">
                     Amount
                   </span>
                   <div className="flex-1 flex items-center text-base text-[#F2F2F4] font-medium">
@@ -2774,7 +2832,7 @@ function TransactionsPageContent() {
                   <>
                     {/* From Account (Source Account) */}
                     <div className="relative flex items-center h-10 border-b border-white/[0.08] px-4">
-                      <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                      <span className="text-sm text-muted-foreground w-24 shrink-0 font-normal">
                         Account
                       </span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
@@ -2790,7 +2848,7 @@ function TransactionsPageContent() {
                           <option
                             key={acc.id}
                             value={acc.id}
-                            className="bg-[#1F2027] text-[#F2F2F4]"
+                            className="bg-card text-[#F2F2F4]"
                           >
                             {acc.name}
                           </option>
@@ -2800,7 +2858,7 @@ function TransactionsPageContent() {
 
                     {/* To Account (Destination Account) */}
                     <div className="relative flex items-center h-10 border-b border-white/[0.08] px-4">
-                      <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                      <span className="text-sm text-muted-foreground w-24 shrink-0 font-normal">
                         To Account
                       </span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium select-none pointer-events-none">
@@ -2821,7 +2879,7 @@ function TransactionsPageContent() {
                             <option
                               key={acc.id}
                               value={acc.id}
-                              className="bg-[#1F2027] text-[#F2F2F4]"
+                              className="bg-card text-[#F2F2F4]"
                             >
                               {acc.name}
                             </option>
@@ -2836,7 +2894,7 @@ function TransactionsPageContent() {
                       onClick={() => setEditPickerMode('category')}
                       className="relative flex items-center h-10 border-b border-white/[0.08] px-4 cursor-pointer hover:bg-white/[0.04] transition-colors"
                     >
-                      <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                      <span className="text-sm text-muted-foreground w-24 shrink-0 font-normal">
                         Category
                       </span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
@@ -2856,7 +2914,7 @@ function TransactionsPageContent() {
                         onClick={() => setEditPickerMode('subcategory')}
                         className="relative flex h-12 cursor-pointer items-center border-b border-white/[0.08] px-4 transition-colors hover:bg-white/[0.04]"
                       >
-                        <span className="w-24 shrink-0 text-sm font-normal text-[#A5A6AD]">
+                        <span className="w-24 shrink-0 text-sm font-normal text-muted-foreground">
                           Subcategory
                         </span>
                         <div className="flex min-w-0 flex-1 items-center justify-between text-[17px] font-medium text-[#F2F2F4] pointer-events-none">
@@ -2878,7 +2936,7 @@ function TransactionsPageContent() {
                       onClick={() => setEditPickerMode('account')}
                       className="relative flex items-center h-10 border-b border-white/[0.08] px-4 cursor-pointer hover:bg-white/[0.04] transition-colors"
                     >
-                      <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal">
+                      <span className="text-sm text-muted-foreground w-24 shrink-0 font-normal">
                         Account
                       </span>
                       <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
@@ -2896,7 +2954,7 @@ function TransactionsPageContent() {
 
                 {/* Note Row */}
                 <div className="relative flex items-start py-2 border-b border-white/[0.08] px-4 min-h-10">
-                  <span className="text-sm text-[#A5A6AD] w-24 shrink-0 font-normal mt-0.5">
+                  <span className="text-sm text-muted-foreground w-24 shrink-0 font-normal mt-0.5">
                     Note
                   </span>
                   <textarea
@@ -2926,14 +2984,14 @@ function TransactionsPageContent() {
                   />
                   <Camera
                     size={20}
-                    className="text-[#A5A6AD] hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5"
+                    className="text-muted-foreground hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5"
                   />
                 </div>
               </div>
 
               {/* Split Details Section if transaction is a Split Expense */}
               {editingTransaction?.isSplit && editingTransaction?.splitDetails && (
-                <div className="mx-4 my-2 bg-secondary/50 border border-border/60 rounded-xl p-3 space-y-2 text-xs">
+                <div className="mx-4 my-2 bg-secondary/50 border border-border/60 rounded-xl p-4 space-y-2 text-xs">
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
                     <div className="flex items-center gap-1.5 font-normal text-foreground">
                       <span className="text-xs font-normal text-muted-foreground">
@@ -2981,7 +3039,7 @@ function TransactionsPageContent() {
                         setEditForm(null);
                         router.push('/split-expenses');
                       }}
-                      className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/30 rounded-lg text-xs font-normal hover:bg-primary hover:text-primary-foreground transition flex items-center gap-1 cursor-pointer"
+                      className="px-4 py-1.5 bg-primary/10 text-primary border border-primary/30 rounded-lg text-xs font-normal hover:bg-primary hover:text-primary-foreground transition flex items-center gap-1 cursor-pointer"
                     >
                       <ReceiptText size={14} />
                       <span>View Split Dashboard</span>
@@ -3009,7 +3067,7 @@ function TransactionsPageContent() {
                   <button
                     type="button"
                     onClick={closeTransactionEditor}
-                    className="h-10 px-3 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                    className="h-10 px-4 rounded-[10px] bg-white/[0.06] hover:bg-white/10 text-slate-300 border border-white/10 font-bold text-sm tracking-wider active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
                   >
                     <X size={18} />
                     <span>Cancel</span>
@@ -3033,7 +3091,7 @@ function TransactionsPageContent() {
                       <div className="flex min-h-0 flex-1 flex-col space-y-2">
                         <div className="flex items-center justify-between px-0.5">
                           <p className="text-xs font-semibold text-white">Choose category</p>
-                          <p className="text-[11px] text-[#A5A6AD]">
+                          <p className="text-[11px] text-muted-foreground">
                             {editCategories.length} available
                           </p>
                         </div>
@@ -3202,7 +3260,7 @@ function TransactionsPageContent() {
                   setTransactions(getTransactions(true));
                   toast.success('Transaction deleted and balances updated');
                 }}
-                className="w-full text-left p-3.5 bg-background border border-border hover:border-negative rounded-lg transition-all group flex flex-col gap-1"
+                className="w-full text-left p-4 bg-background border border-border hover:border-negative rounded-lg transition-all group flex flex-col gap-1"
               >
                 <span className="font-bold text-foreground group-hover:text-negative transition-colors">
                   1. Reverse effect on balance
@@ -3220,7 +3278,7 @@ function TransactionsPageContent() {
                   setTransactions(getTransactions(true));
                   toast.success('Transaction marked as Deleted Category');
                 }}
-                className="w-full text-left p-3.5 bg-background border border-border hover:border-primary rounded-lg transition-all group flex flex-col gap-1"
+                className="w-full text-left p-4 bg-background border border-border hover:border-primary rounded-lg transition-all group flex flex-col gap-1"
               >
                 <span className="font-bold text-foreground group-hover:text-primary transition-colors">
                   2. Retain balance, delete category
@@ -3235,7 +3293,7 @@ function TransactionsPageContent() {
               <button
                 type="button"
                 onClick={() => setDeletingTxn(null)}
-                className="px-3.5 py-1.5 bg-secondary border border-border rounded text-muted-foreground hover:text-foreground"
+                className="px-4 py-1.5 bg-secondary border border-border rounded text-muted-foreground hover:text-foreground"
               >
                 Cancel
               </button>
@@ -3251,7 +3309,7 @@ function TransactionsPageContent() {
           onClose={() => setEditingRepayment(null)}
           title="Edit Repayment"
         >
-          <form onSubmit={handleSaveEditedRepayment} className="space-y-3.5 text-2xs">
+          <form onSubmit={handleSaveEditedRepayment} className="space-y-4 text-2xs">
             <div>
               <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
                 Source Account *
@@ -3275,7 +3333,7 @@ function TransactionsPageContent() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[9px] font-bold text-muted-foreground uppercase mb-1">
                   Amount *
@@ -3395,7 +3453,7 @@ function TransactionsPageContent() {
                 required
                 value={editAccName}
                 onChange={(e) => setEditAccName(e.target.value)}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-bold"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-bold"
               />
             </div>
 
@@ -3409,7 +3467,7 @@ function TransactionsPageContent() {
                 required
                 value={editAccBalance}
                 onChange={(e) => setEditAccBalance(e.target.value)}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
               />
             </div>
 
@@ -3424,10 +3482,10 @@ function TransactionsPageContent() {
                     step="any"
                     value={editAccLimit}
                     onChange={(e) => setEditAccLimit(e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 leading-none">
                       Cycle Start
@@ -3438,7 +3496,7 @@ function TransactionsPageContent() {
                       max="31"
                       value={editAccBillingCycle}
                       onChange={(e) => setEditAccBillingCycle(e.target.value)}
-                      className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
+                      className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
                     />
                   </div>
                   <div>
@@ -3451,7 +3509,7 @@ function TransactionsPageContent() {
                       max="31"
                       value={editAccDueDay}
                       onChange={(e) => setEditAccDueDay(e.target.value)}
-                      className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
+                      className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
                     />
                   </div>
                   <div>
@@ -3463,7 +3521,7 @@ function TransactionsPageContent() {
                       step="any"
                       value={editAccMinPayment}
                       onChange={(e) => setEditAccMinPayment(e.target.value)}
-                      className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
+                      className="w-full text-sm bg-card border border-border rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
                     />
                   </div>
                 </div>
@@ -3478,7 +3536,7 @@ function TransactionsPageContent() {
                     max="30"
                     value={editAccNotifyDays}
                     onChange={(e) => setEditAccNotifyDays(e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
                   />
                   <p className="text-[10px] text-muted-foreground mt-1 font-medium">
                     Set how many days in advance to show billing alerts on the dashboard (e.g. 3 or
@@ -3498,7 +3556,7 @@ function TransactionsPageContent() {
                   step="0.01"
                   value={editAccInterest}
                   onChange={(e) => setEditAccInterest(e.target.value)}
-                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
+                  className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-mono font-bold"
                 />
               </div>
             )}
@@ -3510,11 +3568,11 @@ function TransactionsPageContent() {
               <textarea
                 value={editAccNotes}
                 onChange={(e) => setEditAccNotes(e.target.value)}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition h-20 resize-none font-medium"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition h-20 resize-none font-medium"
               />
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-4 pt-2">
               <button
                 type="submit"
                 className="flex-1 py-3 bg-primary text-primary-foreground font-extrabold rounded-lg hover:opacity-90 active:scale-95 transition"
@@ -3554,7 +3612,7 @@ function TransactionsPageContent() {
                 type="text"
                 value={noteTitle}
                 onChange={(e) => setNoteTitle(e.target.value)}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-bold"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition font-bold"
               />
             </div>
             <div>
@@ -3565,11 +3623,11 @@ function TransactionsPageContent() {
                 value={noteContent}
                 onChange={(e) => setNoteContent(e.target.value)}
                 rows={6}
-                className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3.5 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition h-32 resize-none font-medium leading-relaxed"
+                className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-primary transition h-32 resize-none font-medium leading-relaxed"
                 required
               />
             </div>
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-4 pt-2">
               <button
                 type="submit"
                 className="flex-1 py-3 bg-primary text-primary-foreground font-extrabold rounded-lg hover:opacity-90 active:scale-95 transition"
@@ -3609,12 +3667,12 @@ function TransactionsPageContent() {
                 type="text"
                 value={newTripName}
                 onChange={(e) => setNewTripName(e.target.value)}
-                className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
+                className="w-full text-sm bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
                 required
                 autoFocus
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
                   Destination
@@ -3623,7 +3681,7 @@ function TransactionsPageContent() {
                   type="text"
                   value={newTripDestination}
                   onChange={(e) => setNewTripDestination(e.target.value)}
-                  className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
+                  className="w-full text-sm bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
                 />
               </div>
               <div>
@@ -3634,12 +3692,12 @@ function TransactionsPageContent() {
                   type="number"
                   value={newTripBudget}
                   onChange={(e) => setNewTripBudget(e.target.value)}
-                  className="w-full text-sm bg-secondary border border-border rounded-lg px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
+                  className="w-full text-sm bg-secondary border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-bold"
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-4 pt-2">
               <button
                 type="submit"
                 className="flex-1 py-3 bg-primary text-primary-foreground font-extrabold rounded-lg hover:opacity-90 active:scale-95 transition shadow-sm"
@@ -3662,7 +3720,7 @@ function TransactionsPageContent() {
       {isSelectionMode && (
         <>
           {/* Floating Action Bar */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1F2027] border border-border/80 shadow-2xl rounded-2xl px-5 py-3 flex items-center gap-4 animate-slide-up text-foreground">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-border/80 shadow-card-lg rounded-2xl px-6 py-3 flex items-center gap-4 animate-slide-up text-foreground">
             <span className="text-sm font-bold bg-primary/20 text-primary px-2.5 py-1 rounded-full">
               {selectedTxnIds.length} Selected
             </span>
@@ -3690,7 +3748,7 @@ function TransactionsPageContent() {
             type="button"
             onClick={handleBulkDelete}
             disabled={selectedTxnIds.length === 0}
-            className="fixed bottom-36 right-4 md:bottom-24 md:right-6 w-12 h-12 bg-negative text-negative-foreground rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-40 transition-all z-50 cursor-pointer"
+            className="fixed bottom-36 right-4 md:bottom-24 md:right-6 w-12 h-12 bg-negative text-negative-foreground rounded-full flex items-center justify-center shadow-card-lg hover:scale-105 active:scale-95 disabled:opacity-40 transition-all z-50 cursor-pointer"
             title={`Delete ${selectedTxnIds.length} selected transaction(s)`}
           >
             <Trash2 size={22} />
@@ -3708,11 +3766,11 @@ function TransactionsPageContent() {
 
 export default function TransactionsPage() {
   return (
-    <AppLayout>
+    <AppLayout className="transactions-screen">
       <Suspense
         fallback={
           <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-4">
               <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
               <p className="text-sm font-medium text-muted-foreground">Loading transactions...</p>
             </div>

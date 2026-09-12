@@ -85,7 +85,7 @@ export default function AccountBalancesInner({
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 h-full">
+    <div className="bg-card border border-border rounded-2xl p-6 h-full">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">Account Balances</h3>
@@ -178,11 +178,11 @@ export default function AccountBalancesInner({
           </div>
 
           <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 gap-2">
-            <div className="bg-positive-subtle border border-positive-subtle rounded-lg p-2 text-center">
+            <div className="bg-card border border-border rounded-lg p-2 text-center">
               <p className="text-xs font-bold tabular-nums text-positive">{fmt(totalAssets)}</p>
               <p className="text-2xs text-muted-foreground">Total Assets</p>
             </div>
-            <div className="bg-negative-subtle border border-negative-subtle rounded-lg p-2 text-center">
+            <div className="bg-card border border-border rounded-lg p-2 text-center">
               <p className="text-xs font-bold tabular-nums text-negative">
                 {fmt(totalLiabilities)}
               </p>

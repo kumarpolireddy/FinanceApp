@@ -1,0 +1,124 @@
+.heatmap-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.heatmap-account {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 28px 0 10px;
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.heatmap-account option {
+  color: var(--foreground);
+}
+.heatmap-year {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  font-size: 12px;
+}
+.heatmap-year button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+}
+.heatmap-year button:hover:not(:disabled) {
+  background: var(--muted);
+}
+.heatmap-account:focus-visible,
+.heatmap-year button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.heatmap-panel {
+  padding: 16px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.heatmap-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 18px;
+}
+.heatmap-grid > div:first-child {
+  margin-bottom: 10px;
+}
+.heatmap-grid .gap-0\.5 {
+  gap: 3px;
+}
+.heatmap-grid .space-y-0\.5 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 3px;
+}
+.heatmap-grid .h-4 {
+  height: 20px;
+}
+.heatmap-grid .w-8 {
+  width: 24px;
+}
+.heatmap-grid .rounded-sm {
+  border-radius: 3px;
+}
+.heatmap-grid .cursor-pointer:hover {
+  outline: 1px solid var(--foreground);
+  outline-offset: 1px;
+}
+
+/* Keep the existing actions available without competing with the heatmap. */
+.heatmap-screen button[aria-label='Add transaction'],
+.heatmap-screen button[aria-label='Open AI Assistant full screen'] {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+.heatmap-screen button[aria-label='Add transaction'] svg,
+.heatmap-screen button[aria-label='Open AI Assistant full screen'] svg {
+  width: 20px;
+  height: 20px;
+}
+@media (max-width: 380px) {
+  .heatmap-filters {
+    gap: 8px;
+    padding: 10px;
+  }
+  .heatmap-panel {
+    padding: 14px 8px;
+  }
+  .heatmap-grid .gap-0\.5 {
+    gap: 2px;
+  }
+  .heatmap-month {
+    font-size: 9px;
+  }
+}

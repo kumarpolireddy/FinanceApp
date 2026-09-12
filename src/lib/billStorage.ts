@@ -159,7 +159,7 @@ export function syncBillsFromUserAccounts(): void {
 
       if (isCredit) {
         const cc = calculateCreditCardBalances(acc, allTransactions);
-        const payableAmount = cc.payable > 0 ? cc.payable : Math.abs(acc.balance || 0);
+        const payableAmount = cc.payable;
 
         const todayYearMonth = formatLocalDate(new Date()).slice(0, 7);
         const billingDay = parseInt(String(acc.billingCycle || '4'), 10) || 4;

@@ -3,7 +3,18 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  Pie,
+  PieChart,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 // Backend integration point: fetch /api/analytics/category-comparison
 import { type Transaction, getAccounts, type Account } from '@/lib/storage';
@@ -462,6 +473,32 @@ export default function CategoryYoYChartInner({
     return currentPeriodData.reduce((sum, item) => sum + item.amount, 0);
   }, [currentPeriodData]);
 
+  const categoryPieData = useMemo(
+    () =>
+      currentPeriodData.slice(0, 10).map((item, index) => ({
+        ...item,
+        color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+      })),
+    [currentPeriodData]
+  );
+
+  // Allocate separate rows on each side so even small adjacent slices have clear labels.
+  const pieLabelRows = useMemo(() => {
+    const total = categoryPieData.reduce((sum, entry) => sum + entry.amount, 0);
+    const availableAngle = 360 - categoryPieData.length * 6;
+    let angle = 0;
+    const positions = categoryPieData.map((entry, index) => {
+      const sweep = 4 + (total > 0 ? entry.amount / total : 0) * availableAngle;
+      const midpoint = (angle + sweep / 2) * Math.PI / 180;
+      angle += sweep + 2;
+      return { index, right: Math.cos(midpoint) >= 0, y: -Math.sin(midpoint) };
+    });
+    return positions.map((position) => {
+      const side = positions.filter((item) => item.right === position.right).sort((a, b) => a.y - b.y);
+      return { right: position.right, offset: (side.findIndex((item) => item.index === position.index) - (side.length - 1) / 2) * 44 };
+    });
+  }, [categoryPieData]);
+
   const categoryTxnCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     transactions
@@ -503,7 +540,7 @@ export default function CategoryYoYChartInner({
               setTxnType('expense');
               setSelectedCategoryForList(null);
             }}
-            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+            className={`px-4 py-1 text-xs font-bold rounded-md transition-all ${
               txnType === 'expense'
                 ? 'bg-negative/20 text-negative border border-negative/30 shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -516,7 +553,7 @@ export default function CategoryYoYChartInner({
               setTxnType('income');
               setSelectedCategoryForList(null);
             }}
-            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+            className={`px-4 py-1 text-xs font-bold rounded-md transition-all ${
               txnType === 'income'
                 ? 'bg-positive/20 text-positive border border-positive/30 shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -528,7 +565,7 @@ export default function CategoryYoYChartInner({
       </div>
 
       {/* Total & Compare Toggle Controls Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-t border-border/20 pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-t border-border/20 pt-3">
         <div className="text-xs font-semibold text-muted-foreground">
           Total {txnType === 'expense' ? 'spending' : 'income'}:{' '}
           <span
@@ -540,13 +577,13 @@ export default function CategoryYoYChartInner({
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3.5 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-4 flex-shrink-0">
           <label className="flex items-center gap-2 cursor-pointer hover:text-foreground transition select-none text-xs text-muted-foreground font-semibold">
             <input
               type="checkbox"
               checked={compare}
               onChange={(e) => setCompare(e.target.checked)}
-              className="rounded border-border text-primary bg-[#0b0f1a] h-4 w-4 focus:ring-offset-background focus:ring-1 focus:ring-primary"
+              className="rounded border-border text-primary bg-card h-4 w-4 focus:ring-offset-background focus:ring-1 focus:ring-primary"
             />
             Compare Periods
           </label>
@@ -557,7 +594,7 @@ export default function CategoryYoYChartInner({
                 <select
                   value={compareMode}
                   onChange={(e) => setCompareMode(e.target.value as any)}
-                  className="h-7 text-xs bg-[#0b0f1a] border border-border/60 rounded-md pl-2 pr-6 py-0.5 text-slate-300 appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none transition-all font-semibold"
+                  className="h-7 text-xs bg-card border border-border/60 rounded-md pl-2 pr-6 py-0.5 text-slate-300 appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none transition-all font-semibold"
                 >
                   <option value="prev-month">Previous Month</option>
                   <option value="prev-year-month">Same Month Last Year</option>
@@ -566,7 +603,7 @@ export default function CategoryYoYChartInner({
                 <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               </div>
 
-              <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-2.5 rounded-sm bg-muted-foreground/40" />
                   <span className="text-muted-foreground">{labels.previous}</span>
@@ -582,7 +619,7 @@ export default function CategoryYoYChartInner({
       </div>
 
       {/* Filter Bar */}
-      <div className="mb-4 bg-[#0b0f1a]/10 p-2 border border-border/40 rounded-xl">
+      <div className="bg-card/10 p-2 border border-border/40 rounded-xl">
         <ChartFilterBar
           selectedRange={selectedRange}
           setSelectedRange={setSelectedRange}
@@ -594,12 +631,31 @@ export default function CategoryYoYChartInner({
           setSelectedMonth={setSelectedMonth}
           selectedYear={selectedYear}
           setSelectedYear={setSelectedYear}
-          isChartExpanded={isMainCategoryChartExpanded}
-          onToggleChart={() => setIsMainCategoryChartExpanded((expanded) => !expanded)}
         />
       </div>
 
-      {isMainCategoryChartExpanded && (compare ? (
+      <div className="flex flex-col">
+        <div className="order-2 -mx-5 sm:-mx-7 mt-5 rounded-xl border border-border p-4">
+          <div
+            onClick={() => setIsMainCategoryChartExpanded((expanded) => !expanded)}
+            className="mb-3 flex cursor-pointer items-center justify-between text-xs font-semibold uppercase tracking-wider text-foreground"
+          >
+            <span>Graphs</span>
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-card text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+              aria-label={isMainCategoryChartExpanded ? 'Hide graphs' : 'Show graphs'}
+              aria-expanded={isMainCategoryChartExpanded}
+              onClick={() => setIsMainCategoryChartExpanded((expanded) => !expanded)}
+            >
+              <ChevronDown
+                size={15}
+                className={isMainCategoryChartExpanded ? '' : '-rotate-90'}
+              />
+            </button>
+          </div>
+
+          {isMainCategoryChartExpanded && (compare ? (
         data.length === 0 ? (
           <div className="h-[240px] flex items-center justify-center text-xs text-muted-foreground">
             Not enough transaction data for this comparison yet.
@@ -656,40 +712,97 @@ export default function CategoryYoYChartInner({
           No transaction data for this date range yet.
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart
-            data={currentPeriodData}
-            margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-            barCategoryGap="35%"
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-            <XAxis
-              dataKey="category"
-              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
-              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-              axisLine={false}
-              tickLine={false}
-              width={40}
-            />
-            <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <Bar 
-              dataKey="amount" 
-              fill={txnType === 'income' ? 'var(--positive)' : 'var(--primary)'} 
-              opacity={0.8} 
-              radius={[4, 4, 0, 0]} 
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      ))}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div>
+            <p className="mb-1 text-xs font-semibold text-muted-foreground">By amount</p>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart
+                data={currentPeriodData}
+                margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                barCategoryGap="35%"
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey="category"
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={40}
+                />
+                <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                <Bar
+                  dataKey="amount"
+                  fill={txnType === 'income' ? 'var(--positive)' : 'var(--primary)'}
+                  opacity={0.8}
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div>
+            <p className="mb-1 text-xs font-semibold text-muted-foreground">Top 10 categories</p>
+            <ResponsiveContainer width="100%" height={Math.max(240, 44 * Math.max(pieLabelRows.filter((row) => row.right).length, pieLabelRows.filter((row) => !row.right).length) + 32)}>
+              <PieChart>
+                <Pie
+                  data={categoryPieData}
+                  dataKey="amount"
+                  nameKey="category"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={36}
+                  outerRadius={58}
+                  paddingAngle={2}
+                  minAngle={4}
+                  stroke="var(--card)"
+                  strokeWidth={2}
+                  label={({ cx, cy, midAngle, outerRadius, index }) => {
+                    const row = pieLabelRows[index];
+                    const entry = categoryPieData[index];
+                    if (!row || !entry) return null;
+                    const radians = -midAngle * Math.PI / 180;
+                    const sliceX = Number(cx) + Number(outerRadius) * Math.cos(radians);
+                    const sliceY = Number(cy) + Number(outerRadius) * Math.sin(radians);
+                    const direction = row.right ? 1 : -1;
+                    const labelX = Number(cx) + direction * 78;
+                    const labelY = Number(cy) + row.offset;
+                    const elbowX = Number(cx) + direction * 68;
+                    const labelWidth = Math.max(24, Number(cx) - 84);
+                    return (
+                      <g>
+                        <title>{entry.category}</title>
+                        <path d={`M${labelX},${labelY}H${elbowX}L${sliceX},${sliceY}`} fill="none" stroke={entry.color} />
+                        <foreignObject x={row.right ? labelX : labelX - labelWidth} y={labelY - 18} width={labelWidth} height={36}>
+                          <div className="flex h-full items-center text-[10px] leading-3 text-foreground" style={{ justifyContent: row.right ? 'flex-start' : 'flex-end', textAlign: row.right ? 'left' : 'right' }}>
+                            <span className="line-clamp-3 break-words" title={entry.category}>{entry.category}</span>
+                          </div>
+                        </foreignObject>
+                      </g>
+                    );
+                  }}
+                  labelLine={false}
+                >
+                  {categoryPieData.map((entry) => (
+                    <Cell key={entry.category} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<SimpleTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+          ))}
+        </div>
 
       {/* Footer Callouts */}
       {compare && (
-        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+        <div className="order-3 mt-4 pt-4 border-t border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-negative" />
             <span className="text-xs text-muted-foreground font-medium">Highest increase:</span>
@@ -710,7 +823,7 @@ export default function CategoryYoYChartInner({
       )}
 
       {/* Categories Breakdown Clean Minimalist List */}
-      <div className="mt-5 pt-5 border-t border-border/50 space-y-3">
+      <div className="order-1 -mx-5 sm:-mx-7 mt-2 rounded-xl border border-border p-4 space-y-4">
         <div 
           onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
           className="flex justify-between items-center cursor-pointer select-none hover:text-primary transition py-1"
@@ -766,6 +879,7 @@ export default function CategoryYoYChartInner({
           </div>
         )}
       </div>
+      </div>
 
       {selectedCategoryForList && createPortal(
         <div
@@ -807,9 +921,9 @@ export default function CategoryYoYChartInner({
           </header>
 
           <main className="flex-1 overflow-y-auto px-4 pb-8 pt-4 sm:px-6">
-            <div className="mx-auto w-full max-w-4xl space-y-5">
+            <div className="mx-auto w-full max-w-4xl space-y-6">
               <section className="rounded-xl border border-border bg-muted/80 px-4 py-3">
-                <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="mb-3 flex items-center justify-between gap-4">
                   <div>
                     <h3 className="mt-0.5 text-sm font-semibold">
                       {txnType === 'expense' ? 'Subcategory spending' : 'Subcategory income'}
@@ -829,7 +943,7 @@ export default function CategoryYoYChartInner({
                     {subcategoryBreakdown.map((item) => {
                       return (
                         <div key={item.subcategory} className="py-3">
-                          <div className="flex items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center justify-between gap-4 text-xs">
                             <span className="truncate font-medium">{item.subcategory}</span>
                             <span className="shrink-0 font-mono font-semibold">
                               ₹{item.amount.toLocaleString('en-IN')}
@@ -846,7 +960,7 @@ export default function CategoryYoYChartInner({
                 {categoryTransactions.length === 0 ? (
                   <p className="py-12 text-center text-sm text-muted-foreground">No transactions recorded for this month.</p>
                 ) : (
-                  <div className="divide-y divide-border/30 px-3">
+                  <div className="divide-y divide-border/30 px-4">
                     {categoryTransactions.map((txn) => (
                       <button
                         key={txn.id}

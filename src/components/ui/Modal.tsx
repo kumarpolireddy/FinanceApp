@@ -72,9 +72,9 @@ export default function Modal({
       <div
         className={`relative flex w-full max-w-none flex-col overflow-hidden slide-up ${
           isSheet
-            ? 'h-auto max-h-[70dvh] rounded-t-2xl border border-b-0 border-border bg-card shadow-2xl'
+            ? 'h-auto max-h-[70dvh] rounded-t-2xl border border-b-0 border-border bg-card shadow-card-lg'
             : isDialog
-              ? 'h-auto max-h-[70dvh] !w-[280px] !max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card shadow-2xl'
+              ? 'h-auto max-h-[70dvh] !w-[280px] !max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card shadow-card-lg'
             : 'h-[100dvh] rounded-none border-0 bg-background shadow-none'
         } sm:h-auto ${sizeClasses[size]} sm:max-h-[90vh] sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-card-lg`}
       >
@@ -97,9 +97,9 @@ export default function Modal({
         </div>
         <div className={`flex-1 overflow-y-auto min-h-0 sm:max-h-[calc(90vh-120px)] ${
           isSheet
-            ? 'p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]'
+            ? 'p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]'
             : isDialog
-              ? 'p-3'
+              ? 'p-4'
               : 'p-4 sm:p-6'
         }`}>
           {children}

@@ -223,8 +223,8 @@ export default function TripsPage() {
     <AppLayout>
       <div className="min-h-full space-y-6 bg-background pb-12 text-foreground">
         {/* Top Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border rounded-xl p-5 shadow-sm">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
               <Plane size={24} />
             </div>
@@ -290,13 +290,13 @@ export default function TripsPage() {
                           setSelectedTripId(activeTripState.id);
                           setIsAddExpenseModalOpen(true);
                         }}
-                        className="px-3.5 py-2 bg-primary text-primary-foreground font-semibold text-xs rounded-lg hover:bg-primary/90 transition shadow"
+                        className="px-4 py-2 bg-primary text-primary-foreground font-semibold text-xs rounded-lg hover:bg-primary/90 transition shadow"
                       >
                         + Add Expense
                       </button>
                       <button
                         onClick={() => handleToggleActivate(activeTripState.id, 'active')}
-                        className="px-3.5 py-2 bg-muted hover:bg-muted/80 text-foreground font-semibold text-xs rounded-lg transition"
+                        className="px-4 py-2 bg-muted hover:bg-muted/80 text-foreground font-semibold text-xs rounded-lg transition"
                       >
                         Stop Trip Mode
                       </button>
@@ -320,7 +320,7 @@ export default function TripsPage() {
           {/* Left Column: Trips List */}
           <div className="lg:col-span-5 space-y-4">
             {/* Search & Filter Controls */}
-            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="bg-card border border-border rounded-xl p-4 space-y-4">
               <div className="relative">
                 <Search size={15} className="absolute left-3 top-3 text-muted-foreground" />
                 <input
@@ -336,7 +336,7 @@ export default function TripsPage() {
                   <button
                     key={st}
                     onClick={() => setFilterStatus(st)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider capitalize transition flex-shrink-0 ${
+                    className={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider capitalize transition flex-shrink-0 ${
                       filterStatus === st
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -350,13 +350,13 @@ export default function TripsPage() {
 
             {/* Trip Cards */}
             {filteredTrips.length === 0 ? (
-              <div className="bg-card border border-border rounded-xl p-8 text-center space-y-3">
+              <div className="bg-card border border-border rounded-xl p-8 text-center space-y-4">
                 <Plane size={32} className="mx-auto text-muted-foreground opacity-50" />
                 <p className="text-sm font-medium text-muted-foreground">No trips found</p>
                 
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {filteredTrips.map((trip) => {
                   const summary = getTripSummary(trip.id);
                   const isSelected = selectedTripId === trip.id;
@@ -372,7 +372,7 @@ export default function TripsPage() {
                           : 'border-border hover:border-muted-foreground/30'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="font-bold text-base text-foreground">{trip.name}</h3>
@@ -477,7 +477,7 @@ export default function TripsPage() {
             {currentSummary && currentSummary.trip ? (
               <div className="space-y-6">
                 {/* Trip Header Card */}
-                <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <h2 className="text-xl font-black text-foreground">{currentSummary.trip.name}</h2>
@@ -497,21 +497,21 @@ export default function TripsPage() {
                   </div>
 
                   {currentSummary.trip.description && (
-                    <p className="text-xs text-muted-foreground bg-muted/40 p-3 rounded-lg border border-border">
+                    <p className="text-xs text-muted-foreground bg-muted/40 p-4 rounded-lg border border-border">
                       {currentSummary.trip.description}
                     </p>
                   )}
 
                   {/* Summary Metrics */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-                    <div className="bg-muted/30 p-3 rounded-lg border border-border">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
+                    <div className="bg-muted/30 p-4 rounded-lg border border-border">
                       <p className="text-2xs font-semibold text-muted-foreground uppercase">Total Expenses</p>
                       <p className="text-lg font-black text-negative mt-0.5">
                         ₹{currentSummary.totalExpense.toLocaleString('en-IN')}
                       </p>
                     </div>
 
-                    <div className="bg-muted/30 p-3 rounded-lg border border-border">
+                    <div className="bg-muted/30 p-4 rounded-lg border border-border">
                       <p className="text-2xs font-semibold text-muted-foreground uppercase">Trip Budget</p>
                       <p className="text-lg font-black text-foreground mt-0.5">
                         {currentSummary.budget > 0
@@ -520,7 +520,7 @@ export default function TripsPage() {
                       </p>
                     </div>
 
-                    <div className="bg-muted/30 p-3 rounded-lg border border-border col-span-2 sm:col-span-1">
+                    <div className="bg-muted/30 p-4 rounded-lg border border-border col-span-2 sm:col-span-1">
                       <p className="text-2xs font-semibold text-muted-foreground uppercase">Remaining</p>
                       <p
                         className={`text-lg font-black mt-0.5 ${
@@ -570,7 +570,7 @@ export default function TripsPage() {
                 </div>
 
                 {/* Expense Breakdown by Category */}
-                <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
                   <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                     <PieChart size={16} className="text-primary" /> Category Spending Breakdown
                   </h3>
@@ -580,7 +580,7 @@ export default function TripsPage() {
                       No expenses logged for this trip yet.
                     </p>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {currentSummary.categoryBreakdown.map((item) => {
                         const pct = currentSummary.totalExpense > 0
                           ? Math.round((item.amount / currentSummary.totalExpense) * 100)
@@ -611,7 +611,7 @@ export default function TripsPage() {
                 </div>
 
                 {/* Trip Transactions List */}
-                <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                       <ListFilter size={16} className="text-primary" /> Trip Transactions (
@@ -626,7 +626,7 @@ export default function TripsPage() {
                   ) : (
                     <div className="divide-y divide-border">
                       {currentSummary.transactions.map((txn) => (
-                        <div key={txn.id} className="py-3 flex items-center justify-between gap-3 text-xs">
+                        <div key={txn.id} className="py-3 flex items-center justify-between gap-4 text-xs">
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-foreground truncate">{txn.notes || txn.category}</p>
                             <p className="text-2xs text-muted-foreground mt-0.5 truncate">
@@ -660,19 +660,19 @@ export default function TripsPage() {
               type="text"
               value={tripName}
               onChange={(e) => setTripName(e.target.value)}
-              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+              className="w-full px-4 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Destination</label>
               <input
                 type="text"
                 value={tripDestination}
                 onChange={(e) => setTripDestination(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
@@ -694,14 +694,14 @@ export default function TripsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
               <input
                 type="date"
                 value={tripStartDate}
                 onChange={(e) => setTripStartDate(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
@@ -710,19 +710,19 @@ export default function TripsPage() {
                 type="date"
                 value={tripEndDate}
                 onChange={(e) => setTripEndDate(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Trip Budget (₹)</label>
               <input
                 type="number"
                 value={tripBudget}
                 onChange={(e) => setTripBudget(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
@@ -730,7 +730,7 @@ export default function TripsPage() {
               <select
                 value={tripStatus}
                 onChange={(e) => setTripStatus(e.target.value as any)}
-                className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-4 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               >
                 <option value="active">Active (Live Mode)</option>
                 <option value="planned">Planned</option>
@@ -745,7 +745,7 @@ export default function TripsPage() {
               value={tripDescription}
               onChange={(e) => setTripDescription(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+              className="w-full px-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
             />
           </div>
 
@@ -780,18 +780,18 @@ export default function TripsPage() {
               type="text"
               value={expenseDesc}
               onChange={(e) => setExpenseDesc(e.target.value)}
-              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+              className="w-full px-4 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Amount (₹) *</label>
               <input
                 type="number"
                 value={expenseAmount}
                 onChange={(e) => setExpenseAmount(e.target.value)}
-                className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-4 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
                 required
               />
             </div>
@@ -801,7 +801,7 @@ export default function TripsPage() {
                 type="date"
                 value={expenseDate}
                 onChange={(e) => setExpenseDate(e.target.value)}
-                className="w-full px-3 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+                className="w-full px-4 py-2 bg-muted/40 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -815,7 +815,7 @@ export default function TripsPage() {
                 setExpenseCategory(e.target.value);
                 setExpenseSubcategory('');
               }}
-              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary text-xs"
+              className="w-full px-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary text-xs"
             >
               <option value="">Select Category</option>
               {categories.map((cat) => (
@@ -831,7 +831,7 @@ export default function TripsPage() {
             <select
               value={expenseAccount}
               onChange={(e) => setExpenseAccount(e.target.value)}
-              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
+              className="w-full px-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
             >
               {accounts.map((acc) => (
                 <option key={acc.id} value={acc.id}>

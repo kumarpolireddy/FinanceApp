@@ -248,7 +248,7 @@ export default function AiInsightsPanel({ transactions }: { transactions: Transa
   return (
     <div className="px-1 py-2">
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
             <Sparkles size={16} />
           </div>
@@ -263,7 +263,7 @@ export default function AiInsightsPanel({ transactions }: { transactions: Transa
         <div className="flex items-center gap-2">
           <a
             href="/ai-advisor"
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-sm"
+            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-sm"
           >
             <Sparkles size={13} />
             <span>Ask Gemini AI</span>
@@ -286,9 +286,9 @@ export default function AiInsightsPanel({ transactions }: { transactions: Transa
             return (
               <div
                 key={insight.id}
-                className={`rounded-xl border p-4 flex flex-col gap-3 ${SEVERITY_STYLES[insight.severity]}`}
+                className={`rounded-xl border p-4 flex flex-col gap-4 ${SEVERITY_STYLES[insight.severity]}`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${ICON_STYLES[insight.severity]}`}
                   >

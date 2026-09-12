@@ -115,7 +115,7 @@ export default function AnalyticsFilters({
 
   return (
     <div className="px-1 py-2">
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <SlidersHorizontal size={13} />
           <span className="font-medium">Filters</span>
@@ -127,11 +127,11 @@ export default function AnalyticsFilters({
             <select
               value={selectedRange}
               onChange={(e) => setSelectedRange(e.target.value as DateRange)}
-              className="h-12 text-sm bg-[#0b0f1a] border border-border rounded-xl px-4 py-2.5 text-slate-200 appearance-none cursor-pointer pr-10 hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150 font-semibold"
+              className="h-12 text-sm bg-card border border-border rounded-xl px-4 py-2.5 text-slate-200 appearance-none cursor-pointer pr-10 hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150 font-semibold"
               aria-label="Select Date Range"
             >
               {DATE_RANGES.map((range) => (
-                <option key={`range-${range}`} value={range} className="bg-[#0b0f1a] text-slate-200 text-sm">
+                <option key={`range-${range}`} value={range} className="bg-card text-slate-200 text-sm">
                   {range}
                 </option>
               ))}
@@ -163,7 +163,7 @@ export default function AnalyticsFilters({
 
         {/* Specific Month Selector */}
         {useMonthFilter && (
-          <div className="flex items-center gap-1.5 bg-[#0b0f1a] border border-border rounded-xl p-1 relative h-12">
+          <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl p-1 relative h-12">
             <button
               onClick={() => shiftMonth(-1)}
               className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all"
@@ -191,10 +191,10 @@ export default function AnalyticsFilters({
             {isDatePickerOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsDatePickerOpen(false)} />
-                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 bg-[#0b0f1a] border border-border rounded-xl shadow-2xl p-4 grid grid-cols-2 gap-4 w-72">
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 bg-card border border-border rounded-xl shadow-card-lg p-4 grid grid-cols-2 gap-4 w-72">
                   {/* Month Selection */}
                   <div className="space-y-1 max-h-56 overflow-y-auto pr-1 select-scrollbar">
-                    <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-[#0b0f1a] z-10">
+                    <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-card z-10">
                       Month
                     </p>
                     {MONTH_NAMES.map((m, i) => (
@@ -204,7 +204,7 @@ export default function AnalyticsFilters({
                           setSelectedMonth(i);
                           setIsDatePickerOpen(false);
                         }}
-                        className={`w-full text-left text-sm px-3 py-2.5 rounded-md transition ${
+                        className={`w-full text-left text-sm px-4 py-2.5 rounded-md transition ${
                           selectedMonth === i
                             ? 'bg-primary text-white font-semibold'
                             : 'text-slate-300 hover:bg-muted/50 hover:text-foreground'
@@ -216,7 +216,7 @@ export default function AnalyticsFilters({
                   </div>
                   {/* Year Selection */}
                   <div className="space-y-1 max-h-56 overflow-y-auto pl-1 select-scrollbar border-l border-border">
-                    <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-[#0b0f1a] z-10">
+                    <p className="text-2xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-card z-10">
                       Year
                     </p>
                     {[2024, 2025, 2026, 2027].map((y) => (
@@ -226,7 +226,7 @@ export default function AnalyticsFilters({
                           setSelectedYear(y);
                           setIsDatePickerOpen(false);
                         }}
-                        className={`w-full text-left text-sm px-3 py-2.5 rounded-md transition ${
+                        className={`w-full text-left text-sm px-4 py-2.5 rounded-md transition ${
                           selectedYear === y
                             ? 'bg-primary text-white font-semibold'
                             : 'text-slate-300 hover:bg-muted/50 hover:text-foreground'
@@ -247,17 +247,17 @@ export default function AnalyticsFilters({
           <select
             value={selectedAccountId || ''}
             onChange={(e) => setSelectedAccountId(e.target.value)}
-            className="h-12 text-sm bg-[#0b0f1a] border border-border rounded-xl px-4 py-2.5 text-slate-200 appearance-none cursor-pointer pr-10 hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150 font-semibold"
+            className="h-12 text-sm bg-card border border-border rounded-xl px-4 py-2.5 text-slate-200 appearance-none cursor-pointer pr-10 hover:border-primary/40 focus:border-primary focus:outline-none transition-all duration-150 font-semibold"
             aria-label="Select Account"
           >
-            <option value="" className="bg-[#0b0f1a] text-slate-200 text-sm">
+            <option value="" className="bg-card text-slate-200 text-sm">
               All Accounts
             </option>
             {accounts.map((acc) => (
               <option
                 key={acc.id}
                 value={acc.id}
-                className="bg-[#0b0f1a] text-slate-200 font-medium text-sm"
+                className="bg-card text-slate-200 font-medium text-sm"
               >
                 {acc.name}
               </option>
@@ -291,7 +291,7 @@ export default function AnalyticsFilters({
                   <button
                     key={`cat-filter-${cat}`}
                     onClick={() => toggleCategory(cat)}
-                    className={`w-full text-left text-xs px-3 py-2 rounded-lg transition-all duration-150 flex items-center justify-between ${
+                    className={`w-full text-left text-xs px-4 py-2 rounded-lg transition-all duration-150 flex items-center justify-between ${
                       selectedCategories.includes(cat)
                         ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'

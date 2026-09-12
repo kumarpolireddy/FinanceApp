@@ -1953,6 +1953,14 @@ export function calculateCreditCardBalances(
   let currentCycleCharges = 0;
   let currentCyclePayments = 0;
 
+  const openingBalance = Number(acc.openingBalance);
+  const openingLiability = Number.isFinite(openingBalance) && openingBalance < 0
+    ? Math.abs(openingBalance)
+    : 0;
+  const openingCredit = Number.isFinite(openingBalance) && openingBalance > 0
+    ? openingBalance
+    : 0;
+
   cardTxns.forEach((t) => {
     const txnDate = new Date(`${t.date.slice(0, 10)}T00:00:00`);
     if (Number.isNaN(txnDate.getTime()) || txnDate > today) return;
@@ -1986,7 +1994,8 @@ export function calculateCreditCardBalances(
     }
   });
 
-  const statementNet = completedCycleCharges - completedCyclePayments;
+  const statementNet =
+    openingLiability + completedCycleCharges - completedCyclePayments - openingCredit;
   const statementDue = Math.max(statementNet, 0);
   const carriedCredit = Math.max(-statementNet, 0);
   const payable = Math.max(statementDue - currentCyclePayments, 0);

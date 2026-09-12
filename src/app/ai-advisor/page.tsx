@@ -230,7 +230,7 @@ export default function AiAdvisorPage() {
 
         {/* API Key Missing Alert */}
         {apiKeyMissing && (
-          <div className="mb-2 p-3 rounded-xl bg-warning-subtle border border-warning/30 flex items-start gap-3 flex-shrink-0 text-xs">
+          <div className="mb-2 p-4 rounded-xl bg-warning-subtle border border-warning/30 flex items-start gap-4 flex-shrink-0 text-xs">
             <AlertCircle size={16} className="text-warning flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="font-semibold text-warning">Gemini API Key missing or using placeholder key</p>
@@ -351,7 +351,7 @@ export default function AiAdvisorPage() {
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="Type a message..."
               disabled={loading}
-              className="min-w-0 flex-1 appearance-none bg-transparent border-0 outline-none focus:border-0 focus:outline-none focus-visible:outline-none focus:ring-0 text-base px-3 py-1.5 text-foreground placeholder:text-muted-foreground disabled:opacity-50"
+              className="min-w-0 flex-1 appearance-none bg-transparent border-0 outline-none focus:border-0 focus:outline-none focus-visible:outline-none focus:ring-0 text-base px-4 py-1.5 text-foreground placeholder:text-muted-foreground disabled:opacity-50"
             />
             <button
               type="submit"

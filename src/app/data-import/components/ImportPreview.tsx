@@ -46,7 +46,7 @@ export default function ImportPreview({ rows, totalRows }: ImportPreviewProps) {
   return (
     <div className="space-y-4">
       {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-4">
         {[
           {
             key: 'total',
@@ -79,7 +79,7 @@ export default function ImportPreview({ rows, totalRows }: ImportPreviewProps) {
         ].map((stat) => (
           <div
             key={`preview-stat-${stat.key}`}
-            className="bg-muted/20 border border-border rounded-xl p-3 text-center"
+            className="bg-muted/20 border border-border rounded-xl p-4 text-center"
           >
             <div className={`flex items-center justify-center gap-1.5 mb-1 ${stat.color}`}>
               {stat.icon}
@@ -100,7 +100,7 @@ export default function ImportPreview({ rows, totalRows }: ImportPreviewProps) {
           <button
             key={`preview-filter-${f}`}
             onClick={() => setFilter(f)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all duration-150 capitalize ${filterLabelClass(f)}`}
+            className={`text-xs font-medium px-4 py-1.5 rounded-lg border transition-all duration-150 capitalize ${filterLabelClass(f)}`}
           >
             {f} {f !== 'all' && `(${counts[f as keyof typeof counts]})`}
           </button>

@@ -49,7 +49,7 @@ export default function UpcomingPaymentsWidget() {
       </div>
 
       {overdueTotal > 0 && (
-        <div className="p-3 rounded-xl bg-negative-subtle/30 border border-negative/30 flex items-center justify-between text-xs text-negative font-semibold">
+        <div className="p-4 rounded-xl bg-negative-subtle/30 border border-negative/30 flex items-center justify-between text-xs text-negative font-semibold">
           <span className="flex items-center gap-1.5">
             <AlertCircle size={15} />
             Overdue Payments Total
@@ -80,7 +80,7 @@ export default function UpcomingPaymentsWidget() {
             return (
               <div
                 key={bill.id}
-                className="flex items-center justify-between rounded-md border border-border/70 bg-background/40 p-3 text-xs"
+                className="flex items-center justify-between rounded-md border border-border/70 bg-background/40 p-4 text-xs"
               >
                 <div className="space-y-0.5">
                   <p className="font-bold text-foreground">{bill.name}</p>

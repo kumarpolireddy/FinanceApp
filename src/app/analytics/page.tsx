@@ -52,13 +52,13 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout className={activeSlide === 4 ? 'heatmap-screen' : ''}>
       <div className="w-full min-h-screen px-0 pt-0 pb-32 space-y-4 bg-secondary/70">
         {/* Swipeable Graph Carousel */}
         <div className="select-none mb-2 pt-1">
           
           {/* Slider Controls & Sliding Progress Indicator Bar */}
-          <div className="flex items-center justify-between mb-1 px-3 sm:px-6 py-1">
+          <div className="flex items-center justify-between mb-1 px-4 sm:px-6 py-1">
             <button
               disabled={activeSlide === 0}
               onClick={() => setActiveSlide((p) => Math.max(p - 1, 0))}
@@ -69,7 +69,7 @@ export default function AnalyticsPage() {
             </button>
 
             {/* Sliding Progress Indicator Bar with background slots */}
-            <div className="relative w-40 h-2 bg-[#0b0f1a] rounded-full flex items-center justify-between px-2.5 border border-border/40 select-none">
+            <div className="relative w-40 h-2 bg-card rounded-full flex items-center justify-between px-2.5 border border-border/40 select-none">
               {/* Background ticks to show availability of other graphs */}
               {[0, 1, 2, 3, 4, 5].map((idx) => (
                 <div 
@@ -107,32 +107,32 @@ export default function AnalyticsPage() {
               style={{ transform: `translateX(-${activeSlide * 100}%)` }}
             >
               {/* Slide 0: Category Spending */}
-              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+              <div className="w-full shrink-0 px-4 sm:px-6 overflow-hidden">
                 <CategoryYoYChart transactions={allTransactions} />
               </div>
               
               {/* Slide 1: Savings Trend */}
-              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+              <div className="w-full shrink-0 px-4 sm:px-6 overflow-hidden">
                 <SavingsTrendChart />
               </div>
 
               {/* Slide 2: Weekday vs Weekend */}
-              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+              <div className="w-full shrink-0 px-4 sm:px-6 overflow-hidden">
                 <WeekdayWeekendChart transactions={allTransactions} />
               </div>
 
               {/* Slide 3: Top Merchants */}
-              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+              <div className="w-full shrink-0 px-4 sm:px-6 overflow-hidden">
                 <TopMerchantsTable allTransactions={allTransactions} />
               </div>
 
               {/* Slide 4: Spending Heatmap */}
-              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+              <div className="w-full shrink-0 px-4 sm:px-6 overflow-hidden">
                 <SpendingHeatmap allTransactions={allTransactions} />
               </div>
 
               {/* Slide 5: AI Insights */}
-              <div className="w-full shrink-0 px-3 sm:px-6 overflow-hidden">
+              <div className="w-full shrink-0 px-4 sm:px-6 overflow-hidden">
                 <AiInsightsPanel transactions={allTransactions} />
               </div>
             </div>

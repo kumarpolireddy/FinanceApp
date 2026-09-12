@@ -142,13 +142,13 @@ export default function CategorySpendingChartInner({
   }, [selectedMonth, selectedYear, selectedAccountId]);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 h-full">
+    <div className="bg-card border border-border rounded-2xl p-6 h-full">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-base font-semibold text-foreground">Category Spending</h3>
           <p className="text-xs text-muted-foreground mt-0.5">{currentMonth} · vs budget</p>
         </div>
-        <div className="flex items-center gap-3 text-2xs text-muted-foreground">
+        <div className="flex items-center gap-4 text-2xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-sm bg-primary inline-block" />
             On track

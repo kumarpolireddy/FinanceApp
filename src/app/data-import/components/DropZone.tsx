@@ -79,14 +79,14 @@ export default function DropZone({ onFileSelected, selectedFile, onClear }: Drop
 
   if (selectedFile) {
     return (
-      <div className="border border-border rounded-xl p-5 bg-muted/20">
+      <div className="border border-border rounded-xl p-6 bg-muted/20">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-positive-subtle border border-positive-subtle flex items-center justify-center flex-shrink-0">
             <FileSpreadsheet size={22} className="text-positive" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">{selectedFile.name}</p>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-4 mt-1">
               <span className="text-xs text-muted-foreground">
                 {formatFileSize(selectedFile.size)}
               </span>
@@ -171,7 +171,7 @@ export default function DropZone({ onFileSelected, selectedFile, onClear }: Drop
       </div>
 
       {dragError && (
-        <div className="mt-3 flex items-start gap-2.5 p-3 rounded-lg bg-negative-subtle border border-negative-subtle">
+        <div className="mt-3 flex items-start gap-2.5 p-4 rounded-lg bg-negative-subtle border border-negative-subtle">
           <AlertCircle size={14} className="text-negative flex-shrink-0 mt-0.5" />
           <p className="text-sm text-negative">{dragError}</p>
         </div>

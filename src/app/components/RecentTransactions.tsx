@@ -53,13 +53,13 @@ export default function RecentTransactions({
 }: RecentTransactionsProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [showIcons, setShowIcons] = useState(true);
+  const [showIcons, setShowIcons] = useState(false);
 
   useEffect(() => {
     setCategories(getCategories());
     const updateShowIcons = () => {
       const stored = localStorage.getItem('wealthiq_show_category_icons');
-      setShowIcons(stored !== 'false');
+      setShowIcons(stored === 'true');
     };
     updateShowIcons();
     window.addEventListener('storage', updateShowIcons);
@@ -84,7 +84,7 @@ export default function RecentTransactions({
   }, [selectedMonth, selectedYear, selectedAccountId]);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className="bg-card border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">Recent Transactions</h3>
@@ -115,33 +115,26 @@ export default function RecentTransactions({
         <div className="space-y-1">
           {transactions.map((txn) => {
             const catMeta = categoryLookup.get(txn.category || '');
-            const hasIcon = showIcons && catMeta?.icon;
             const fallbackColorClass =
               CATEGORY_COLORS[txn.category || ''] || 'bg-muted text-muted-foreground';
             return (
               <div
                 key={txn.id}
-                className="flex items-center gap-3 px-2 py-2 rounded-lg row-hover-highlight hover:bg-muted/20 cursor-pointer transition-colors duration-150"
+                className="flex items-center gap-4 px-2 py-2 rounded-lg row-hover-highlight hover:bg-muted/20 cursor-pointer transition-colors duration-150"
               >
-                <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    hasIcon
-                      ? 'text-base bg-background/50 border border-border'
-                      : `text-xs font-bold ${fallbackColorClass}`
-                  }`}
-                  style={{
-                    borderColor: hasIcon && catMeta?.color ? `${catMeta.color}40` : undefined,
-                  }}
-                >
-                  {hasIcon ? catMeta.icon : (txn.category || 'Transfer').charAt(0)}
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{txn.notes || txn.category || 'Transaction'}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="text-2xs text-muted-foreground">{formatDate(txn.date)}</span>
                     <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground" />
-                    <span className="text-2xs text-muted-foreground truncate">
-                      {txn.type === 'transfer' ? 'Transfer' : txn.category || ''}
+                    <span className="text-2xs text-muted-foreground truncate inline-flex items-center gap-1">
+                      {txn.type === 'transfer' ? (
+                        'Transfer'
+                      ) : (
+                        <>
+                          {txn.category || ''}
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>

@@ -23,8 +23,8 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-screen-2xl space-y-5 px-0 pb-32 pt-6 md:px-6 xl:px-10 2xl:px-16">
-        <div className="px-4 md:px-0">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 pb-32 pt-6 md:px-8 xl:px-8 2xl:px-16">
+        <div className="px-0">
           <DashboardHeader
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}

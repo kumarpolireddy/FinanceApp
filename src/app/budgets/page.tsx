@@ -391,13 +391,13 @@ export default function BudgetsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="flex items-center gap-4 self-start sm:self-auto">
             {/* Custom Month Picker */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                className="flex items-center gap-2 px-3.5 py-2 border border-border bg-[#0b0f1a] hover:bg-muted text-xs font-semibold text-foreground rounded-xl transition-all animate-fade-in"
+                className="flex items-center gap-2 px-4 py-2 border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground rounded-xl transition-all animate-fade-in"
               >
                 <Calendar size={13} className="text-primary" />
                 <span>
@@ -409,9 +409,9 @@ export default function BudgetsPage() {
               {isDatePickerOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsDatePickerOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 z-50 bg-[#0b0f1a] border border-border rounded-xl shadow-2xl p-3 grid grid-cols-2 gap-3 w-56">
+                  <div className="absolute right-0 top-full mt-2 z-50 bg-card border border-border rounded-xl shadow-card-lg p-4 grid grid-cols-2 gap-4 w-56">
                     <div className="space-y-0.5 max-h-40 overflow-y-auto pr-1 select-scrollbar">
-                      <p className="text-3xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-[#0b0f1a] z-10">
+                      <p className="text-3xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-card z-10">
                         Month
                       </p>
                       {MONTH_NAMES.map((m, i) => (
@@ -433,7 +433,7 @@ export default function BudgetsPage() {
                       ))}
                     </div>
                     <div className="space-y-0.5 max-h-40 overflow-y-auto pl-1 select-scrollbar border-l border-border">
-                      <p className="text-3xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-[#0b0f1a] z-10">
+                      <p className="text-3xs font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 sticky top-0 bg-card z-10">
                         Year
                       </p>
                       {availableYears.map((y) => (
@@ -473,7 +473,7 @@ export default function BudgetsPage() {
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-[#0b0f1a] border border-border rounded-2xl p-5 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-lg" />
             <p className="text-2xs font-semibold tracking-wider text-slate-400 uppercase">
               Total Budget
@@ -486,7 +486,7 @@ export default function BudgetsPage() {
             </p>
           </div>
 
-          <div className="bg-[#0b0f1a] border border-border rounded-2xl p-5 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-negative/5 rounded-full blur-lg" />
             <p className="text-2xs font-semibold tracking-wider text-slate-400 uppercase">
               Total Spent
@@ -497,7 +497,7 @@ export default function BudgetsPage() {
             <p className="text-3xs text-muted-foreground mt-1">Spent under configured categories</p>
           </div>
 
-          <div className="bg-[#0b0f1a] border border-border rounded-2xl p-5 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden">
             <div
               className={`absolute top-0 right-0 w-16 h-16 ${totalRemaining >= 0 ? 'bg-positive' : 'bg-negative'}/5 rounded-full blur-lg`}
             />
@@ -516,7 +516,7 @@ export default function BudgetsPage() {
           </div>
 
           <div
-            className={`bg-[#0b0f1a] border rounded-2xl p-5 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden transition-all ${
+            className={`bg-card border rounded-2xl p-6 md:p-6 flex flex-col justify-between min-h-[120px] shadow-sm relative overflow-hidden transition-all ${
               overBudgetsCount > 0
                 ? 'border-negative/20 bg-negative/5 shadow-md shadow-negative/5'
                 : 'border-border'
@@ -542,22 +542,22 @@ export default function BudgetsPage() {
         </div>
 
         {/* Budgets List Grid or Setup Prompts */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl p-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-card-lg p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <h2 className="text-base font-semibold text-foreground">Category Budgets</h2>
 
             {activeBudgets.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={handleCopyDefaultTemplateForce}
-                  className="flex items-center gap-1 px-3 py-1.5 border border-border bg-[#0b0f1a] hover:bg-muted text-3xs font-semibold text-slate-300 rounded-lg transition"
+                  className="flex items-center gap-1 px-4 py-1.5 border border-border bg-card hover:bg-muted text-3xs font-semibold text-slate-300 rounded-lg transition"
                 >
                   <LayoutTemplate size={10} />
                   Copy Default Template
                 </button>
                 <button
                   onClick={handleCopyPreviousMonthForce}
-                  className="flex items-center gap-1 px-3 py-1.5 border border-border bg-[#0b0f1a] hover:bg-muted text-3xs font-semibold text-slate-300 rounded-lg transition"
+                  className="flex items-center gap-1 px-4 py-1.5 border border-border bg-card hover:bg-muted text-3xs font-semibold text-slate-300 rounded-lg transition"
                 >
                   <Copy size={10} />
                   Copy Previous Month
@@ -569,7 +569,7 @@ export default function BudgetsPage() {
           {activeBudgets.length === 0 && !hasStartedEmpty ? (
             <div className="py-10 max-w-4xl mx-auto space-y-6">
               <div className="text-center space-y-1">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-[#0b0f1a] text-primary">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-card text-primary">
                   <LayoutTemplate size={20} />
                 </div>
                 <h3 className="text-sm font-bold text-foreground pt-2">Configure Month Plan</h3>
@@ -583,7 +583,7 @@ export default function BudgetsPage() {
                 {/* Default Template */}
                 <button
                   onClick={handleCreateFromTemplate}
-                  className="flex flex-col items-center text-center p-5 border border-border bg-[#0b0f1a]/50 hover:bg-[#0b0f1a]/85 rounded-2xl hover:border-primary/30 transition group space-y-2 cursor-pointer"
+                  className="flex flex-col items-center text-center p-6 border border-border bg-card/50 hover:bg-card/85 rounded-2xl hover:border-primary/30 transition group space-y-2 cursor-pointer"
                 >
                   <CheckCircle
                     size={18}
@@ -598,7 +598,7 @@ export default function BudgetsPage() {
                 {/* Copy Previous Month */}
                 <button
                   onClick={handleCopyPreviousMonth}
-                  className="flex flex-col items-center text-center p-5 border border-border bg-[#0b0f1a]/50 hover:bg-[#0b0f1a]/85 rounded-2xl hover:border-primary/30 transition group space-y-2 cursor-pointer"
+                  className="flex flex-col items-center text-center p-6 border border-border bg-card/50 hover:bg-card/85 rounded-2xl hover:border-primary/30 transition group space-y-2 cursor-pointer"
                 >
                   <Copy size={18} className="text-warning group-hover:scale-110 transition" />
                   <p className="text-xs font-bold text-slate-200">Previous Month</p>
@@ -610,7 +610,7 @@ export default function BudgetsPage() {
                 {/* Start Empty */}
                 <button
                   onClick={() => setHasStartedEmpty(true)}
-                  className="flex flex-col items-center text-center p-5 border border-border bg-[#0b0f1a]/50 hover:bg-[#0b0f1a]/85 rounded-2xl hover:border-primary/30 transition group space-y-2 cursor-pointer"
+                  className="flex flex-col items-center text-center p-6 border border-border bg-card/50 hover:bg-card/85 rounded-2xl hover:border-primary/30 transition group space-y-2 cursor-pointer"
                 >
                   <Plus size={18} className="text-positive group-hover:scale-110 transition" />
                   <p className="text-xs font-bold text-slate-200">Start Empty</p>
@@ -657,7 +657,7 @@ export default function BudgetsPage() {
                 return (
                   <div
                     key={budget.id}
-                    className="border border-border bg-[#0b0f1a]/40 rounded-xl p-4 flex flex-col justify-between gap-3 hover:border-primary/20 transition-all"
+                    className="border border-border bg-card/40 rounded-xl p-4 flex flex-col justify-between gap-4 hover:border-primary/20 transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div>
@@ -768,7 +768,7 @@ export default function BudgetsPage() {
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               required
               disabled={!!editingBudget}
-              className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium disabled:opacity-60"
+              className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium disabled:opacity-60"
             >
               {availableCategories.length === 0 && !editingBudget ? (
                 <option value="">No categories available</option>
@@ -792,7 +792,7 @@ export default function BudgetsPage() {
               onChange={(e) => setFormData({ ...formData, allocated: e.target.value })}
               required
               min="1"
-              className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
+              className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold"
             />
           </div>
 
@@ -800,7 +800,7 @@ export default function BudgetsPage() {
             <button
               type="button"
               onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 border border-border bg-[#0b0f1a] hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
+              className="px-4 py-2 border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
             >
               Cancel
             </button>

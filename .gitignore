@@ -43,6 +43,7 @@ turbo/
 
 # Builds
 *.apk
+*.jks
 
 # Scratch and temp files
 scratch/

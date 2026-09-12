@@ -149,14 +149,14 @@ export default function ChartFilterBar({
               setSelectedRange(val as DateRange);
             }
           }}
-          className="h-8 text-xs bg-[#0b0f1a] border border-border/60 rounded-md px-3 py-1 text-slate-300 appearance-none cursor-pointer pr-8 hover:border-primary/40 focus:border-primary focus:outline-none transition-all font-semibold"
+          className="h-8 text-xs bg-card border border-border/60 rounded-md px-4 py-1 text-slate-300 appearance-none cursor-pointer pr-8 hover:border-primary/40 focus:border-primary focus:outline-none transition-all font-semibold"
         >
           {DATE_RANGES.map((range) => (
-            <option key={range} value={range} className="bg-[#0b0f1a] text-slate-300">
+            <option key={range} value={range} className="bg-card text-slate-300">
               {range}
             </option>
           ))}
-          <option value="Specific Month" className="bg-[#0b0f1a] text-slate-300">
+          <option value="Specific Month" className="bg-card text-slate-300">
             {useMonthFilter ? `${MONTH_NAMES[selectedMonth]} ${selectedYear}` : 'Specific Month'}
           </option>
         </select>
@@ -167,13 +167,13 @@ export default function ChartFilterBar({
         <select
           value={selectedAccountId}
           onChange={(e) => setSelectedAccountId(e.target.value)}
-          className="h-8 w-28 text-xs bg-[#0b0f1a] border border-border/60 rounded-md pl-2 pr-6 text-slate-300 appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none transition-all font-semibold truncate"
+          className="h-8 w-28 text-xs bg-card border border-border/60 rounded-md pl-2 pr-6 text-slate-300 appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none transition-all font-semibold truncate"
         >
-          <option value="" className="bg-[#0b0f1a] text-slate-300">
+          <option value="" className="bg-card text-slate-300">
             All Accounts
           </option>
           {accounts.map((acc) => (
-            <option key={acc.id} value={acc.id} className="bg-[#0b0f1a] text-slate-300">
+            <option key={acc.id} value={acc.id} className="bg-card text-slate-300">
               {acc.name}
             </option>
           ))}
@@ -184,7 +184,7 @@ export default function ChartFilterBar({
         <button
           type="button"
           onClick={onToggleChart}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-border/60 bg-[#0b0f1a] text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-border/60 bg-card text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
           aria-label={isChartExpanded ? 'Hide graph' : 'Show graph'}
           aria-expanded={isChartExpanded}
         >

@@ -101,7 +101,7 @@ export default function CalendarPage() {
         {/* Table-like Calendar Grid */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-md">
           {/* Weekdays Header */}
-          <div className="grid grid-cols-7 text-center border-b border-border bg-[#0b0f1a]/80 divide-x divide-border/60">
+          <div className="grid grid-cols-7 text-center border-b border-border bg-card/80 divide-x divide-border/60">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((w, idx) => (
               <span 
                 key={w} 
@@ -153,7 +153,7 @@ export default function CalendarPage() {
 
         {/* Selected day details */}
         {selectedDay !== null && (
-          <div className="space-y-3 animate-slide-up">
+          <div className="space-y-4 animate-slide-up">
             <h3 className="text-sm font-extrabold text-foreground tracking-tight">
               Transactions for {selectedDay} {MONTH_NAMES[selectedMonth]} {selectedYear}
             </h3>

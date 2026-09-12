@@ -93,7 +93,7 @@ export default function BudgetUtilization({
   const remaining = totalBudget - totalSpent;
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className="bg-card border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">Budget Utilization</h3>
@@ -114,7 +114,7 @@ export default function BudgetUtilization({
         </div>
       ) : (
         <>
-          <div className="space-y-3.5">
+          <div className="space-y-4">
             {rows.map((budget) => (
               <div key={budget.id}>
                 <div className="flex items-center justify-between mb-1.5">

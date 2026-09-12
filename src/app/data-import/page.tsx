@@ -923,7 +923,7 @@ export default function DataImportPage() {
 
   return (
     <AppLayout>
-      <div className="px-3 py-3 sm:px-6 sm:py-6 xl:px-10 max-w-5xl mx-auto pb-28">
+      <div className="px-4 py-3 sm:px-6 sm:py-6 xl:px-10 max-w-5xl mx-auto pb-28">
         <div>
           <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground mb-2 font-medium">
             <Link href="/" className="hover:text-foreground">
@@ -934,7 +934,7 @@ export default function DataImportPage() {
           </div>
 
           <div className="overflow-hidden">
-            <div className="px-1 sm:px-4 py-3 border-b border-border flex items-start justify-between gap-3">
+            <div className="px-1 sm:px-4 py-3 border-b border-border flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-base sm:text-lg font-semibold text-foreground">
                   {currentStep === 'upload' && 'Upload Your Money Manager File'}
@@ -980,7 +980,7 @@ export default function DataImportPage() {
               </div>
             </div>
 
-            <div className="py-4 sm:p-5">
+            <div className="py-4 sm:p-6">
               {currentStep === 'upload' && (
                 <div className="space-y-4">
                   {/* Import Mode Selector */}
@@ -988,7 +988,7 @@ export default function DataImportPage() {
                     <button
                       type="button"
                       onClick={() => setImportMode('sqlite')}
-                      className={`px-3 py-3 border-b-2 text-left transition cursor-pointer ${
+                      className={`px-4 py-3 border-b-2 text-left transition cursor-pointer ${
                         importMode === 'sqlite'
                           ? 'border-primary text-foreground'
                           : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -1001,7 +1001,7 @@ export default function DataImportPage() {
                     <button
                       type="button"
                       onClick={() => setImportMode('spreadsheet')}
-                      className={`px-3 py-3 border-b-2 text-left transition cursor-pointer ${
+                      className={`px-4 py-3 border-b-2 text-left transition cursor-pointer ${
                         importMode === 'spreadsheet'
                           ? 'border-primary text-foreground'
                           : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -1013,7 +1013,7 @@ export default function DataImportPage() {
                   </div>
 
                   {importMode === 'sqlite' ? (
-                    <div className="border border-dashed border-border py-7 px-4 text-center space-y-3 bg-secondary/20">
+                    <div className="border border-dashed border-border py-7 px-4 text-center space-y-4 bg-secondary/20">
                       <div className="text-muted-foreground flex items-center justify-center mx-auto">
                         <Database className="w-6 h-6" />
                       </div>
@@ -1116,7 +1116,7 @@ export default function DataImportPage() {
                         ].map((stat) => (
                           <div
                             key={stat.id}
-                            className="bg-muted/20 border border-border rounded-xl p-3 text-center"
+                            className="bg-muted/20 border border-border rounded-xl p-4 text-center"
                           >
                             <p className="text-xl font-bold tabular-nums text-foreground">
                               {stat.value}
@@ -1140,7 +1140,7 @@ export default function DataImportPage() {
                             {importedAccounts.map((account) => (
                               <div
                                 key={account.id}
-                                className="flex items-center justify-between gap-3 px-3 py-2.5 bg-muted/10"
+                                className="flex items-center justify-between gap-4 px-4 py-2.5 bg-muted/10"
                               >
                                 <div className="min-w-0">
                                   <p className="text-sm font-medium text-foreground truncate">
@@ -1184,7 +1184,7 @@ export default function DataImportPage() {
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 'upload'}
-                  className="px-3 py-2 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                  className="px-4 py-2 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                 >
                   ← Back
                 </button>

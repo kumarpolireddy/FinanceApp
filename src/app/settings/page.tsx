@@ -96,7 +96,7 @@ export default function SettingsPage() {
     'accounts' | 'categories' | 'general' | 'system' | 'budgets'
   >('accounts');
   const [currency, setCurrency] = useState('INR');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
   const [tripBgColor, setTripBgColorState] = useState('#f59e0b');
   const [defaultAccount, setDefaultAccount] = useState('');
   const [budgetStartDay, setBudgetStartDay] = useState(1);
@@ -297,7 +297,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setCurrency(localStorage.getItem('wealthiq_currency') || 'INR');
-    setTheme(localStorage.getItem('wealthiq_theme') || 'dark');
+    setTheme(localStorage.getItem('wealthiq_theme') || 'light');
     setDefaultAccount(localStorage.getItem('wealthiq_default_account') || '');
     setBudgetStartDay(Number(localStorage.getItem('wealthiq_budget_start_day')) || 1);
     refreshAccounts();
@@ -1050,7 +1050,7 @@ export default function SettingsPage() {
       localStorage.setItem('wealthiq_categories', JSON.stringify(defaultCats));
 
       localStorage.setItem('wealthiq_currency', 'INR');
-      localStorage.setItem('wealthiq_theme', 'dark');
+      localStorage.setItem('wealthiq_theme', 'light');
       localStorage.setItem('wealthiq_default_account', '');
       localStorage.setItem('wealthiq_budget_start_day', '1');
 
@@ -1107,7 +1107,7 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto px-4 py-5 pb-32 space-y-5 bg-background">
+      <div className="max-w-3xl mx-auto px-4 py-5 pb-32 space-y-6 bg-background">
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-lg font-bold text-foreground">Settings</h1>
@@ -1173,14 +1173,14 @@ export default function SettingsPage() {
         {activeTab === 'accounts' && (
           <div className="space-y-4 transition-all duration-300">
             {/* Desktop Filters Bar */}
-            <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 grid grid-cols-2 md:grid-cols-12 gap-2.5 sm:gap-3 items-center shadow-card">
+            <div className="bg-card border border-border rounded-2xl p-4 sm:p-4 grid grid-cols-2 md:grid-cols-12 gap-2.5 sm:gap-4 items-center shadow-card">
               {/* Search */}
               <div className="col-span-2 md:col-span-4 relative">
                 <input
                   type="text"
                   value={accountSearch}
                   onChange={(e) => setAccountSearch(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary transition"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary transition"
                 />
               </div>
 
@@ -1189,7 +1189,7 @@ export default function SettingsPage() {
                 <select
                   value={accountTypeFilter}
                   onChange={(e) => setAccountTypeFilter(e.target.value as any)}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary transition font-medium"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary transition font-medium"
                 >
                   <option value="all">All Types</option>
                   <option value="accounts">Bank Accounts</option>
@@ -1204,7 +1204,7 @@ export default function SettingsPage() {
                 <select
                   value={accountSortField}
                   onChange={(e) => setAccountSortField(e.target.value as any)}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary transition font-medium"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary transition font-medium"
                 >
                   <option value="name">Sort by Name</option>
                   <option value="balance">Sort by Balance</option>
@@ -1213,13 +1213,13 @@ export default function SettingsPage() {
               </div>
 
               {/* Toggles */}
-              <div className="col-span-2 md:col-span-4 flex items-center justify-between md:justify-end gap-3 sm:gap-4 flex-wrap text-2xs text-muted-foreground font-semibold pt-1 md:pt-0">
+              <div className="col-span-2 md:col-span-4 flex items-center justify-between md:justify-end gap-4 sm:gap-4 flex-wrap text-2xs text-muted-foreground font-semibold pt-1 md:pt-0">
                 <label className="flex items-center gap-2 cursor-pointer hover:text-foreground transition select-none">
                   <input
                     type="checkbox"
                     checked={showHiddenAccounts}
                     onChange={(e) => setShowHiddenAccounts(e.target.checked)}
-                    className="rounded border-border text-primary bg-[#0b0f1a] h-3.5 w-3.5 focus:ring-offset-background focus:ring-1 focus:ring-primary"
+                    className="rounded border-border text-primary bg-card h-3.5 w-3.5 focus:ring-offset-background focus:ring-1 focus:ring-primary"
                   />
                   Show Hidden
                 </label>
@@ -1228,7 +1228,7 @@ export default function SettingsPage() {
                     type="checkbox"
                     checked={showArchivedAccounts}
                     onChange={(e) => setShowArchivedAccounts(e.target.checked)}
-                    className="rounded border-border text-primary bg-[#0b0f1a] h-3.5 w-3.5 focus:ring-offset-background focus:ring-1 focus:ring-primary"
+                    className="rounded border-border text-primary bg-card h-3.5 w-3.5 focus:ring-offset-background focus:ring-1 focus:ring-primary"
                   />
                   Show Archived
                 </label>
@@ -1240,7 +1240,7 @@ export default function SettingsPage() {
               {showAccountForm && (
                 <form
                   onSubmit={handleSubmitAccount}
-                  className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xl"
+                  className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-card-lg"
                 >
                   <h3 className="text-sm font-bold text-foreground">
                     {editingId ? 'Modify Account Details' : 'Register New Account'}
@@ -1272,7 +1272,7 @@ export default function SettingsPage() {
                             color,
                           });
                         }}
-                        className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition disabled:opacity-50"
+                        className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition disabled:opacity-50"
                       >
                         {ACCOUNT_TYPES.map((t) => (
                           <option key={t.value} value={t.value}>
@@ -1296,7 +1296,7 @@ export default function SettingsPage() {
                         required
                         value={accountForm.name}
                         onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
-                        className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                        className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                       />
                     </div>
 
@@ -1314,7 +1314,7 @@ export default function SettingsPage() {
                               onChange={(e) =>
                                 setAccountForm({ ...accountForm, balance: e.target.value })
                               }
-                              className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                              className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                             />
                           </div>
                         )}
@@ -1328,7 +1328,7 @@ export default function SettingsPage() {
                               setAccountForm({ ...accountForm, notes: e.target.value })
                             }
                             rows={2}
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition resize-none"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition resize-none"
                           />
                         </div>
                       </>
@@ -1348,7 +1348,7 @@ export default function SettingsPage() {
                               onChange={(e) =>
                                 setAccountForm({ ...accountForm, balance: e.target.value })
                               }
-                              className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                              className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                             />
                           </div>
                         )}
@@ -1362,7 +1362,7 @@ export default function SettingsPage() {
                               setAccountForm({ ...accountForm, notes: e.target.value })
                             }
                             rows={2}
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition resize-none"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition resize-none"
                           />
                         </div>
                       </>
@@ -1382,7 +1382,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, creditLimit: e.target.value })
                             }
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
                         {!editingId && (
@@ -1396,7 +1396,7 @@ export default function SettingsPage() {
                               onChange={(e) =>
                                 setAccountForm({ ...accountForm, balance: e.target.value })
                               }
-                              className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                              className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                             />
                           </div>
                         )}
@@ -1410,7 +1410,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, billingCycle: e.target.value })
                             }
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
                         <div>
@@ -1423,7 +1423,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, dueDate: e.target.value })
                             }
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
                       </>
@@ -1443,7 +1443,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, lenderName: e.target.value })
                             }
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
 
@@ -1458,7 +1458,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, startDate: e.target.value })
                             }
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
 
@@ -1475,7 +1475,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                   setAccountForm({ ...accountForm, originalAmount: e.target.value })
                                 }
-                                className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                               />
                             </div>
                             <div>
@@ -1488,7 +1488,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                   setAccountForm({ ...accountForm, balance: e.target.value })
                                 }
-                                className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                               />
                             </div>
                           </>
@@ -1506,7 +1506,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, interestRate: e.target.value })
                             }
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           />
                         </div>
 
@@ -1519,7 +1519,7 @@ export default function SettingsPage() {
                             onChange={(e) =>
                               setAccountForm({ ...accountForm, interestType: e.target.value })
                             }
-                            className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                            className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                           >
                             <option value="reducing">Reducing Balance</option>
                             <option value="simple">Simple Interest</option>
@@ -1533,7 +1533,7 @@ export default function SettingsPage() {
                               onChange={(e) =>
                                 setAccountForm({ ...accountForm, isInformal: e.target.checked })
                               }
-                              className="rounded border-border text-primary bg-[#0b0f1a] h-4 w-4 focus:ring-0"
+                              className="rounded border-border text-primary bg-card h-4 w-4 focus:ring-0"
                             />
                             <label
                               htmlFor="isInformal"
@@ -1569,7 +1569,7 @@ export default function SettingsPage() {
                                     });
                                   }
                                 }}
-                                className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                               />
                             </div>
                             <div>
@@ -1581,7 +1581,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                   setAccountForm({ ...accountForm, tenureType: e.target.value })
                                 }
-                                className="rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                className="rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                               >
                                 <option value="months">Months</option>
                                 <option value="years">Years</option>
@@ -1605,7 +1605,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                   setAccountForm({ ...accountForm, emiDueDay: e.target.value })
                                 }
-                                className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                               />
                             </div>
 
@@ -1620,7 +1620,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                   setAccountForm({ ...accountForm, firstEmiDate: e.target.value })
                                 }
-                                className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                               />
                             </div>
 
@@ -1635,7 +1635,7 @@ export default function SettingsPage() {
                                 onChange={(e) =>
                                   setAccountForm({ ...accountForm, emiAmount: e.target.value })
                                 }
-                                className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition font-mono"
+                                className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition font-mono"
                               />
                             </div>
                           </>
@@ -1655,7 +1655,7 @@ export default function SettingsPage() {
                                   expectedRepaymentDate: e.target.value,
                                 })
                               }
-                              className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                              className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                             />
                           </div>
                         )}
@@ -1673,7 +1673,7 @@ export default function SettingsPage() {
                                   compoundingFrequency: e.target.value as any,
                                 })
                               }
-                              className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                              className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                             >
                               <option value="monthly">Monthly</option>
                               <option value="quarterly">Quarterly</option>
@@ -1765,7 +1765,7 @@ export default function SettingsPage() {
                                       loanAccountNumber: e.target.value,
                                     })
                                   }
-                                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 />
                               </div>
                               <div>
@@ -1781,7 +1781,7 @@ export default function SettingsPage() {
                                       processingFee: e.target.value,
                                     })
                                   }
-                                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 />
                               </div>
                               <div>
@@ -1798,7 +1798,7 @@ export default function SettingsPage() {
                                       prepaymentCharges: e.target.value,
                                     })
                                   }
-                                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 />
                               </div>
                               <div>
@@ -1814,7 +1814,7 @@ export default function SettingsPage() {
                                       latePaymentCharges: e.target.value,
                                     })
                                   }
-                                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 />
                               </div>
                               <div>
@@ -1829,7 +1829,7 @@ export default function SettingsPage() {
                                       linkedPaymentAccountId: e.target.value,
                                     })
                                   }
-                                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 >
                                   <option value="">None</option>
                                   {accounts
@@ -1850,7 +1850,7 @@ export default function SettingsPage() {
                                   onChange={(e) =>
                                     setAccountForm({ ...accountForm, loanStatus: e.target.value })
                                   }
-                                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                                 >
                                   <option value="active">Active</option>
                                   <option value="paid_off">Paid Off</option>
@@ -1869,7 +1869,7 @@ export default function SettingsPage() {
                                       autoCreateEmi: e.target.checked,
                                     })
                                   }
-                                  className="rounded border-border text-primary bg-[#0b0f1a] h-4 w-4 focus:ring-1 focus:ring-primary"
+                                  className="rounded border-border text-primary bg-card h-4 w-4 focus:ring-1 focus:ring-primary"
                                 />
                                 <label
                                   htmlFor="autoCreateEmi"
@@ -1893,12 +1893,12 @@ export default function SettingsPage() {
                         type="color"
                         value={accountForm.color}
                         onChange={(e) => setAccountForm({ ...accountForm, color: e.target.value })}
-                        className="h-10 w-full rounded-xl border border-border bg-[#0b0f1a] p-1 cursor-pointer"
+                        className="h-10 w-full rounded-xl border border-border bg-card p-1 cursor-pointer"
                       />
                     </div>
 
                     {editingId && (
-                      <div className="sm:col-span-2 bg-[#0b0f1a] border border-border rounded-xl p-3">
+                      <div className="sm:col-span-2 bg-card border border-border rounded-xl p-4">
                         <p className="text-3xs text-muted-foreground leading-relaxed">
                           Note: Modifying account info here will not edit its balance history. To
                           change the account balance value, please close this form and use the{' '}
@@ -1916,7 +1916,7 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           setAccountForm({ ...accountForm, visible: e.target.checked })
                         }
-                        className="h-4 w-4 rounded border-border text-primary bg-[#0b0f1a] focus:ring-primary"
+                        className="h-4 w-4 rounded border-border text-primary bg-card focus:ring-primary"
                       />
                       <label
                         htmlFor="visibleCheckbox"
@@ -1927,7 +1927,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-4 pt-2">
                     <button
                       type="submit"
                       className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:opacity-90 transition"
@@ -1952,7 +1952,7 @@ export default function SettingsPage() {
               <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-md">
                 <div
                   onClick={() => toggleCategoryCollapse('accounts')}
-                  className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted/10 transition select-none bg-[#0b0f1a]/40"
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/10 transition select-none bg-card/40"
                 >
                   <div className="flex-1 min-w-0 pr-2">
                     <h3 className="text-xs font-black text-foreground tracking-wider flex flex-wrap items-baseline gap-1.5 uppercase leading-tight">
@@ -1995,7 +1995,7 @@ export default function SettingsPage() {
                         </div>
                       ) : (
                         getProcessedAccounts('accounts').map((acc) => (
-                          <div key={acc.id} className="p-4 space-y-3">
+                          <div key={acc.id} className="p-4 space-y-4">
                             <div className="flex justify-between items-start gap-2">
                               <div className="font-bold text-sm flex items-center gap-2 text-foreground">
                                 {acc.name}
@@ -2062,7 +2062,7 @@ export default function SettingsPage() {
                     {/* Desktop table view */}
                     <div className="hidden md:block overflow-x-auto select-scrollbar">
                       <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
-                        <thead className="bg-[#0b0f1a]/80 border-b border-border/60">
+                        <thead className="bg-card/80 border-b border-border/60">
                           <tr>
                             <th className="py-2.5 px-4 text-2xs font-bold text-muted-foreground uppercase tracking-wider">
                               Account Name
@@ -2175,7 +2175,7 @@ export default function SettingsPage() {
               <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-md">
                 <div
                   onClick={() => toggleCategoryCollapse('cash')}
-                  className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted/10 transition select-none bg-[#0b0f1a]/40"
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/10 transition select-none bg-card/40"
                 >
                   <div className="flex-1 min-w-0 pr-2">
                     <h3 className="text-xs font-black text-foreground tracking-wider flex flex-wrap items-baseline gap-1.5 uppercase leading-tight">
@@ -2218,7 +2218,7 @@ export default function SettingsPage() {
                         </div>
                       ) : (
                         getProcessedAccounts('cash').map((acc) => (
-                          <div key={acc.id} className="p-4 space-y-3">
+                          <div key={acc.id} className="p-4 space-y-4">
                             <div className="flex justify-between items-start gap-2">
                               <div className="font-bold text-sm flex items-center gap-2 text-foreground">
                                 {acc.name}
@@ -2291,7 +2291,7 @@ export default function SettingsPage() {
                     {/* Desktop table view */}
                     <div className="hidden md:block overflow-x-auto select-scrollbar">
                       <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
-                        <thead className="bg-[#0b0f1a]/80 border-b border-border/60">
+                        <thead className="bg-card/80 border-b border-border/60">
                           <tr>
                             <th className="py-2.5 px-4 text-2xs font-bold text-muted-foreground uppercase tracking-wider">
                               Account Name
@@ -2410,7 +2410,7 @@ export default function SettingsPage() {
               <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-md">
                 <div
                   onClick={() => toggleCategoryCollapse('credit')}
-                  className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted/10 transition select-none bg-[#0b0f1a]/40"
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/10 transition select-none bg-card/40"
                 >
                   <div className="flex-1 min-w-0 pr-2">
                     <h3 className="text-xs font-black text-foreground tracking-wider flex flex-wrap items-baseline gap-1.5 uppercase leading-tight">
@@ -2457,7 +2457,7 @@ export default function SettingsPage() {
                           const limit = acc.creditLimit || 0;
                           const avail = Math.max(0, limit - outstanding);
                           return (
-                            <div key={acc.id} className="p-4 space-y-3">
+                            <div key={acc.id} className="p-4 space-y-4">
                               <div className="flex justify-between items-start gap-2">
                                 <div className="font-bold text-sm flex items-center gap-2 text-foreground">
                                   {acc.name}
@@ -2551,7 +2551,7 @@ export default function SettingsPage() {
                     {/* Desktop table view */}
                     <div className="hidden md:block overflow-x-auto select-scrollbar">
                       <table className="w-full text-left border-collapse table-fixed min-w-[900px]">
-                        <thead className="bg-[#0b0f1a]/80 border-b border-border/60">
+                        <thead className="bg-card/80 border-b border-border/60">
                           <tr>
                             <th className="py-2.5 px-4 text-2xs font-bold text-muted-foreground uppercase tracking-wider">
                               Card Name
@@ -2705,7 +2705,7 @@ export default function SettingsPage() {
               <div className="border border-border rounded-2xl bg-card overflow-hidden shadow-md">
                 <div
                   onClick={() => toggleCategoryCollapse('loan')}
-                  className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted/10 transition select-none bg-[#0b0f1a]/40"
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/10 transition select-none bg-card/40"
                 >
                   <div className="flex-1 min-w-0 pr-2">
                     <h3 className="text-xs font-black text-foreground tracking-wider flex flex-wrap items-baseline gap-1.5 uppercase leading-tight">
@@ -2751,7 +2751,7 @@ export default function SettingsPage() {
                           const outstanding = Math.abs(acc.balance);
                           const totalLiability = outstanding + (acc.accruedInterest || 0);
                           return (
-                            <div key={acc.id} className="p-4 space-y-3">
+                            <div key={acc.id} className="p-4 space-y-4">
                               <div className="flex justify-between items-start gap-2">
                                 <div className="font-bold text-sm flex flex-col gap-0.5 text-foreground">
                                   <span>{acc.name}</span>
@@ -2863,7 +2863,7 @@ export default function SettingsPage() {
                     {/* Desktop table view */}
                     <div className="hidden md:block overflow-x-auto select-scrollbar">
                       <table className="w-full text-left border-collapse table-fixed min-w-[950px]">
-                        <thead className="bg-[#0b0f1a]/80 border-b border-border/60">
+                        <thead className="bg-card/80 border-b border-border/60">
                           <tr>
                             <th className="py-2.5 px-4 text-2xs font-bold text-muted-foreground uppercase tracking-wider">
                               Loan Name
@@ -3066,7 +3066,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Currency
@@ -3077,7 +3077,7 @@ export default function SettingsPage() {
                     setCurrency(e.target.value);
                     saveSetting('wealthiq_currency', e.target.value);
                   }}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-3 text-slate-200 focus:outline-none focus:border-primary transition-all font-medium text-sm"
+                  className="w-full rounded-xl border border-border bg-card p-4 text-slate-200 focus:outline-none focus:border-primary transition-all font-medium text-sm"
                 >
                   <option value="INR">₹ Indian Rupee (INR)</option>
                   <option value="USD">$ US Dollar (USD)</option>
@@ -3097,7 +3097,7 @@ export default function SettingsPage() {
                     setTheme(e.target.value);
                     saveSetting('wealthiq_theme', e.target.value);
                   }}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-3 text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold text-sm"
+                  className="w-full rounded-xl border border-border bg-card p-4 text-slate-200 focus:outline-none focus:border-primary transition-all font-semibold text-sm"
                 >
                   <option value="dark">Default Dark</option>
                   <option value="light">Light Mode</option>
@@ -3121,7 +3121,7 @@ export default function SettingsPage() {
                   Choose the highlight background color for trip-related transactions across the
                   application.
                 </p>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-4">
                   {[
                     { label: 'Amber', color: '#f59e0b' },
                     { label: 'Emerald', color: '#10b981' },
@@ -3140,7 +3140,7 @@ export default function SettingsPage() {
                         setTripBgColor(preset.color);
                         toast.success(`Trip background color updated to ${preset.label}`);
                       }}
-                      className={`flex items-center justify-center px-3.5 py-2 rounded-xl border text-xs font-bold transition-all ${
+                      className={`flex items-center justify-center px-4 py-2 rounded-xl border text-xs font-bold transition-all ${
                         tripBgColor === preset.color
                           ? 'border-primary ring-2 ring-primary/30 scale-105 shadow-md'
                           : 'border-border hover:border-muted-foreground/40'
@@ -3184,7 +3184,7 @@ export default function SettingsPage() {
                     setBudgetStartDay(Number(e.target.value));
                     saveSetting('wealthiq_budget_start_day', e.target.value);
                   }}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-3 text-slate-200 focus:outline-none focus:border-primary transition-all text-sm font-medium"
+                  className="w-full rounded-xl border border-border bg-card p-4 text-slate-200 focus:outline-none focus:border-primary transition-all text-sm font-medium"
                 />
                 <p className="text-2xs text-muted-foreground mt-1.5">
                   Choose the day of the month when your budgets should reset (e.g. your salary day).
@@ -3204,7 +3204,7 @@ export default function SettingsPage() {
                   Export your database file locally or restore a previous data state.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-4">
                 <button
                   onClick={exportBackup}
                   className="px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-semibold hover:opacity-90 shadow-lg shadow-primary/10 transition"
@@ -3250,7 +3250,7 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Auto Create */}
-                <div className="flex items-center justify-between p-4 border border-border/60 bg-[#0b0f1a]/20 rounded-xl">
+                <div className="flex items-center justify-between p-4 border border-border/60 bg-card/20 rounded-xl">
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-slate-200">
                       Auto-create Monthly Budgets
@@ -3263,12 +3263,12 @@ export default function SettingsPage() {
                     type="checkbox"
                     checked={globalSettings.autoCreate}
                     onChange={(e) => handleToggleGlobalSetting('autoCreate', e.target.checked)}
-                    className="h-4 w-4 rounded border-border bg-[#0b0f1a] text-primary focus:ring-primary/20 cursor-pointer"
+                    className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-primary/20 cursor-pointer"
                   />
                 </div>
 
                 {/* Carry limits */}
-                <div className="flex items-center justify-between p-4 border border-border/60 bg-[#0b0f1a]/20 rounded-xl">
+                <div className="flex items-center justify-between p-4 border border-border/60 bg-card/20 rounded-xl">
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-slate-200">Carry Forward Limits</p>
                     <p className="text-3xs text-muted-foreground">
@@ -3279,12 +3279,12 @@ export default function SettingsPage() {
                     type="checkbox"
                     checked={globalSettings.carryLimits}
                     onChange={(e) => handleToggleGlobalSetting('carryLimits', e.target.checked)}
-                    className="h-4 w-4 rounded border-border bg-[#0b0f1a] text-primary focus:ring-primary/20 cursor-pointer"
+                    className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-primary/20 cursor-pointer"
                   />
                 </div>
 
                 {/* Carry unused */}
-                <div className="flex items-center justify-between p-4 border border-border/60 bg-[#0b0f1a]/20 rounded-xl">
+                <div className="flex items-center justify-between p-4 border border-border/60 bg-card/20 rounded-xl">
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-slate-200">
                       Carry Forward Unused Budgets
@@ -3297,12 +3297,12 @@ export default function SettingsPage() {
                     type="checkbox"
                     checked={globalSettings.carryUnused}
                     onChange={(e) => handleToggleGlobalSetting('carryUnused', e.target.checked)}
-                    className="h-4 w-4 rounded border-border bg-[#0b0f1a] text-primary focus:ring-primary/20 cursor-pointer"
+                    className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-primary/20 cursor-pointer"
                   />
                 </div>
 
                 {/* Carry overspending */}
-                <div className="flex items-center justify-between p-4 border border-border/60 bg-[#0b0f1a]/20 rounded-xl">
+                <div className="flex items-center justify-between p-4 border border-border/60 bg-card/20 rounded-xl">
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-slate-200">
                       Carry Forward Overspending
@@ -3317,7 +3317,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       handleToggleGlobalSetting('carryOverspending', e.target.checked)
                     }
-                    className="h-4 w-4 rounded border-border bg-[#0b0f1a] text-primary focus:ring-primary/20 cursor-pointer"
+                    className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-primary/20 cursor-pointer"
                   />
                 </div>
 
@@ -3329,7 +3329,7 @@ export default function SettingsPage() {
                   <select
                     value={globalSettings.scope}
                     onChange={(e) => handleToggleGlobalSetting('scope', e.target.value)}
-                    className="w-full rounded-xl border border-border bg-[#0b0f1a] p-3 text-slate-200 focus:outline-none focus:border-primary transition-all text-sm font-medium"
+                    className="w-full rounded-xl border border-border bg-card p-4 text-slate-200 focus:outline-none focus:border-primary transition-all text-sm font-medium"
                   >
                     <option value="all">All Accounts (Consolidated)</option>
                     {accounts.map((acc) => (
@@ -3359,7 +3359,7 @@ export default function SettingsPage() {
                 </div>
                 <button
                   onClick={handleOpenAddTemplate}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary/95 text-xs font-semibold text-white rounded-xl transition shadow"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/95 text-xs font-semibold text-white rounded-xl transition shadow"
                 >
                   <Plus size={13} />
                   Add Template
@@ -3377,7 +3377,7 @@ export default function SettingsPage() {
                   {templates.map((t) => (
                     <div
                       key={t.id}
-                      className="border border-border/80 bg-[#0b0f1a]/40 rounded-xl p-4 flex flex-col justify-between gap-3 hover:border-primary/20 transition-all"
+                      className="border border-border/80 bg-card/40 rounded-xl p-4 flex flex-col justify-between gap-4 hover:border-primary/20 transition-all"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -3455,7 +3455,7 @@ export default function SettingsPage() {
                     }
                     required
                     disabled={!!editingTemplate}
-                    className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium disabled:opacity-60"
+                    className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium disabled:opacity-60"
                   >
                     {categories
                       .filter((c) => c.type === 'expense')
@@ -3479,7 +3479,7 @@ export default function SettingsPage() {
                     }
                     required
                     min="1"
-                    className="w-full rounded-lg border border-border bg-[#0b0f1a] p-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-primary transition-all font-semibold"
+                    className="w-full rounded-lg border border-border bg-card p-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-primary transition-all font-semibold"
                   />
                 </div>
 
@@ -3488,7 +3488,7 @@ export default function SettingsPage() {
                   <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                     Notification Thresholds
                   </label>
-                  <div className="grid grid-cols-2 gap-2 p-3 border border-border/80 bg-[#0b0f1a]/40 rounded-xl">
+                  <div className="grid grid-cols-2 gap-2 p-4 border border-border/80 bg-card/40 rounded-xl">
                     {[50, 80, 100, 120].map((pct) => {
                       const label = pct === 120 ? 'Exceeded (>100%)' : `${pct}% Limit`;
                       const isChecked = templateFormData.notifications.includes(pct);
@@ -3506,7 +3506,7 @@ export default function SettingsPage() {
                                 : templateFormData.notifications.filter((n) => n !== pct);
                               setTemplateFormData({ ...templateFormData, notifications: updated });
                             }}
-                            className="h-3.5 w-3.5 rounded border-border bg-[#0b0f1a] text-primary focus:ring-primary/20"
+                            className="h-3.5 w-3.5 rounded border-border bg-card text-primary focus:ring-primary/20"
                           />
                           <span>{label}</span>
                         </label>
@@ -3516,7 +3516,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Carry Forward Options */}
-                <div className="flex items-center justify-between p-3 border border-border/80 bg-[#0b0f1a]/40 rounded-xl">
+                <div className="flex items-center justify-between p-4 border border-border/80 bg-card/40 rounded-xl">
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-slate-200">
                       Carry Forward Remaining Limits
@@ -3531,12 +3531,12 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setTemplateFormData({ ...templateFormData, carryForward: e.target.checked })
                     }
-                    className="h-4 w-4 rounded border-border bg-[#0b0f1a] text-primary focus:ring-primary/20 cursor-pointer"
+                    className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-primary/20 cursor-pointer"
                   />
                 </div>
 
                 {/* Enabled */}
-                <div className="flex items-center justify-between p-3 border border-border/80 bg-[#0b0f1a]/40 rounded-xl">
+                <div className="flex items-center justify-between p-4 border border-border/80 bg-card/40 rounded-xl">
                   <div className="space-y-0.5">
                     <p className="text-xs font-semibold text-slate-200">Template Enabled</p>
                     <p className="text-3xs text-muted-foreground">
@@ -3549,7 +3549,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setTemplateFormData({ ...templateFormData, enabled: e.target.checked })
                     }
-                    className="h-4 w-4 rounded border-border bg-[#0b0f1a] text-primary focus:ring-primary/20 cursor-pointer"
+                    className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-primary/20 cursor-pointer"
                   />
                 </div>
 
@@ -3557,7 +3557,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setIsTemplateModalOpen(false)}
-                    className="px-4 py-2 border border-border bg-[#0b0f1a] hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
+                    className="px-4 py-2 border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground rounded-lg transition-all"
                   >
                     Cancel
                   </button>
@@ -3577,12 +3577,12 @@ export default function SettingsPage() {
       {/* Adjust Balance Modal */}
       {adjustAccount && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-card-lg">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               Adjust Account Balance
             </h3>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
               <div>
                 <p className="text-3xs text-muted-foreground uppercase font-bold tracking-wider">
                   Account Name
@@ -3619,7 +3619,7 @@ export default function SettingsPage() {
                   type="number"
                   value={adjustActualBalance}
                   onChange={(e) => setAdjustActualBalance(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm font-semibold text-foreground focus:outline-none focus:border-primary transition"
+                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm font-semibold text-foreground focus:outline-none focus:border-primary transition"
                 />
               </div>
 
@@ -3629,7 +3629,7 @@ export default function SettingsPage() {
                 </p>
 
                 {/* Option 1 */}
-                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-[#0b0f1a]/40 hover:bg-muted/10 cursor-pointer transition">
+                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-card/40 hover:bg-muted/10 cursor-pointer transition">
                   <input
                     type="radio"
                     name="adjustOpt"
@@ -3652,7 +3652,7 @@ export default function SettingsPage() {
                 </label>
 
                 {/* Option 2 */}
-                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-[#0b0f1a]/40 hover:bg-muted/10 cursor-pointer transition">
+                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-card/40 hover:bg-muted/10 cursor-pointer transition">
                   <input
                     type="radio"
                     name="adjustOpt"
@@ -3673,7 +3673,7 @@ export default function SettingsPage() {
                 </label>
 
                 {/* Option 3 */}
-                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-[#0b0f1a]/40 hover:bg-muted/10 cursor-pointer transition">
+                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-card/40 hover:bg-muted/10 cursor-pointer transition">
                   <input
                     type="radio"
                     name="adjustOpt"
@@ -3696,7 +3696,7 @@ export default function SettingsPage() {
 
               {/* Force Override Warning */}
               {adjustOption === 3 && showWarningDialog && (
-                <div className="bg-red-950/20 border border-red-500/20 rounded-xl p-3 flex items-start gap-2 text-[#ef4444]">
+                <div className="bg-red-950/20 border border-red-500/20 rounded-xl p-4 flex items-start gap-2 text-[#ef4444]">
                   <p className="text-3xs leading-relaxed">
                     Warning: Directly replacing current balance overrides opening balance targets
                     without creating ledger entries. This may create inconsistencies. Click Adjust
@@ -3706,7 +3706,7 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <div className="flex gap-3 pt-3 border-t border-border/40">
+            <div className="flex gap-4 pt-3 border-t border-border/40">
               <button
                 type="button"
                 onClick={handleExecuteAdjust}
@@ -3734,13 +3734,13 @@ export default function SettingsPage() {
       {/* Delete Confirmation Options Modal */}
       {deleteAccountTarget && deleteStats && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-card-lg">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               Delete Account Options
             </h3>
 
-            <div className="space-y-3 text-xs">
-              <div className="bg-muted/20 border border-border rounded-xl p-3 text-3xs text-muted-foreground space-y-1">
+            <div className="space-y-4 text-xs">
+              <div className="bg-muted/20 border border-border rounded-xl p-4 text-3xs text-muted-foreground space-y-1">
                 <p>
                   Target Account:{' '}
                   <span className="font-semibold text-foreground">{deleteAccountTarget.name}</span>
@@ -3765,7 +3765,7 @@ export default function SettingsPage() {
                 </p>
 
                 {/* Option 3: Archive (Recommended) */}
-                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-[#0b0f1a]/40 hover:bg-muted/10 cursor-pointer transition">
+                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-card/40 hover:bg-muted/10 cursor-pointer transition">
                   <input
                     type="radio"
                     name="deleteOpt"
@@ -3785,7 +3785,7 @@ export default function SettingsPage() {
                 </label>
 
                 {/* Option 2: Move */}
-                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-[#0b0f1a]/40 hover:bg-muted/10 cursor-pointer transition">
+                <label className="flex items-start gap-2.5 p-2 rounded-lg border border-border bg-card/40 hover:bg-muted/10 cursor-pointer transition">
                   <input
                     type="radio"
                     name="deleteOpt"
@@ -3812,7 +3812,7 @@ export default function SettingsPage() {
                     <select
                       value={deleteTargetAccountForMove}
                       onChange={(e) => setDeleteTargetAccountForMove(e.target.value)}
-                      className="w-full rounded-lg border border-border bg-[#0b0f1a] px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-primary transition"
+                      className="w-full rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-primary transition"
                     >
                       <option value="">— Select Account —</option>
                       {accounts
@@ -3846,7 +3846,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-3 border-t border-border/40">
+            <div className="flex gap-4 pt-3 border-t border-border/40">
               <button
                 type="button"
                 onClick={handleExecuteDelete}
@@ -3873,7 +3873,7 @@ export default function SettingsPage() {
       {/* Confirmation Modal */}
       {isResetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-card-lg relative">
             <h3 className="text-lg font-bold text-red-400 flex items-center gap-2">
               Reset All Data
             </h3>
@@ -3893,7 +3893,7 @@ export default function SettingsPage() {
               <p className="text-red-400/90 font-semibold mt-2">This action cannot be undone.</p>
               <p className="mt-4 font-semibold text-foreground">
                 Type{' '}
-                <span className="text-red-400 select-all font-mono bg-[#0b0f1a] px-1.5 py-0.5 rounded border border-border">
+                <span className="text-red-400 select-all font-mono bg-card px-1.5 py-0.5 rounded border border-border">
                   DELETE
                 </span>{' '}
                 to confirm.
@@ -3906,11 +3906,11 @@ export default function SettingsPage() {
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="DELETE"
-                className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-center text-sm font-bold tracking-widest text-foreground focus:outline-none focus:border-red-500 transition"
+                className="w-full rounded-xl border border-border bg-card p-2.5 text-center text-sm font-bold tracking-widest text-foreground focus:outline-none focus:border-red-500 transition"
               />
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-4 pt-2">
               <button
                 type="button"
                 onClick={handleExecuteReset}
@@ -3937,7 +3937,7 @@ export default function SettingsPage() {
       {/* Success Modal */}
       {resetSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full text-center space-y-4 shadow-2xl">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full text-center space-y-4 shadow-card-lg">
             <h3 className="text-lg font-bold text-foreground">
               All data has been reset successfully.
             </h3>
@@ -3961,7 +3961,7 @@ export default function SettingsPage() {
       {/* 1. Loan Details Modal */}
       {activeLoanDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl relative select-scrollbar">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-6 shadow-card-lg relative select-scrollbar">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-bold text-foreground">{activeLoanDetails.name}</h3>
@@ -3986,7 +3986,7 @@ export default function SettingsPage() {
               const repaid = Math.max(0, original - outstanding);
               const pct = Math.min(100, Math.round((repaid / original) * 100));
               return (
-                <div className="space-y-2 bg-[#0b0f1a]/40 border border-border/40 rounded-xl p-4">
+                <div className="space-y-2 bg-card/40 border border-border/40 rounded-xl p-4">
                   <div className="flex justify-between text-xs font-semibold">
                     <span className="text-muted-foreground">Payoff Progress</span>
                     <span className="text-primary font-mono">{pct}% Repaid</span>
@@ -4007,7 +4007,7 @@ export default function SettingsPage() {
 
             {/* Detailed Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Outstanding Principal
                 </span>
@@ -4015,7 +4015,7 @@ export default function SettingsPage() {
                   ₹{Math.abs(activeLoanDetails.balance).toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Accrued Unpaid Interest
                 </span>
@@ -4023,7 +4023,7 @@ export default function SettingsPage() {
                   ₹{(activeLoanDetails.accruedInterest || 0).toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Total Outstanding Liability
                 </span>
@@ -4034,7 +4034,7 @@ export default function SettingsPage() {
                   ).toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Total Principal Repaid
                 </span>
@@ -4042,7 +4042,7 @@ export default function SettingsPage() {
                   ₹{(activeLoanDetails.totalPrincipalRepaid || 0).toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Total Interest Paid
                 </span>
@@ -4050,7 +4050,7 @@ export default function SettingsPage() {
                   ₹{(activeLoanDetails.totalInterestPaid || 0).toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Total Amount Repaid
                 </span>
@@ -4058,7 +4058,7 @@ export default function SettingsPage() {
                   ₹{(activeLoanDetails.totalAmountPaid || 0).toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Interest Rate & Type
                 </span>
@@ -4066,7 +4066,7 @@ export default function SettingsPage() {
                   {activeLoanDetails.interestRate}% ({activeLoanDetails.interestType || 'reducing'})
                 </span>
               </div>
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Remaining Tenure
                 </span>
@@ -4077,7 +4077,7 @@ export default function SettingsPage() {
                   / {activeLoanDetails.tenureMonths || '—'} months
                 </span>
               </div>
-              <div className="bg-[#0b0f1a]/30 border border-border/30 rounded-xl p-3">
+              <div className="bg-card/30 border border-border/30 rounded-xl p-4">
                 <span className="text-3xs text-muted-foreground uppercase tracking-wider block font-semibold">
                   Next EMI Date
                 </span>
@@ -4088,7 +4088,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Quick Actions Panel */}
-            <div className="flex gap-3 justify-end pt-2">
+            <div className="flex gap-4 justify-end pt-2">
               <button
                 type="button"
                 onClick={() => {
@@ -4120,39 +4120,39 @@ export default function SettingsPage() {
             </div>
 
             {/* Amortization Repayment Schedule */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <h4 className="text-xs font-extrabold text-foreground uppercase tracking-wider">
                 📊 Amortization Schedule
               </h4>
               <div className="overflow-x-auto border border-border/50 rounded-xl max-h-[300px] select-scrollbar">
                 <table className="w-full text-left text-2xs table-auto border-collapse min-w-[700px]">
-                  <thead className="bg-[#0b0f1a]/90 text-muted-foreground border-b border-border/50 sticky top-0 font-semibold">
+                  <thead className="bg-card/90 text-muted-foreground border-b border-border/50 sticky top-0 font-semibold">
                     <tr>
-                      <th className="py-2 px-3">Installment #</th>
-                      <th className="py-2 px-3">Due Date</th>
-                      <th className="py-2 px-3">Opening Principal</th>
-                      <th className="py-2 px-3">Total Installment</th>
-                      <th className="py-2 px-3">Principal Portion</th>
-                      <th className="py-2 px-3">Interest Portion</th>
-                      <th className="py-2 px-3">Closing Principal</th>
-                      <th className="py-2 px-3 text-center">Status</th>
+                      <th className="py-2 px-4">Installment #</th>
+                      <th className="py-2 px-4">Due Date</th>
+                      <th className="py-2 px-4">Opening Principal</th>
+                      <th className="py-2 px-4">Total Installment</th>
+                      <th className="py-2 px-4">Principal Portion</th>
+                      <th className="py-2 px-4">Interest Portion</th>
+                      <th className="py-2 px-4">Closing Principal</th>
+                      <th className="py-2 px-4 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/20 text-foreground/80 font-mono">
                     {activeLoanSchedule.map((row) => (
                       <tr key={row.num} className="hover:bg-muted/5 transition-colors">
-                        <td className="py-2 px-3 font-semibold text-center">{row.num}</td>
-                        <td className="py-2 px-3 font-sans">{row.dueDateStr}</td>
-                        <td className="py-2 px-3">₹{row.opening.toLocaleString('en-IN')}</td>
-                        <td className="py-2 px-3 text-negative font-semibold">
+                        <td className="py-2 px-4 font-semibold text-center">{row.num}</td>
+                        <td className="py-2 px-4 font-sans">{row.dueDateStr}</td>
+                        <td className="py-2 px-4">₹{row.opening.toLocaleString('en-IN')}</td>
+                        <td className="py-2 px-4 text-negative font-semibold">
                           ₹{row.emi.toLocaleString('en-IN')}
                         </td>
-                        <td className="py-2 px-3 text-[#10b981]">
+                        <td className="py-2 px-4 text-[#10b981]">
                           ₹{row.principal.toLocaleString('en-IN')}
                         </td>
-                        <td className="py-2 px-3">₹{row.interest.toLocaleString('en-IN')}</td>
-                        <td className="py-2 px-3">₹{row.closing.toLocaleString('en-IN')}</td>
-                        <td className="py-2 px-3 text-center font-sans">
+                        <td className="py-2 px-4">₹{row.interest.toLocaleString('en-IN')}</td>
+                        <td className="py-2 px-4">₹{row.closing.toLocaleString('en-IN')}</td>
+                        <td className="py-2 px-4 text-center font-sans">
                           <span
                             className={`px-1.5 py-0.5 rounded text-3xs font-bold ${
                               row.status === 'Paid'
@@ -4180,7 +4180,7 @@ export default function SettingsPage() {
       {/* 2. Pay EMI Modal */}
       {payingLoan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-card-lg relative">
             <h3 className="text-lg font-bold text-foreground">Record EMI Payment</h3>
             <p className="text-xs text-muted-foreground -mt-2">
               Logging transaction for {payingLoan.name}
@@ -4195,7 +4195,7 @@ export default function SettingsPage() {
                   value={payEmiAccountId}
                   onChange={(e) => setPayEmiAccountId(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                 >
                   <option value="">Select payment source...</option>
                   {accounts
@@ -4218,7 +4218,7 @@ export default function SettingsPage() {
                     value={payEmiAmount}
                     onChange={(e) => setPayEmiAmount(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary font-mono transition"
+                    className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary font-mono transition"
                   />
                 </div>
                 <div>
@@ -4230,7 +4230,7 @@ export default function SettingsPage() {
                     value={payEmiDate}
                     onChange={(e) => setPayEmiDate(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                    className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                   />
                 </div>
               </div>
@@ -4242,7 +4242,7 @@ export default function SettingsPage() {
                 const interestComp = Math.min(accrued, amt);
                 const principalComp = Math.max(0, amt - interestComp);
                 return (
-                  <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-xl p-3 space-y-2 text-2xs">
+                  <div className="bg-card/40 border border-border/30 rounded-xl p-4 space-y-2 text-2xs">
                     <span className="font-bold text-muted-foreground uppercase tracking-wider block">
                       Repayment Breakdown Summary
                     </span>
@@ -4270,7 +4270,7 @@ export default function SettingsPage() {
                 );
               })()}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-4 pt-2">
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-[#10b981] hover:bg-[#10b981]/90 text-white text-xs font-semibold transition shadow-lg shadow-[#10b981]/10"
@@ -4293,7 +4293,7 @@ export default function SettingsPage() {
       {/* 3. Make Extra Payment Modal */}
       {prepayingLoan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full space-y-4 shadow-card-lg relative">
             <h3 className="text-lg font-bold text-foreground">Make Extra Payment (Prepayment)</h3>
             <p className="text-xs text-muted-foreground -mt-2">
               Log prepayment to reduce outstanding principal of {prepayingLoan.name}
@@ -4308,7 +4308,7 @@ export default function SettingsPage() {
                   value={prepayAccountId}
                   onChange={(e) => setPrepayAccountId(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                 >
                   <option value="">Select payment source...</option>
                   {accounts
@@ -4331,7 +4331,7 @@ export default function SettingsPage() {
                     value={prepayAmount}
                     onChange={(e) => setPrepayAmount(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary font-mono transition"
+                    className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary font-mono transition"
                   />
                 </div>
                 <div>
@@ -4343,7 +4343,7 @@ export default function SettingsPage() {
                     value={prepayDate}
                     onChange={(e) => setPrepayDate(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                    className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                   />
                 </div>
               </div>
@@ -4355,7 +4355,7 @@ export default function SettingsPage() {
                 <select
                   value={prepayStrategy}
                   onChange={(e) => setPrepayStrategy(e.target.value as any)}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                 >
                   <option value="tenure">Keep EMI and Reduce Tenure (Default)</option>
                   <option value="emi">Reduce EMI and Keep Tenure</option>
@@ -4370,7 +4370,7 @@ export default function SettingsPage() {
                   type="text"
                   value={prepayNotes}
                   onChange={(e) => setPrepayNotes(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-[#0b0f1a] p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
+                  className="w-full rounded-xl border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition"
                 />
               </div>
 
@@ -4412,7 +4412,7 @@ export default function SettingsPage() {
                 }
 
                 return (
-                  <div className="bg-[#0b0f1a]/40 border border-border/30 rounded-xl p-3 space-y-2 text-2xs">
+                  <div className="bg-card/40 border border-border/30 rounded-xl p-4 space-y-2 text-2xs">
                     <span className="font-bold text-muted-foreground uppercase tracking-wider block">
                       Estimated Prepayment Impact
                     </span>
@@ -4431,7 +4431,7 @@ export default function SettingsPage() {
                 );
               })()}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-4 pt-2">
                 <button
                   type="submit"
                   className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold shadow-lg hover:bg-primary/95 transition-all"

@@ -75,19 +75,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#0a0f1e] items-center justify-center p-4 relative overflow-hidden">
+    <div className="flex min-h-screen bg-background items-center justify-center p-4 relative overflow-hidden">
       {/* Background glow effects */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md space-y-6 z-10">
         {/* Logo and Header */}
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-2xl shadow-xl shadow-cyan-950/20">
+          <div className="p-4 bg-primary/10 border border-primary/30 rounded-2xl shadow-card-lg ">
             <AppLogo size={42} />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white mt-4">
-            Wealth<span className="text-cyan-400">IQ</span>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground mt-4">
+            Wealth<span className="text-primary">IQ</span>
           </h1>
           <p className="text-xs text-slate-400 max-w-xs">
             Advanced Personal Finance Analytics &amp; Planning
@@ -95,10 +95,10 @@ export default function LoginPage() {
         </div>
 
         {/* Auth Box */}
-        <div className="bg-[#0f172a]/70 backdrop-blur-xl border border-border/80 rounded-2xl p-6 shadow-2xl space-y-5">
+        <div className="bg-card/70 backdrop-blur-xl border border-border/80 rounded-2xl p-6 shadow-card-lg space-y-6">
           {/* Mock Banner */}
           {isMockAuth && (
-            <div className="flex gap-2.5 items-start bg-cyan-950/20 border border-cyan-500/20 rounded-xl p-3 text-cyan-400 text-2xs leading-normal">
+            <div className="flex gap-2.5 items-start bg-primary/10 border border-primary/20 rounded-xl p-4 text-primary text-2xs leading-normal">
               <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold uppercase tracking-wider block mb-0.5">
@@ -118,12 +118,12 @@ export default function LoginPage() {
                 setPassword('');
               }}
               className={`flex-1 pb-3 text-sm font-semibold transition-all relative ${
-                !isSignUp ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                !isSignUp ? 'text-foreground' : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               Sign In
               {!isSignUp && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-500 rounded-full" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
               )}
             </button>
             <button
@@ -133,12 +133,12 @@ export default function LoginPage() {
                 setPassword('');
               }}
               className={`flex-1 pb-3 text-sm font-semibold transition-all relative ${
-                isSignUp ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                isSignUp ? 'text-foreground' : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               Register
               {isSignUp && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-500 rounded-full" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
               )}
             </button>
           </div>
@@ -159,7 +159,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={submitting}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-[#0a0f1e]/80 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-all font-medium"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background/80 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium"
                 />
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function LoginPage() {
               <label className="block text-3xs font-semibold text-slate-400 uppercase tracking-widest mb-1.5 flex justify-between items-center">
                 Password
                 {!isSignUp && (
-                  <span className="text-4xs text-cyan-500 hover:underline cursor-pointer normal-case font-semibold">
+                  <span className="text-4xs text-primary hover:underline cursor-pointer normal-case font-semibold">
                     Forgot Password?
                   </span>
                 )}
@@ -183,7 +183,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={submitting}
-                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-border bg-[#0a0f1e]/80 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-all font-medium"
+                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-border bg-background/80 text-sm text-slate-200 focus:outline-none focus:border-primary transition-all font-medium"
                 />
                 <button
                   type="button"
@@ -198,10 +198,10 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 rounded-xl bg-cyan-500 text-[#0a0f1e] hover:bg-cyan-400 font-bold text-sm flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-cyan-500/10 active:scale-[0.98] disabled:opacity-50 disabled:scale-100"
+              className="w-full py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-sm flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-primary/10 active:scale-[0.98] disabled:opacity-50 disabled:scale-100"
             >
               {submitting ? (
-                <div className="w-5 h-5 border-2 border-[#0a0f1e]/20 border-t-[#0a0f1e] rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />
               ) : (
                 <>
                   {isSignUp ? (

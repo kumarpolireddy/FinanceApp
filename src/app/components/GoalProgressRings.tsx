@@ -77,9 +77,9 @@ function GoalCard({ goal }: GoalCardProps) {
   const monthlyNeeded = months > 0 ? Math.ceil(remaining / months) : remaining;
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 hover:border-primary/30 transition-colors">
+    <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-4 hover:border-primary/30 transition-colors">
       {/* Ring + info row */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Ring with centered emoji */}
         <div className="relative flex-shrink-0" style={{ width: 72, height: 72 }}>
           <ProgressRing pct={pct} color={goal.color} size={72} strokeWidth={6} />
@@ -137,7 +137,7 @@ export default function GoalProgressRings() {
       : 0;
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className="bg-card border border-border rounded-2xl p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -164,7 +164,7 @@ export default function GoalProgressRings() {
           No goals yet. Add your first financial goal!
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {goals.map((goal) => (
             <GoalCard key={goal.id} goal={goal} />
           ))}

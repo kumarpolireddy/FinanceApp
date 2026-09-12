@@ -133,7 +133,7 @@ export default function ColumnMapper({
   return (
     <div className="space-y-4">
       {/* Auto-detect banner */}
-      <div className="flex items-center justify-between p-3.5 rounded-xl bg-primary/5 border border-primary/20">
+      <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
         <div className="flex items-center gap-2.5">
           <Wand2 size={16} className="text-primary" />
           <span className="text-sm font-medium text-foreground">
@@ -157,7 +157,7 @@ export default function ColumnMapper({
       )}
 
       {unmappedRequired.length > 0 && (
-        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-warning-subtle border border-warning-subtle">
+        <div className="flex items-start gap-2.5 p-4 rounded-lg bg-warning-subtle border border-warning-subtle">
           <AlertCircle size={14} className="text-warning flex-shrink-0 mt-0.5" />
           <p className="text-sm text-warning">
             Required fields not yet mapped:{' '}
@@ -212,14 +212,14 @@ export default function ColumnMapper({
                 <select
                   value={mapping.targetField}
                   onChange={(e) => onMappingChange(idx, e.target.value)}
-                  className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3 py-1.5 text-slate-200 appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors duration-150"
+                  className="w-full text-sm bg-card border border-border rounded-lg px-4 py-1.5 text-slate-200 appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors duration-150"
                   aria-label={`Map ${mapping.sourceColumn} to field`}
                 >
                   {TARGET_FIELDS.map((field) => (
                     <option
                       key={`field-${field.value}`}
                       value={field.value}
-                      className="bg-[#0b0f1a] text-slate-200"
+                      className="bg-card text-slate-200"
                     >
                       {field.label}
                       {field.required ? ' *' : ''}

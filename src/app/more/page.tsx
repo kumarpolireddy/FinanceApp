@@ -76,8 +76,8 @@ export default function MorePage() {
   };
 
   const MENU_ITEMS = [
-    { label: 'AI Advisor', icon: Sparkles, color: 'text-purple-400', path: '/ai-advisor' },
-    { label: 'Bills & Reminders', icon: Receipt, color: 'text-emerald-400', path: '/bills' },
+    { label: 'AI Advisor', icon: Sparkles, color: 'text-primary', path: '/ai-advisor' },
+    { label: 'Bills & Reminders', icon: Receipt, color: 'text-primary', path: '/bills' },
     { label: 'Split Expenses', icon: Users, color: 'text-primary', path: '/split-expenses' },
     { label: 'Recycle Bin', icon: Trash2, color: 'text-negative', action: () => { loadRecycled(); setSubView('recycle_bin'); } },
     { label: 'Trips', icon: Plane, color: 'text-primary', path: '/trips' },
@@ -126,7 +126,7 @@ export default function MorePage() {
                         item.action();
                       }
                     }}
-                    className="bg-secondary border border-border/60 hover:border-primary/40 rounded-lg p-3.5 flex flex-col items-center justify-center gap-2 transition active:scale-95 text-center cursor-pointer shadow-xs"
+                    className="bg-secondary border border-border/60 hover:border-primary/40 rounded-lg p-4 flex flex-col items-center justify-center gap-2 transition active:scale-95 text-center cursor-pointer shadow-xs"
                   >
                     <div className="w-10 h-10 bg-background/50 rounded-full flex items-center justify-center border border-border/40 shrink-0">
                       <Icon size={18} className={item.color} />
@@ -138,7 +138,7 @@ export default function MorePage() {
             </div>
 
             {/* Version Display */}
-            <div className="bg-secondary/40 border border-border/50 rounded-lg p-3 text-center space-y-0.5 text-2xs">
+            <div className="bg-secondary/40 border border-border/50 rounded-lg p-4 text-center space-y-0.5 text-2xs">
               <span className="font-extrabold text-foreground block">WealthIQ Pro v1.2.0</span>
               <p className="text-[10px] text-muted-foreground font-semibold">Ledger-focused local-first database client.</p>
             </div>
@@ -155,7 +155,7 @@ export default function MorePage() {
 
         {/* 3. Sub-view: JSON Backup & Restore */}
         {subView === 'backup' && (
-          <div className="bg-secondary border border-border rounded-lg p-5 space-y-4 shadow-md text-center animate-slide-up text-2xs">
+          <div className="bg-secondary border border-border rounded-lg p-6 space-y-4 shadow-md text-center animate-slide-up text-2xs">
             <h2 className="text-xs font-black uppercase text-foreground">Database Backup & Restore</h2>
             <p className="text-muted-foreground leading-relaxed font-semibold text-[10px]">
               Export a complete backup of all transaction history, accounts, categories, and goals. Import it on any device to restore your database.
@@ -258,7 +258,7 @@ export default function MorePage() {
               {recycledList.length > 0 && (
                 <button
                   onClick={handleEmptyBin}
-                  className="px-3 py-1.5 bg-negative/10 text-negative border border-negative/30 rounded-lg text-xs font-bold hover:bg-negative hover:text-negative-foreground transition shrink-0 flex items-center gap-1.5"
+                  className="px-4 py-1.5 bg-negative/10 text-negative border border-negative/30 rounded-lg text-xs font-bold hover:bg-negative hover:text-negative-foreground transition shrink-0 flex items-center gap-1.5"
                 >
                   <Trash2 size={14} /> Empty Bin
                 </button>
@@ -276,7 +276,7 @@ export default function MorePage() {
                 {recycledList.map((item) => (
                   <div 
                     key={item.id}
-                    className="bg-secondary border border-border/80 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs"
+                    className="bg-secondary border border-border/80 rounded-xl p-4 flex items-center justify-between gap-4 shadow-xs"
                   >
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-2">

@@ -130,7 +130,7 @@ export default function ImportProgress({ isRunning, onComplete, totalRows }: Imp
           return (
             <div
               key={step.id}
-              className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-300 ${
+              className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 ${
                 step.status === 'running'
                   ? 'bg-primary/5 border-primary/20'
                   : step.status === 'done'

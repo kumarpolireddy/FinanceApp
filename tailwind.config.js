@@ -58,8 +58,8 @@ module.exports = {
         '3xs': ['0.625rem', { lineHeight: '0.875rem' }],
       },
       boxShadow: {
-        'card': '0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)',
-        'card-lg': '0 4px 24px rgba(0,0,0,0.4)',
+        'card': '0 1px 2px rgba(15,23,42,0.03), 0 4px 16px rgba(15,23,42,0.04)',
+        'card-lg': '0 8px 32px rgba(15,23,42,0.08)',
         'glow-primary': '0 0 20px rgba(6, 182, 212, 0.15)',
         'glow-accent': '0 0 20px rgba(245, 158, 11, 0.15)',
       },

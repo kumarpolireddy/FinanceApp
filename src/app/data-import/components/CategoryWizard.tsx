@@ -41,7 +41,7 @@ export default function CategoryWizard({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-muted/20 border border-border gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-muted/20 border border-border gap-4">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <span className="text-muted-foreground">
             {mappings.length} source categories detected
@@ -68,12 +68,12 @@ export default function CategoryWizard({
               type="text"
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
-              className="text-xs bg-[#0b0f1a] border border-border rounded-lg px-2.5 py-1.5 text-slate-200 hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors duration-150 w-full sm:w-40"
+              className="text-xs bg-card border border-border rounded-lg px-2.5 py-1.5 text-slate-200 hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors duration-150 w-full sm:w-40"
               autoFocus
             />
             <button
               type="submit"
-              className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-all duration-150"
+              className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-all duration-150"
             >
               Add
             </button>
@@ -133,16 +133,16 @@ export default function CategoryWizard({
                   <select
                     value={mapping.selectedTarget}
                     onChange={(e) => onMappingChange(mapping.sourceCategory, e.target.value)}
-                    className="w-full text-sm bg-[#0b0f1a] border border-border rounded-lg px-3 py-1.5 text-slate-200 appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors duration-150"
+                    className="w-full text-sm bg-card border border-border rounded-lg px-4 py-1.5 text-slate-200 appearance-none cursor-pointer hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors duration-150"
                   >
-                    <option value="" className="bg-[#0b0f1a] text-slate-200">
+                    <option value="" className="bg-card text-slate-200">
                       — Select category —
                     </option>
                     {userCategories.map((cat) => (
                       <option
                         key={`wiq-cat-${cat}`}
                         value={cat}
-                        className="bg-[#0b0f1a] text-slate-200"
+                        className="bg-card text-slate-200"
                       >
                         {cat}
                       </option>
@@ -175,7 +175,7 @@ export default function CategoryWizard({
       </div>
 
       {allMapped && mappings.length > 0 && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-positive-subtle border border-positive-subtle">
+        <div className="flex items-center gap-2 p-4 rounded-lg bg-positive-subtle border border-positive-subtle">
           <Check size={14} className="text-positive" />
           <p className="text-sm text-positive font-medium">
             All categories mapped — ready to import

@@ -665,7 +665,7 @@ export default function SavingsTrendChartInner() {
               setDrillMonth(null);
               setDrillDate(null);
             }}
-            className="px-3 py-1.5 rounded-lg border border-border bg-[#0b0f1a] text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/25 transition shadow-sm"
+            className="px-4 py-1.5 rounded-lg border border-border bg-card text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/25 transition shadow-sm"
           >
             Reset to Monthly View
           </button>
@@ -673,7 +673,7 @@ export default function SavingsTrendChartInner() {
       </div>
 
       {/* Date & Subtitle Controls Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-t border-border/20 pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-t border-border/20 pt-3">
         {/* Left: Active Month Display */}
         <div className="text-xs font-bold text-foreground select-none uppercase tracking-wider py-1.5">
           📅 {MONTH_SHORT[selectedMonth]} {selectedYear}
@@ -687,7 +687,7 @@ export default function SavingsTrendChartInner() {
       </div>
 
       {/* Toggles Row */}
-      <div className="flex flex-col gap-3.5 mb-5 border-b border-border/40 pb-4">
+      <div className="flex flex-col gap-4 mb-5 border-b border-border/40 pb-4">
         {/* Trend Type Selector & Granularity Buttons Row */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex gap-1 bg-muted/30 border border-border/80 rounded-xl p-1 w-fit">
@@ -695,7 +695,7 @@ export default function SavingsTrendChartInner() {
               <button
                 key={type}
                 onClick={() => setTrendType(type)}
-                className={`text-xs font-bold px-3 py-1.5 rounded-lg capitalize transition-all ${
+                className={`text-xs font-bold px-4 py-1.5 rounded-lg capitalize transition-all ${
                   trendType === type
                     ? type === 'income'
                       ? 'bg-positive/20 text-positive shadow-sm'
@@ -720,7 +720,7 @@ export default function SavingsTrendChartInner() {
                 setDrillMonth(null);
                 setDrillDate(null);
               }}
-              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+              className={`text-xs font-bold px-4 py-1.5 rounded-lg transition-all ${
                 granularity === 'monthly'
                   ? 'bg-primary/20 text-primary shadow-xs border border-primary/30'
                   : 'text-muted-foreground hover:text-foreground'
@@ -781,7 +781,7 @@ export default function SavingsTrendChartInner() {
                 setShowCurrent(!active);
                 setShowPrevious(!active);
               }}
-              className="text-3xs font-bold px-1.5 py-0.5 rounded border border-border/65 bg-[#0b0f1a] text-muted-foreground hover:text-foreground transition-all"
+              className="text-3xs font-bold px-1.5 py-0.5 rounded border border-border/65 bg-card text-muted-foreground hover:text-foreground transition-all"
             >
               {showCurrent || showPrevious ? 'Hide All' : 'Show All'}
             </button>
@@ -804,7 +804,7 @@ export default function SavingsTrendChartInner() {
 
       {/* Drill-down Breadcrumb Bar */}
       {(drillMonth !== null || drillDate !== null) && (
-        <div className="flex items-center gap-2 mb-4 bg-muted/20 border border-border/50 px-3 py-2 rounded-xl text-xs">
+        <div className="flex items-center gap-2 mb-4 bg-muted/20 border border-border/50 px-4 py-2 rounded-xl text-xs">
           <button
             onClick={() => {
               if (drillDate !== null) {
@@ -915,7 +915,7 @@ export default function SavingsTrendChartInner() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
+      <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
         <div className="text-center">
           <p className="text-sm font-bold tabular-nums text-positive">
             {fmt(trendType === 'balance' ? endingBalance : totalSaved)}
