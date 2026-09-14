@@ -99,7 +99,6 @@ const CATEGORY_BADGE: Record<string, string> = {
   Groceries: 'bg-green-500/10 text-green-400',
 };
 
-import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 export default function TopMerchantsTable({

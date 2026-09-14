@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChevronDown, Wand2, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 export interface ColumnMapping {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -12,11 +12,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import {
-  getMonthlyIncomeExpenseRange,
-  getDailyIncomeExpense,
-  getTransactions,
-} from '@/lib/storage';
+import { getTransactions } from '@/lib/storage';
 
 type RangeOption = '1M' | '3M' | '6M' | '1Y' | 'ALL';
 

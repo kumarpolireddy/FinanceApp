@@ -4,17 +4,7 @@ import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/AppLayout';
 import Modal from '@/components/ui/Modal';
 import { getGoals, saveGoals, type Goal } from '@/lib/storage';
-import {
-  Plus,
-  Trash2,
-  Edit3,
-  Target,
-  Calendar,
-  Award,
-  PiggyBank,
-  Sparkles,
-  TrendingUp,
-} from 'lucide-react';
+import { Plus, Trash2, Edit3, Target, Calendar, PiggyBank, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 const COLOR_PRESETS = [

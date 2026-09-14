@@ -1,9 +1,7 @@
 'use client';
 
-import React from 'react';
 import dynamic from 'next/dynamic';
 
-import { type DateRange } from './AnalyticsFilters';
 
 const SavingsTrendChartInner = dynamic(() => import('./SavingsTrendChartInner'), {
   ssr: false,

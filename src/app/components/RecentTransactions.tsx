@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import SplitTransactionLabel from '@/components/SplitTransactionLabel';
+
+import { useState, useEffect } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { ArrowRight } from 'lucide-react';
 import { getTransactions, getCategories, type Transaction, type Category } from '@/lib/storage';
@@ -120,10 +122,10 @@ export default function RecentTransactions({
             return (
               <div
                 key={txn.id}
-                className="flex items-center gap-4 px-2 py-2 rounded-lg row-hover-highlight hover:bg-muted/20 cursor-pointer transition-colors duration-150"
+                className="relative flex items-center gap-4 px-2 py-2 rounded-lg row-hover-highlight hover:bg-muted/20 cursor-pointer transition-colors duration-150"
               >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{txn.notes || txn.category || 'Transaction'}</p>
+                <div className={`flex-1 min-w-0 ${txn.isSplit ? "max-w-[33.333%] overflow-hidden" : ""}`}>
+                  <p className="text-sm font-medium text-foreground truncate">{txn.isSplit ? (txn.splitDetails?.name?.trim() || txn.description || 'Split expense') : (txn.notes || txn.category || 'Transaction')}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="text-2xs text-muted-foreground">{formatDate(txn.date)}</span>
                     <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground" />
@@ -138,7 +140,8 @@ export default function RecentTransactions({
                     </span>
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <SplitTransactionLabel transaction={txn} />
+                <div className={`text-right flex-shrink-0 ml-auto ${txn.isSplit ? "max-w-[33.333%] break-all" : ""}`}>
                   <p
                     className={`text-sm font-semibold tabular-nums ${
                       txn.type === 'income'

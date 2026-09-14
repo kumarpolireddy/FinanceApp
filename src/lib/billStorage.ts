@@ -7,7 +7,6 @@ import {
   saveTransaction,
   getAccounts,
   updateAccount,
-  getCategories,
   getTransactions,
   calculateCreditCardBalances,
 } from '@/lib/storage';

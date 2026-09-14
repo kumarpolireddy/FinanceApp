@@ -7,18 +7,11 @@ import {
   Plane,
   Plus,
   Calendar,
-  DollarSign,
   MapPin,
-  TrendingUp,
-  Clock,
-  CheckCircle2,
   Play,
   StopCircle,
   Edit2,
   Trash2,
-  Tag,
-  ArrowUpRight,
-  Sparkles,
   PieChart,
   ListFilter,
   Search,
@@ -35,7 +28,6 @@ import {
   getCategories,
   saveTransaction,
   type Trip,
-  type Transaction,
 } from '@/lib/storage';
 import { toast } from 'sonner';
 

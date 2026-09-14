@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, CheckCircle, Copy, Filter } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 

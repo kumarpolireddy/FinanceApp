@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Bell,
@@ -9,7 +9,6 @@ import {
   X,
   Volume2,
   VolumeX,
-  AlertTriangle,
   PlusCircle,
   CreditCard,
   Landmark,

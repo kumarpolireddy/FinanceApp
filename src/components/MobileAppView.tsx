@@ -1,40 +1,37 @@
 'use client';
 
+import SplitTransactionLabel from '@/components/SplitTransactionLabel';
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { 
-  Calendar as CalendarIcon, 
-  List, 
-  Wallet, 
-  Menu, 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronDown, 
-  Plus, 
-  Trash2, 
-  Edit3, 
-  Settings as SettingsIcon, 
-  Globe, 
-  Download, 
-  Upload, 
+import {
+  Calendar as CalendarIcon,
+  List,
+  Wallet,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Settings as SettingsIcon,
+  Globe,
+  Download,
+  Upload,
   HelpCircle,
   X,
-  ArrowDownLeft,
-  ArrowUpRight,
-  TrendingUp,
   Plane,
   ArrowLeft,
   Camera,
   Check,
-  RotateCcw
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { 
-  getTransactions, 
-  getAccounts, 
-  getCategories, 
-  saveTransaction, 
-  updateTransaction, 
+import {
+  getTransactions,
+  getAccounts,
+  getCategories,
+  saveTransaction,
+  updateTransaction,
   deleteTransaction,
   getActiveTrip,
   setActiveTrip,
@@ -50,7 +47,6 @@ import {
   type Account,
   type Category,
   type Trip,
-  type RecycledTransaction
 } from '@/lib/storage';
 import PCManagerComponent from './PCManager';
 
@@ -768,7 +764,7 @@ export default function MobileAppView() {
                                 onMouseUp={handleTouchEndOrCancel}
                                 onMouseLeave={handleTouchEndOrCancel}
                                 onClick={() => handleTxnClick(tx)}
-                                className={`flex justify-between items-center p-4 transition cursor-pointer ${
+                                className={`relative flex justify-between items-center p-4 transition cursor-pointer ${
                                   isSelected
                                     ? 'bg-primary/20 border-l-4 border-l-primary'
                                     : isTrip
@@ -790,14 +786,9 @@ export default function MobileAppView() {
                                 )}
 
                                 {/* Left: Notes / Category */}
-                                <div className="space-y-0.5 min-w-0 flex-1 pr-2">
+                                <div className={`space-y-0.5 min-w-0 flex-1 pr-2 ${tx.isSplit ? "max-w-[33.333%] overflow-hidden" : ""}`}>
                                   <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-xs font-semibold text-foreground truncate">{tx.notes || tx.category}</span>
-                                    {tx.isSplit && (
-                                      <span className="text-4xs bg-primary/20 text-primary px-1.5 py-0.5 rounded font-normal uppercase shrink-0 max-w-[140px] truncate">
-                                        Split{tx.splitDetails?.members ? `: ${tx.splitDetails.members.map(m => m.name).filter(Boolean).join(', ')}` : ''}
-                                      </span>
-                                    )}
+                                    <span className="text-xs font-semibold text-foreground truncate">{tx.isSplit ? (tx.splitDetails?.name?.trim() || tx.description || 'Split expense') : (tx.notes || tx.category)}</span>
                                     {!isTransfer && (
                                       <span className="text-4xs bg-card border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
                                         {tx.category}
@@ -810,7 +801,7 @@ export default function MobileAppView() {
                                 </div>
 
                                 {/* Middle: Trip Name (Clean text, no box, show ONLY for earliest trip transaction) */}
-                                {isTrip && isFirstTripStartTxn && (
+                                {isTrip && isFirstTripStartTxn && !(tx.isSplit) && (
                                   <div className="px-2 shrink-0 text-center">
                                     <span 
                                       className="text-xs font-bold max-w-[90px] truncate block"
@@ -821,8 +812,9 @@ export default function MobileAppView() {
                                   </div>
                                 )}
 
+                                <SplitTransactionLabel transaction={tx} />
                                 {/* Right: Amount */}
-                                <span className={`text-xs font-bold tabular-nums flex-shrink-0 ${
+                                <span className={`text-xs font-bold tabular-nums flex-shrink-0 ${tx.isSplit ? "max-w-[33.333%] break-all text-right" : ""} ${
                                   tx.type === 'income' ? 'text-positive' : tx.type === 'expense' ? 'text-negative' : 'text-muted-foreground'
                                 }`}>
                                   {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : '⇄'}
@@ -1029,7 +1021,7 @@ export default function MobileAppView() {
                         >
                           <div className="min-w-0 pr-2">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-semibold text-foreground truncate">{tx.notes || tx.category}</span>
+                              <span className="text-xs font-semibold text-foreground truncate">{tx.isSplit ? (tx.splitDetails?.name?.trim() || tx.description || 'Split expense') : (tx.notes || tx.category)}</span>
                               <span className="text-4xs bg-card border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">
                                 {tx.category}
                               </span>
@@ -1333,7 +1325,7 @@ export default function MobileAppView() {
                         >
                           <div className="space-y-0.5 min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-foreground truncate">{item.notes || item.category}</span>
+                              <span className="text-xs font-bold text-foreground truncate">{item.isSplit ? (item.splitDetails?.name?.trim() || item.description || 'Split expense') : (item.notes || item.category)}</span>
                               <span className="text-4xs bg-muted text-muted-foreground px-1 py-0.5 rounded font-medium">{item.category}</span>
                             </div>
                             <span className="text-4xs text-muted-foreground block">

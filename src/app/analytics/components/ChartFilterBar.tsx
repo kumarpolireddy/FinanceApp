@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { getAccounts, type Account, type Transaction } from '@/lib/storage';
 import { type DateRange, DATE_RANGES } from './AnalyticsFilters';

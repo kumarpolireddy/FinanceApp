@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 import {

@@ -1,6 +1,7 @@
 'use client';
 
 import { createLocalId } from './ids';
+import { readStoredJson } from './browserStorage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -288,13 +289,7 @@ export function getIncomeCategories(): string[] {
 // ── Split Expenses CRUD ───────────────────────────────────────────────────────
 
 export function getSplitExpenses(): SplitDetails[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(KEYS.SPLIT_EXPENSES);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return readStoredJson(KEYS.SPLIT_EXPENSES, []);
 }
 
 export function saveSplitExpenses(splits: SplitDetails[]): void {
@@ -324,13 +319,7 @@ export function deleteSplitExpense(transactionId: string): void {
 }
 
 export function getSplitPayments(): SplitPaymentRecord[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(KEYS.SPLIT_PAYMENTS);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return readStoredJson(KEYS.SPLIT_PAYMENTS, []);
 }
 
 export function saveSplitPayments(payments: SplitPaymentRecord[]): void {
@@ -632,13 +621,7 @@ export interface RecycledTransaction extends Transaction {
 }
 
 export function getRecycledTransactions(): RecycledTransaction[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(KEYS.RECYCLE_BIN);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return readStoredJson(KEYS.RECYCLE_BIN, []);
 }
 
 export function saveRecycledTransactions(items: RecycledTransaction[]): void {
@@ -731,13 +714,7 @@ export function updateTransaction(id: string, updates: Partial<Transaction>): vo
 // ── Trips CRUD & Management ──────────────────────────────────────────────────
 
 export function getTrips(): Trip[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(KEYS.TRIPS);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return readStoredJson(KEYS.TRIPS, []);
 }
 
 export function saveTrips(trips: Trip[]): void {
@@ -1722,13 +1699,7 @@ export interface Repayment {
 }
 
 export function getRepayments(): Repayment[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem('wealthiq_repayments');
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return readStoredJson('wealthiq_repayments', []);
 }
 
 export function saveRepayments(repayments: Repayment[]): void {

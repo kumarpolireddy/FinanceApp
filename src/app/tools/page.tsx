@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AppLayout from '@/components/AppLayout';
 import MetricCard from '@/components/ui/MetricCard';
 import {
   Calendar,
-  Percent,
   Coins,
   Calculator,
   Info,

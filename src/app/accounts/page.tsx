@@ -4,7 +4,18 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import { getAccounts, type Account, addAccount, updateAccount, getTransactions, type Transaction, calculateCreditCardBalances } from '@/lib/storage';
-import { Landmark, Wallet, CreditCard, ShieldAlert, ChevronDown, ChevronRight, Eye, EyeOff, Plus, GripVertical, Pencil } from 'lucide-react';
+import {
+  Landmark,
+  Wallet,
+  CreditCard,
+  ShieldAlert,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  Plus,
+  GripVertical,
+  Pencil,
+} from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
 

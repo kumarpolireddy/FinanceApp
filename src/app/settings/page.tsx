@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import AppLayout from '@/components/AppLayout';
+import GeminiSettings from '@/components/GeminiSettings';
 import {
   getAccounts,
   addAccount,
@@ -23,21 +24,11 @@ import {
 } from '@/lib/storage';
 import { toast } from 'sonner';
 import Modal from '@/components/ui/Modal';
-import {
-  Edit2,
-  Trash2,
-  Archive,
-  Eye,
-  EyeOff,
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  ChevronRight,
-  ChevronDown,
-} from 'lucide-react';
+import { Edit2, Trash2, Archive, Eye, EyeOff, Plus, ChevronRight, ChevronDown } from 'lucide-react';
 import { CategorySettingsInner } from '@/app/categories/components/CategorySettingsInner';
 import {
   calculateNewEMI,
+  calculateLoanPreview,
   calculateRemainingTenure,
   getNextEmiDateStr,
 } from '@/lib/loanCalculations';
@@ -93,8 +84,16 @@ const EMPTY_FORM = {
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<
-    'accounts' | 'categories' | 'general' | 'system' | 'budgets'
+    'accounts' | 'categories' | 'general' | 'system' | 'budgets' | 'ai'
   >('accounts');
+  useEffect(() => {
+    const navigateToAI = () => {
+      if (window.location.hash === '#ai-assistant') setActiveTab('ai');
+    };
+    navigateToAI();
+    window.addEventListener('hashchange', navigateToAI);
+    return () => window.removeEventListener('hashchange', navigateToAI);
+  }, []);
   const [currency, setCurrency] = useState('INR');
   const [theme, setTheme] = useState('light');
   const [tripBgColor, setTripBgColorState] = useState('#f59e0b');
@@ -175,42 +174,7 @@ export default function SettingsPage() {
   const [deleteOption, setDeleteOption] = useState<1 | 2 | 3>(3); // 1 = Cascade Delete, 2 = Move, 3 = Archive
   const [deleteTargetAccountForMove, setDeleteTargetAccountForMove] = useState('');
 
-  const emiPreview = useMemo(() => {
-    if (accountForm.type !== 'loan') return null;
-    const p = parseFloat(accountForm.originalAmount) || 0;
-    const r = parseFloat(accountForm.interestRate) || 0;
-    const tenureMonthsVal =
-      accountForm.tenureType === 'years'
-        ? parseFloat(accountForm.tenureYears) * 12
-        : parseFloat(accountForm.tenureMonths);
-    const n = tenureMonthsVal || 0;
-
-    if (p <= 0 || r <= 0 || n <= 0) return null;
-
-    const monthlyRate = r / 12 / 100;
-    let calculatedEmi = 0;
-    if (accountForm.interestType === 'flat') {
-      calculatedEmi = (p + p * (r / 100) * (n / 12)) / n;
-    } else {
-      // Reducing balance (default)
-      calculatedEmi =
-        (p * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
-    }
-
-    const totalPayment = calculatedEmi * n;
-    const totalInterest = totalPayment - p;
-
-    const startStr = accountForm.startDate || new Date().toISOString().slice(0, 10);
-    const start = new Date(startStr);
-    const end = new Date(start.getFullYear(), start.getMonth() + n, start.getDate());
-
-    return {
-      emi: Math.ceil(calculatedEmi),
-      totalPayment: Math.ceil(totalPayment),
-      totalInterest: Math.ceil(totalInterest),
-      endDate: end.toLocaleDateString('en-IN', { year: 'numeric', month: 'short' }),
-    };
-  }, [
+  const emiPreview = useMemo(() => calculateLoanPreview(accountForm), [
     accountForm.originalAmount,
     accountForm.interestRate,
     accountForm.tenureMonths,
@@ -1116,7 +1080,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="grid grid-cols-5 bg-secondary p-1 border border-border rounded-xl gap-1">
+        <div className="grid grid-cols-3 sm:grid-cols-6 bg-secondary p-1 border border-border rounded-xl gap-1">
           <button
             onClick={() => setActiveTab('accounts')}
             className={`min-w-0 text-center py-2.5 px-1 rounded-lg text-3xs font-bold uppercase tracking-wide transition ${
@@ -1167,7 +1131,13 @@ export default function SettingsPage() {
           >
             System
           </button>
+          <button
+            onClick={() => setActiveTab('ai')}
+            className={`min-w-0 text-center py-2.5 px-1 rounded-lg text-3xs font-bold uppercase tracking-wide transition ${activeTab === 'ai' ? 'bg-primary text-primary-foreground font-black' : 'text-muted-foreground hover:text-foreground'}`}
+          >AI Assistant</button>
         </div>
+
+        {activeTab === 'ai' && <GeminiSettings />}
 
         {/* Tab 1: Manage Accounts */}
         {activeTab === 'accounts' && (

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BarChart3, Download, Share2 } from 'lucide-react';
 
 export default function AnalyticsHeader() {

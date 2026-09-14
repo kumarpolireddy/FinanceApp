@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, Loader2, AlertCircle, Database, Cpu, Shield } from 'lucide-react';
-import Icon from '@/components/ui/AppIcon';
 
 interface ImportStep {
   id: string;

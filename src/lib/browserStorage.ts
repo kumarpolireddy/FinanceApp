@@ -9,6 +9,18 @@ export function safeGetItem(key: string): string | null {
   }
 }
 
+/** Read JSON with the same fallback for missing, inaccessible, or malformed data. */
+export function readStoredJson<T>(key: string, fallback: T): T {
+  const data = safeGetItem(key);
+  if (!data) return fallback;
+
+  try {
+    return JSON.parse(data) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 export function safeSetItem(key: string, value: string): void {
   if (typeof window === 'undefined') return;
 

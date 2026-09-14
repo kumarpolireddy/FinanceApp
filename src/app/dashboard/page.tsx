@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import DashboardKPIs from '../components/DashboardKPIs';
 import IncomeExpenseChart from '../components/IncomeExpenseChart';

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import AppLayout from '@/components/AppLayout';
+import { calculateSplit } from '@/lib/splitCalculation';
 import { createLocalId } from '@/lib/ids';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
@@ -16,25 +16,8 @@ import {
   type Transaction,
   type Account,
   type Category,
-  type SplitDetails,
-  type SplitMember,
 } from '@/lib/storage';
-import {
-  ArrowLeftRight,
-  Calendar,
-  ChevronDown,
-  Landmark,
-  PlusCircle,
-  ReceiptText,
-  TrendingDown,
-  TrendingUp,
-  ArrowLeft,
-  Camera,
-  Check,
-  Delete,
-  Users,
-  X,
-} from 'lucide-react';
+import { PlusCircle, ArrowLeft, Check, X } from 'lucide-react';
 
 function cleanString(val: unknown): string {
   if (val === undefined || val === null) return '';
@@ -42,7 +25,7 @@ function cleanString(val: unknown): string {
   return str.replace(/[^\w\s\-&/().,]/g, '').trim();
 }
 
-type TxnType = 'expense' | 'income' | 'transfer';
+type TxnType = 'expense' | 'income' | 'transfer' | 'split';
 
 function todayISO() {
   const d = new Date();
@@ -92,6 +75,10 @@ export default function AddExpensePage() {
   const router = useRouter();
   const [type, setType] = useState<TxnType>('expense');
   const [amount, setAmount] = useState('');
+  const [splitMethod, setSplitMethod] = useState<'equal' | 'custom'>('equal');
+  const [splitMembers, setSplitMembers] = useState([{ name: '', share: '' }]);
+  const [myShare, setMyShare] = useState('');
+  const split = calculateSplit(amount, splitMethod, splitMembers, myShare);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [subcategory, setSubcategory] = useState('');
@@ -100,6 +87,7 @@ export default function AddExpensePage() {
   const [toAccount, setToAccount] = useState('');
   const [date, setDate] = useState(todayDateTimeISO());
   const [notes, setNotes] = useState('');
+  const [splitName, setSplitName] = useState('');
   const [saved, setSaved] = useState(false);
   const [todayTxns, setTodayTxns] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -195,7 +183,7 @@ export default function AddExpensePage() {
 
     const params = new URLSearchParams(window.location.search);
     const urlType = params.get('type') as TxnType | null;
-    if (urlType === 'transfer' || urlType === 'income' || urlType === 'expense') {
+    if (urlType === 'split' || urlType === 'transfer' || urlType === 'income' || urlType === 'expense') {
       setType(urlType);
     }
   }, []);
@@ -208,7 +196,7 @@ export default function AddExpensePage() {
   }
 
   const categories = useMemo(() => {
-    return categoriesMeta.filter((c) => c.type === type).map((c) => c.name);
+    return categoriesMeta.filter((c) => c.type === (type === 'split' ? 'expense' : type)).map((c) => c.name);
   }, [categoriesMeta, type]);
 
   const activeCategorySubcategories = useMemo(() => {
@@ -239,7 +227,7 @@ export default function AddExpensePage() {
 
   function handleSubmit(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    if (!amount || Number(amount) <= 0) {
+    if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
       toast.error('Please enter a valid amount.');
       return;
     }
@@ -260,22 +248,43 @@ export default function AddExpensePage() {
       return;
     }
 
+    if (type === 'split' && split.error) {
+      toast.error(split.error);
+      return;
+    }
+
     saveTransaction({
       date,
-      description: description.trim() || (type === 'transfer' ? 'Transfer' : category || 'Expense'),
+      description:
+        (type === 'split' ? splitName.trim() : description.trim()) ||
+        (type === 'transfer' ? 'Transfer' : category || 'Expense'),
       category: type === 'transfer' ? 'Transfer' : category,
       subcategory: type === 'transfer' ? undefined : subcategory || undefined,
       account,
       toAccount: type === 'transfer' ? toAccount : undefined,
-      amount: parseFloat(amount),
-      type,
-      notes: notes.trim() || undefined,
+      amount: type === 'split' ? split.myShare : parseFloat(amount),
+      type: type === 'split' ? 'expense' : type,
+      ...(type === 'split' ? {
+        isSplit: true,
+        splitDetails: {
+          id: createLocalId('split', 4), transactionId: '',
+          name: splitName.trim() || undefined,
+          totalAmount: Math.round(Number(amount) * 100) / 100,
+          myShare: split.myShare, toReceive: split.toReceive,
+          received: 0, pending: split.toReceive, splitMethod,
+          members: split.members,
+          status: split.toReceive > 0 ? 'pending' as const : 'paid' as const,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        },
+      } : {}),
+      notes: type === 'split' ? undefined : notes.trim() || undefined,
     });
 
     setSaved(true);
     setAmount('');
     setDescription('');
     setNotes('');
+    setSplitName('');
     setCategory('');
     setSubcategory('');
     const dayOnly = date.slice(0, 10);
@@ -407,13 +416,15 @@ export default function AddExpensePage() {
       <div className="flex-1 overflow-y-auto w-full max-w-2xl mx-auto pb-12">
         <form onSubmit={handleSubmit} className="flex flex-col">
           {/* Transaction Type Selector */}
-          <div className="grid grid-cols-3 gap-2.5 px-6 mt-2">
-            {(['income', 'expense', 'transfer'] as const).map((t) => {
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 px-6 mt-2">
+            {(['income', 'expense', 'transfer', 'split'] as const).map((t) => {
               const isActive = type === t;
               let activeStyle = '';
               if (isActive) {
                 if (t === 'income') {
                   activeStyle = 'border border-[#22C55E] text-[#22C55E] bg-muted';
+                } else if (t === 'split') {
+                  activeStyle = 'border border-violet-400 text-violet-300 bg-muted';
                 } else if (t === 'expense') {
                   activeStyle = 'border border-[#EF4444] text-[#EF4444] bg-muted';
                 } else {
@@ -426,6 +437,7 @@ export default function AddExpensePage() {
               return (
                 <button
                   key={t}
+                  aria-pressed={isActive}
                   type="button"
                   onClick={() => {
                     setType(t);
@@ -462,7 +474,7 @@ export default function AddExpensePage() {
             {/* Amount Row */}
             <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
               <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal">
-                Amount
+                {type === 'split' ? 'Total paid' : 'Amount'}
               </span>
               <div className="flex-1 flex items-center text-[17px] text-[#F2F2F4] font-medium">
                 <span className="mr-1">₹</span>
@@ -609,13 +621,14 @@ export default function AddExpensePage() {
             {/* Note Row */}
             <div className="relative flex items-start py-4 border-b border-white/[0.08] px-6 min-h-[54px]">
               <span className="text-[15px] text-muted-foreground w-[110px] shrink-0 font-normal mt-0.5">
-                Note
+                {type === 'split' ? 'Split Name' : 'Note'}
               </span>
               <textarea
                 ref={noteInputRef}
-                value={notes}
+                aria-label={type === 'split' ? 'Split Name' : 'Note'}
+                value={type === 'split' ? splitName : notes}
                 enterKeyHint="next"
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => type === 'split' ? setSplitName(e.target.value) : setNotes(e.target.value)}
                 onFocus={() => {
                   setIsInputFocused(true);
                   setIsNoteFocused(true);
@@ -641,7 +654,51 @@ export default function AddExpensePage() {
             </div>
           </div>
 
-          {/* Description & Camera Section */}
+          {type === 'split' && (
+            <section aria-label="Split details" className="mx-6 mt-5 space-y-4">
+              <div className="flex gap-2">
+                {(['equal', 'custom'] as const).map((method) => (
+                  <button key={method} type="button" aria-pressed={splitMethod === method}
+                    onClick={() => setSplitMethod(method)}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm ${splitMethod === method ? 'border-violet-400 text-violet-300' : 'border-white/10 text-muted-foreground'}`}>
+                    {method === 'equal' ? 'Split equally' : 'Custom amounts'}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="own-share">You</label>
+                {splitMethod === 'custom' ? (
+                  <input id="own-share" aria-label="Your share" type="number" inputMode="decimal" min="0" step="0.01"
+                    value={myShare} onChange={(e) => setMyShare(e.target.value)} placeholder="Your share"
+                    className="w-28 rounded-lg bg-muted border border-white/10 px-3 py-2" />
+                ) : <span>₹{Number.isFinite(split.myShare) ? split.myShare.toFixed(2) : '0.00'}</span>}
+              </div>
+              {splitMembers.map((member, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input aria-label={`Person ${index + 1} name`} value={member.name} placeholder="Person's name"
+                    onChange={(e) => setSplitMembers((members) => members.map((item, i) => i === index ? { ...item, name: e.target.value } : item))}
+                    className="min-w-0 flex-1 rounded-lg bg-muted border border-white/10 px-3 py-2" />
+                  {splitMethod === 'custom' ? (
+                    <input aria-label={`Person ${index + 1} share`} type="number" inputMode="decimal" min="0" step="0.01"
+                      value={member.share} placeholder="Share"
+                      onChange={(e) => setSplitMembers((members) => members.map((item, i) => i === index ? { ...item, share: e.target.value } : item))}
+                      className="w-24 rounded-lg bg-muted border border-white/10 px-3 py-2" />
+                  ) : <span className="text-sm">₹{Number.isFinite(split.members[index]?.share) ? split.members[index].share.toFixed(2) : '0.00'}</span>}
+                  <button type="button" aria-label={`Remove person ${index + 1}`} disabled={splitMembers.length === 1}
+                    onClick={() => setSplitMembers((members) => members.filter((_, i) => i !== index))}
+                    className="p-2 rounded-lg hover:bg-muted disabled:opacity-30"><X size={18} /></button>
+                </div>
+              ))}
+              <button type="button" onClick={() => setSplitMembers((members) => [...members, { name: '', share: '' }])}
+                className="text-violet-300 text-sm font-medium py-2">+ Add person</button>
+              <div aria-live="polite" className="border-t border-white/10 pt-3 text-sm space-y-2">
+                <p>Your share: ₹{Number.isFinite(split.myShare) ? split.myShare.toFixed(2) : '0.00'} · To receive: ₹{Number.isFinite(split.toReceive) ? split.toReceive.toFixed(2) : '0.00'}</p>
+                {split.error && <p className="text-amber-300">{split.error}</p>}
+              </div>
+            </section>
+          )}
+
+          {/* Description Section */}
           <div className="flex flex-col mt-5">
             <div className="relative flex items-center h-[54px] border-b border-white/[0.08] px-6">
               <input
@@ -652,11 +709,7 @@ export default function AddExpensePage() {
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
                 placeholder="Description"
-                className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0 pr-8"
-              />
-              <Camera
-                size={20}
-                className="text-muted-foreground hover:text-[#F2F2F4] cursor-pointer shrink-0 absolute right-5"
+                className="bg-transparent border-none text-left text-[17px] text-[#F2F2F4] font-medium focus:outline-none w-full p-0"
               />
             </div>
           </div>
@@ -679,7 +732,7 @@ export default function AddExpensePage() {
                 className="flex-1 h-12 rounded-[10px] bg-primary text-primary-foreground font-black text-sm uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Check size={18} />
-                <span>Save Transaction</span>
+                <span>{type === 'split' ? 'Save Split' : 'Save Transaction'}</span>
               </button>
             </div>
 
@@ -739,15 +792,14 @@ export default function AddExpensePage() {
                           )}
                         </tbody>
                       </table>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddCategoryOpen(true)}
+                        className="flex w-full items-center justify-center border-t border-dashed border-white/20 bg-white/[0.04] px-2.5 py-2.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.08]"
+                      >
+                        <span>Add Category</span>
+                      </button>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsAddCategoryOpen(true)}
-                      className="flex w-full items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/[0.04] px-2.5 py-2.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.08]"
-                    >
-                      <span>Add Category</span>
-                    </button>
                   </div>
                 )}
 

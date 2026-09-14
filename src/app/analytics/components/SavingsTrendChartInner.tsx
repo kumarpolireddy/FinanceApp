@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -11,16 +11,8 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import {
-  getSavingsYoY,
-  getSavingsMoM,
-  getAccounts,
-  getBalanceAtDate,
-  getTransactions,
-  type Account,
-} from '@/lib/storage';
+import { getAccounts, getBalanceAtDate, getTransactions, type Account } from '@/lib/storage';
 import { type DateRange } from './AnalyticsFilters';
-import { ChevronDown } from 'lucide-react';
 import ChartFilterBar from './ChartFilterBar';
 
 const MONTH_SHORT = [

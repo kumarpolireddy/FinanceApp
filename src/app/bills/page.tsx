@@ -7,7 +7,6 @@ import {
   CalendarDays,
   Plus,
   Clock,
-  CheckCircle2,
   AlertCircle,
   CreditCard,
   Landmark,
@@ -25,10 +24,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Filter,
-  DollarSign,
-  Wallet,
-  Bell,
   Settings,
   History,
   Check,
@@ -40,9 +35,7 @@ import {
   BillSettings,
   BillType,
   BillRecurrence,
-  BillStatus,
   getStoredBills,
-  saveStoredBills,
   addBill,
   updateBill,
   deleteBill,
@@ -56,7 +49,7 @@ import {
   formatLocalDate,
 } from '@/lib/billStorage';
 import { scheduleBillNotifications, cancelBillNotifications, requestLocalNotificationPermissions } from '@/lib/billNotification';
-import { getAccounts, getCategories, calculateCreditCardBalances } from '@/lib/storage';
+import { getAccounts } from '@/lib/storage';
 
 export default function BillsPage() {
   const [bills, setBills] = useState<BillPaymentReminder[]>([]);

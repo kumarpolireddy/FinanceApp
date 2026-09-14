@@ -1,9 +1,12 @@
 'use client';
 
+import { matchesTransactionFilters, getChartScale, getChartPlotData } from './transactionHelpers';
+
+import SplitTransactionLabel from '@/components/SplitTransactionLabel';
+
 import React, { useEffect, useMemo, useState, useRef, Suspense, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -13,9 +16,7 @@ import {
   ArrowLeft,
   Trash2,
   Camera,
-  Plane,
   Check,
-  Users,
   ReceiptText,
   X,
 } from 'lucide-react';
@@ -37,17 +38,13 @@ import {
   getTransactionImpact,
   getTransactionAccountAmount,
   getActiveTrip,
-  setActiveTrip,
   addTrip,
-  updateTrip,
-  getTripSummary,
   getTripBgColor,
   getTrips,
   type Transaction,
   type Account,
   type Category,
   type Repayment,
-  type Trip,
 } from '@/lib/storage';
 
 const MONTH_NAMES = [
@@ -129,12 +126,6 @@ function TransactionsPageContent() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [showCategoryIcons, setShowCategoryIcons] = useState(false);
-
-  const categoryLookup = useMemo(
-    () => new Map(categories.map((category) => [category.name, category])),
-    [categories]
-  );
 
   const [typeFilter, setTypeFilter] = useState<
     'all' | 'income' | 'expense' | 'transfer' | 'cash-in' | 'cash-out'
@@ -151,8 +142,6 @@ function TransactionsPageContent() {
   const [deletingTxn, setDeletingTxn] = useState<Transaction | null>(null);
 
   // Sorting state
-  const [sortField, setSortField] = useState<'date' | 'amount' | 'category' | 'account'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Editing transaction state
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -170,44 +159,10 @@ function TransactionsPageContent() {
   } | null>(null);
 
   // Trip Mode States & Handlers
-  const [activeTrip, setActiveTripState] = useState<Trip | null>(null);
   const [isStartTripModalOpen, setIsStartTripModalOpen] = useState(false);
-  const [isActiveTripModalOpen, setIsActiveTripModalOpen] = useState(false);
   const [newTripName, setNewTripName] = useState('');
   const [newTripDestination, setNewTripDestination] = useState('');
   const [newTripBudget, setNewTripBudget] = useState('');
-
-  const refreshActiveTrip = useCallback(() => {
-    setActiveTripState(getActiveTrip());
-  }, []);
-
-  useEffect(() => {
-    refreshActiveTrip();
-  }, [refreshActiveTrip]);
-
-  useEffect(() => {
-    const updateCategoryIconVisibility = () => {
-      setShowCategoryIcons(localStorage.getItem('wealthiq_show_category_icons') === 'true');
-    };
-    updateCategoryIconVisibility();
-    window.addEventListener('storage', updateCategoryIconVisibility);
-    return () => window.removeEventListener('storage', updateCategoryIconVisibility);
-  }, []);
-
-  const handleTripButtonClick = () => {
-    const current = getActiveTrip();
-    if (current) {
-      updateTrip(current.id, { status: 'completed' });
-      setActiveTrip(null);
-      refreshActiveTrip();
-      toast.success(`Trip "${current.name}" completed!`);
-    } else {
-      setNewTripName('');
-      setNewTripDestination('');
-      setNewTripBudget('');
-      setIsStartTripModalOpen(true);
-    }
-  };
 
   const handleStartTripSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,7 +178,6 @@ function TransactionsPageContent() {
       status: 'active',
       icon: '✈️',
     });
-    refreshActiveTrip();
     setIsStartTripModalOpen(false);
     toast.success(`Trip "${created.name}" started`);
   };
@@ -238,7 +192,7 @@ function TransactionsPageContent() {
   });
   const [deletingRepayment, setDeletingRepayment] = useState<Repayment | null>(null);
 
-  const [showBalances, setShowBalances] = useState<boolean>(() => {
+  const [showBalances] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('wealthiq_show_balances') !== 'false';
     }
@@ -252,7 +206,6 @@ function TransactionsPageContent() {
   const [filterPanelMode, setFilterPanelMode] = useState<'search' | 'filters' | null>(null);
   const [showAccountChart, setShowAccountChart] = useState(false);
   const [accountChartView, setAccountChartView] = useState<'daily' | 'monthly'>('daily');
-  const [tripBgColor, setTripBgColorState] = useState('#f59e0b');
 
   const tripsMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -489,26 +442,6 @@ function TransactionsPageContent() {
     return accounts.find((a) => a.id === accountFilter) || null;
   }, [accounts, accountFilter]);
 
-  const handleOpenEditAccount = () => {
-    if (!activeAccount) return;
-    setEditAccName(activeAccount.name);
-    setEditAccBalance(String(activeAccount.balance));
-    setEditAccLimit(String(activeAccount.creditLimit || '100000'));
-    setEditAccDueDay(activeAccount.dueDate || '25');
-    setEditAccMinPayment(String(activeAccount.minPayment || '0'));
-    setEditAccBillingCycle(activeAccount.billingCycle || '4');
-    setEditAccNotifyDays(
-      String(
-        activeAccount.notificationDaysBefore !== undefined
-          ? activeAccount.notificationDaysBefore
-          : '3'
-      )
-    );
-    setEditAccNotes(activeAccount.notes || '');
-    setEditAccInterest(String(activeAccount.interestRate || '8.5'));
-    setIsEditAccountOpen(true);
-  };
-
   const handleSaveAccount = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeAccount) return;
@@ -720,6 +653,10 @@ function TransactionsPageContent() {
     setDestinationAccountFilter('all');
   };
 
+  const matchFilters = useCallback((transaction: Transaction) => matchesTransactionFilters(
+    transaction, { typeFilter, accountFilter, destinationAccountFilter, categoryFilter, search }, getAccountName
+  ), [typeFilter, accountFilter, destinationAccountFilter, categoryFilter, search, getAccountName]);
+
   const filtered = useMemo(() => {
     const today = new Date();
     return transactions
@@ -750,96 +687,17 @@ function TransactionsPageContent() {
         // Custom quick filter or fallback to url month selection
         return t.date.startsWith(monthKey);
       })
-      .filter((t) => {
-        if (typeFilter === 'all') return true;
-        if (typeFilter === 'cash-in') {
-          return t.type === 'income' || t.type === 'transfer';
-        }
-        if (typeFilter === 'cash-out') {
-          return t.type === 'expense' || t.type === 'transfer';
-        }
-        return t.type === typeFilter;
-      })
-      .filter((t) => {
-        if (typeFilter === 'transfer') {
-          const matchSource = accountFilter === 'all' || t.account === accountFilter;
-          const matchDest =
-            destinationAccountFilter === 'all' || t.toAccount === destinationAccountFilter;
-          return matchSource && matchDest;
-        }
-        if (typeFilter === 'cash-in') {
-          if (accountFilter === 'all') return true;
-          if (t.type === 'transfer') {
-            return t.toAccount === accountFilter;
-          }
-          return t.account === accountFilter;
-        }
-        if (typeFilter === 'cash-out') {
-          if (accountFilter === 'all') return true;
-          if (t.type === 'transfer') {
-            return t.account === accountFilter;
-          }
-          return t.account === accountFilter;
-        }
-        return (
-          accountFilter === 'all' || t.account === accountFilter || t.toAccount === accountFilter
-        );
-      })
-      .filter((t) => {
-        if (typeFilter === 'transfer') {
-          return true;
-        }
-        return categoryFilter === 'all' || t.category === categoryFilter;
-      })
-      .filter((t) => {
-        if (search.trim() === '') return true;
-        const q = search.toLowerCase();
-        const accName = getAccountName(t.account).toLowerCase();
-        const toAccName = t.toAccount ? getAccountName(t.toAccount).toLowerCase() : '';
-        const note = (t.notes || '').toLowerCase();
-        return (
-          t.description.toLowerCase().includes(q) ||
-          (t.category || '').toLowerCase().includes(q) ||
-          accName.includes(q) ||
-          toAccName.includes(q) ||
-          note.includes(q)
-        );
-      })
+      .filter(matchFilters)
       .sort((a, b) => {
-        let valA: any = '';
-        let valB: any = '';
-
-        if (sortField === 'date') {
-          valA = a.date;
-          valB = b.date;
-        } else if (sortField === 'amount') {
-          valA = a.amount;
-          valB = b.amount;
-        } else if (sortField === 'category') {
-          valA = a.category || '';
-          valB = b.category || '';
-        } else if (sortField === 'account') {
-          valA = getAccountName(a.account);
-          valB = getAccountName(b.account);
-        }
-
-        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        if (a.date < b.date) return 1;
+        if (a.date > b.date) return -1;
         return (b.createdAt || '').localeCompare(a.createdAt || '');
       });
   }, [
     transactions,
     monthKey,
-    typeFilter,
-    accountFilter,
-    categoryFilter,
-    destinationAccountFilter,
-    search,
+    matchFilters,
     quickFilter,
-    sortField,
-    sortOrder,
-    accounts,
-    getAccountName,
   ]);
 
   const accountChartData = useMemo(() => {
@@ -939,33 +797,9 @@ function TransactionsPageContent() {
     return 'monthStr';
   }, [accountChartData]);
 
-  const accountChartScale = useMemo(() => {
-    const values = accountChartData.flatMap((item) =>
-      [item.income, item.expense, item.transfer].filter((value) => value > 0)
-    );
-    if (values.length < 2) return { logarithmic: false, minimum: 0 };
+  const accountChartScale = useMemo(() => getChartScale(accountChartData), [accountChartData]);
 
-    const smallest = Math.min(...values);
-    const largest = Math.max(...values);
-    return {
-      logarithmic: largest / smallest >= 100,
-      minimum: smallest,
-    };
-  }, [accountChartData]);
-
-  const accountChartPlotData = useMemo(() => {
-    if (!accountChartScale.logarithmic) return accountChartData;
-
-    return accountChartData.map((item) => ({
-      ...item,
-      incomeRaw: item.income,
-      expenseRaw: item.expense,
-      transferRaw: item.transfer,
-      income: Math.log10(item.income + 1),
-      expense: Math.log10(item.expense + 1),
-      transfer: Math.log10(item.transfer + 1),
-    }));
-  }, [accountChartData, accountChartScale.logarithmic]);
+  const accountChartPlotData = useMemo(() => getChartPlotData<(typeof accountChartData)[number]>(accountChartData, accountChartScale.logarithmic), [accountChartData, accountChartScale.logarithmic]);
 
   const yearlyAccountChartData = useMemo(() => {
     if (accountFilter === 'all') return [];
@@ -994,28 +828,9 @@ function TransactionsPageContent() {
     return months;
   }, [transactions, accountFilter, selectedYear]);
 
-  const yearlyAccountChartScale = useMemo(() => {
-    const values = yearlyAccountChartData.flatMap((item) =>
-      [item.income, item.expense, item.transfer].filter((value) => value > 0)
-    );
-    if (values.length < 2) return { logarithmic: false };
+  const yearlyAccountChartScale = useMemo(() => getChartScale(yearlyAccountChartData), [yearlyAccountChartData]);
 
-    return { logarithmic: Math.max(...values) / Math.min(...values) >= 100 };
-  }, [yearlyAccountChartData]);
-
-  const yearlyAccountChartPlotData = useMemo(() => {
-    if (!yearlyAccountChartScale.logarithmic) return yearlyAccountChartData;
-
-    return yearlyAccountChartData.map((item) => ({
-      ...item,
-      incomeRaw: item.income,
-      expenseRaw: item.expense,
-      transferRaw: item.transfer,
-      income: Math.log10(item.income + 1),
-      expense: Math.log10(item.expense + 1),
-      transfer: Math.log10(item.transfer + 1),
-    }));
-  }, [yearlyAccountChartData, yearlyAccountChartScale.logarithmic]);
+  const yearlyAccountChartPlotData = useMemo(() => getChartPlotData(yearlyAccountChartData, yearlyAccountChartScale.logarithmic), [yearlyAccountChartData, yearlyAccountChartScale.logarithmic]);
 
   const totals = useMemo(() => {
     let income = 0;
@@ -1122,15 +937,6 @@ function TransactionsPageContent() {
     return cat?.subcategories || [];
   }, [categories, editForm]);
 
-  const currentCategoryObj = useMemo(() => {
-    if (!editForm || !categories || !editForm.category) return null;
-    return (
-      categories.find(
-        (c) => c && c.name && c.name.toLowerCase() === editForm.category.toLowerCase()
-      ) || null
-    );
-  }, [editForm, categories]);
-
   const currencySymbol = useMemo(() => {
     if (typeof window !== 'undefined') {
       const cur = localStorage.getItem('wealthiq_currency') || 'INR';
@@ -1141,20 +947,6 @@ function TransactionsPageContent() {
     }
     return '₹';
   }, []);
-
-  const handleDelete = (txn: Transaction) => {
-    const repayments = getRepayments();
-    const linkedRep = repayments.find(
-      (r) => r.interestTransactionId === txn.id || r.principalTransactionId === txn.id
-    );
-
-    if (linkedRep) {
-      setDeletingRepayment(linkedRep);
-      return;
-    }
-
-    setDeletingTxn(txn);
-  };
 
   const startEditing = (txn: Transaction) => {
     const repayments = getRepayments();
@@ -1357,15 +1149,6 @@ function TransactionsPageContent() {
     setTransactions(getTransactions(true));
   };
 
-  const handleSort = (field: 'date' | 'amount' | 'category' | 'account') => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('desc');
-    }
-  };
-
   // Group transactions for Daily Tab
   const groupedDailyTransactions = useMemo(() => {
     const groups: Record<
@@ -1436,61 +1219,6 @@ function TransactionsPageContent() {
       summary[m] = { income: 0, expense: 0, count: 0 };
     }
 
-    const matchFilters = (t: Transaction) => {
-      if (typeFilter !== 'all') {
-        if (typeFilter === 'cash-in') {
-          if (t.type !== 'income' && t.type !== 'transfer') return false;
-        } else if (typeFilter === 'cash-out') {
-          if (t.type !== 'expense' && t.type !== 'transfer') return false;
-        } else if (t.type !== typeFilter) {
-          return false;
-        }
-      }
-
-      if (typeFilter === 'transfer') {
-        const matchSource = accountFilter === 'all' || t.account === accountFilter;
-        const matchDest =
-          destinationAccountFilter === 'all' || t.toAccount === destinationAccountFilter;
-        if (!matchSource || !matchDest) return false;
-      } else if (typeFilter === 'cash-in') {
-        if (accountFilter !== 'all') {
-          const matched =
-            t.type === 'transfer' ? t.toAccount === accountFilter : t.account === accountFilter;
-          if (!matched) return false;
-        }
-      } else if (typeFilter === 'cash-out') {
-        if (accountFilter !== 'all') {
-          const matched =
-            t.type === 'transfer' ? t.account === accountFilter : t.account === accountFilter;
-          if (!matched) return false;
-        }
-      } else {
-        const matched =
-          accountFilter === 'all' || t.account === accountFilter || t.toAccount === accountFilter;
-        if (!matched) return false;
-      }
-
-      if (typeFilter !== 'transfer') {
-        if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
-      }
-
-      if (search.trim() !== '') {
-        const q = search.toLowerCase();
-        const accName = getAccountName(t.account).toLowerCase();
-        const toAccName = t.toAccount ? getAccountName(t.toAccount).toLowerCase() : '';
-        const note = (t.notes || '').toLowerCase();
-        const matchesSearch =
-          t.description.toLowerCase().includes(q) ||
-          (t.category || '').toLowerCase().includes(q) ||
-          accName.includes(q) ||
-          toAccName.includes(q) ||
-          note.includes(q);
-        if (!matchesSearch) return false;
-      }
-
-      return true;
-    };
-
     transactions.forEach((t) => {
       if (!t.date) return;
       const d = new Date(t.date);
@@ -1513,13 +1241,7 @@ function TransactionsPageContent() {
   }, [
     transactions,
     selectedYear,
-    typeFilter,
-    accountFilter,
-    categoryFilter,
-    destinationAccountFilter,
-    search,
-    accounts,
-    getAccountName,
+    matchFilters,
   ]);
 
   // Totals view aggregates by Category
@@ -2114,7 +1836,7 @@ function TransactionsPageContent() {
                   </p>
                 ) : (
                   (() => {
-                    const seenTripIds = new Set<string>();
+
                     return groupedDailyTransactions.map((group) => {
                       const day = group.date.getDate();
                       const weekday = getDayName(group.date.toISOString().slice(0, 10));
@@ -2161,7 +1883,9 @@ function TransactionsPageContent() {
                               const isIncome = txn.type === 'income';
                               const isTransfer = txn.type === 'transfer';
 
-                              const title = txn.notes?.trim() || txn.category || 'Transaction';
+                              const title = txn.isSplit
+                                ? txn.splitDetails?.name?.trim() || txn.description || 'Split expense'
+                                : txn.notes?.trim() || txn.category || 'Transaction';
 
                               const accName =
                                 txn.historicalAccountName || getAccountName(txn.account);
@@ -2175,7 +1899,6 @@ function TransactionsPageContent() {
                               } else {
                                 metadata = `${accName}`;
                               }
-                              const categoryMeta = categoryLookup.get(txn.category || '');
 
                               const isTrip = Boolean(txn.tripId);
                               const isFirstTripStartTxn =
@@ -2227,22 +1950,11 @@ function TransactionsPageContent() {
                                   )}
 
                                   {/* Left: Notes / Category & Metadata */}
-                                  <div className="flex-1 min-w-0 pr-2">
+                                  <div className={`flex-1 min-w-0 pr-2 ${txn.isSplit ? "max-w-[33.333%] overflow-hidden" : ""}`}>
                                     <div className="flex items-center gap-1.5 min-w-0">
                                       <span className="text-sm font-semibold text-foreground truncate">
                                         {title}
                                       </span>
-                                      {txn.isSplit && (
-                                        <span className="text-xs font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase shrink-0 max-w-[88px] sm:max-w-[180px] truncate">
-                                          Split
-                                          {txn.splitDetails?.members
-                                            ? `: ${txn.splitDetails.members
-                                                .map((m) => m.name)
-                                                .filter(Boolean)
-                                                .join(', ')}`
-                                            : ''}
-                                        </span>
-                                      )}
                                     </div>
                                     <div className="text-xs font-normal text-muted-foreground truncate mt-1">
                                       {isTransfer ? (
@@ -2257,7 +1969,7 @@ function TransactionsPageContent() {
                                   </div>
 
                                   {/* Middle: Trip Name (Show ONLY on the first transaction when trip started) */}
-                                  {isTrip && isFirstTripStartTxn && (
+                                  {isTrip && isFirstTripStartTxn && !(txn.isSplit) && (
                                     <div className="transaction-trip px-2 shrink text-center">
                                       <span
                                         className="text-sm font-bold max-w-[120px] truncate block"
@@ -2268,8 +1980,9 @@ function TransactionsPageContent() {
                                     </div>
                                   )}
 
+                                  <SplitTransactionLabel transaction={txn} />
                                   {/* Right: Amount */}
-                                  <div className="transaction-amount text-right tabular-nums shrink-0 ml-auto pl-2">
+                                  <div className={`transaction-amount text-right tabular-nums shrink-0 ml-auto pl-2 ${txn.isSplit ? "!max-w-[33.333%]" : ""}`}>
                                     <span
                                       className={`text-sm font-bold block ${
                                         isTransfer
@@ -2410,7 +2123,9 @@ function TransactionsPageContent() {
                           const isIncome = txn.type === 'income';
                           const isTransfer = txn.type === 'transfer';
 
-                          const title = txn.notes?.trim() || txn.category || 'Transaction';
+                          const title = txn.isSplit
+                                ? txn.splitDetails?.name?.trim() || txn.description || 'Split expense'
+                                : txn.notes?.trim() || txn.category || 'Transaction';
 
                           const accName = txn.historicalAccountName || getAccountName(txn.account);
                           const toAccName =
@@ -2426,7 +2141,6 @@ function TransactionsPageContent() {
                           if (txn.notes) {
                             metadata += `  •  ${txn.notes}`;
                           }
-                          const categoryMeta = categoryLookup.get(txn.category || '');
 
                           const isTrip = Boolean(txn.tripId);
 
@@ -2434,13 +2148,13 @@ function TransactionsPageContent() {
                             <div
                               key={txn.id}
                               onClick={() => startEditing(txn)}
-                              className={`transaction-row flex items-center justify-between gap-2 py-4 px-2 rounded-lg transition cursor-pointer ${
+                              className={`transaction-row relative flex items-center justify-between gap-2 py-4 px-2 rounded-lg transition cursor-pointer ${
                                 isTrip
                                   ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
                                   : 'hover:bg-secondary/45 active:bg-secondary/65'
                               }`}
                             >
-                              <div className="flex-1 min-w-0 pr-3">
+                              <div className={`flex-1 min-w-0 pr-3 ${txn.isSplit ? "max-w-[33.333%] overflow-hidden" : ""}`}>
                                 <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
                                   <span>{title}</span>
                                   {isTrip && (
@@ -2460,8 +2174,9 @@ function TransactionsPageContent() {
                                   )}
                                 </div>
                               </div>
+                              <SplitTransactionLabel transaction={txn} />
                               <span
-                                className={`font-mono text-sm font-bold shrink-0 ${isTransfer ? 'text-foreground' : isIncome ? 'text-positive' : 'text-negative'}`}
+                                className={`font-mono text-sm font-bold shrink-0 ${txn.isSplit ? "max-w-[33.333%] break-all text-right" : ""} ${isTransfer ? 'text-foreground' : isIncome ? 'text-positive' : 'text-negative'}`}
                               >
                                 ₹{txn.amount.toLocaleString('en-IN')}
                               </span>

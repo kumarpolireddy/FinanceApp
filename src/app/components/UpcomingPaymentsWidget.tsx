@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Receipt, ChevronRight, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Receipt, ChevronRight, AlertCircle } from 'lucide-react';
 import { getStoredBills, BillPaymentReminder } from '@/lib/billStorage';
 
 export default function UpcomingPaymentsWidget() {

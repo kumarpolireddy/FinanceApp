@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { RefreshCw, Download, Bell, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { getTransactions, getBudgets, getAccounts, type Account, calculateCreditCardBalances } from '@/lib/storage';
 import { toast } from 'sonner';

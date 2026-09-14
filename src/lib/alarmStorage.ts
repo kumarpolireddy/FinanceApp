@@ -1,6 +1,6 @@
 'use client';
 
-import { safeGetItem, safeSetItem } from './browserStorage';
+import { readStoredJson, safeGetItem, safeSetItem } from './browserStorage';
 import { createLocalId } from './ids';
 
 export interface FinanceAlarm {
@@ -172,13 +172,7 @@ export function saveAlarmSettings(settings: AlarmSettings): void {
 }
 
 export function getAlarmLogs(): AlarmLogEntry[] {
-  const data = safeGetItem(ALARM_LOGS_STORAGE_KEY);
-  if (!data) return [];
-  try {
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
+  return readStoredJson(ALARM_LOGS_STORAGE_KEY, []);
 }
 
 export function addAlarmLog(entry: Omit<AlarmLogEntry, 'id'>): void {

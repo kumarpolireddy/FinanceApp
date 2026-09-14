@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic';
 
 import { type Transaction } from '@/lib/storage';
 
-import { type DateRange } from './AnalyticsFilters';
 
 const CategoryYoYChartInner = dynamic(() => import('./CategoryYoYChartInner'), {
   ssr: false,

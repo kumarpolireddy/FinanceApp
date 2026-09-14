@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getBudgets, getTransactions, type Budget } from '@/lib/storage';
 
 interface BudgetRow {

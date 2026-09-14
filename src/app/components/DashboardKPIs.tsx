@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import MetricCard from '@/components/ui/MetricCard';
 import { getBudgets, getTransactions, getAccounts, getTransactionImpact } from '@/lib/storage';
 

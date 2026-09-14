@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FinanceAlarm, getStoredAlarms, getAlarmSettings } from '@/lib/alarmStorage';
 import { triggerSystemNotification } from '@/lib/alarmSound';
 import AlarmAlertModal from './AlarmAlertModal';

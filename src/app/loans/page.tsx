@@ -12,7 +12,6 @@ import {
   saveTransaction,
   deleteTransaction,
   getTransactions,
-  calculateInterestAccrual,
   getRepayments,
   saveRepayments,
   recalculateLoanTimeline,
@@ -22,6 +21,7 @@ import {
 import { toast } from 'sonner';
 import {
   calculateNewEMI,
+  calculateLoanPreview,
   calculateRemainingTenure,
   getNextEmiDateStr,
 } from '@/lib/loanCalculations';
@@ -29,33 +29,20 @@ import { createLocalId } from '@/lib/ids';
 import {
   Edit2,
   Trash2,
-  Archive,
-  Eye,
-  EyeOff,
   Plus,
-  TrendingUp,
   Calendar,
-  Info,
   DollarSign,
-  AlertCircle,
-  Clock,
-  ArrowUpRight,
   Search,
   Filter,
-  Calculator,
   ChevronRight,
   ChevronLeft,
   PieChart,
-  Layers,
   CreditCard,
-  RefreshCw,
   X,
   LayoutGrid,
   List,
-  ArrowRight,
   FileText,
   History,
-  CornerDownRight,
 } from 'lucide-react';
 
 const EMPTY_FORM = {
@@ -335,41 +322,7 @@ export default function LoansPage() {
     return accounts.filter((a) => a.type !== 'loan' && !a.archived);
   }, [accounts]);
 
-  const emiPreview = useMemo(() => {
-    if (accountForm.type !== 'loan') return null;
-    const p = parseFloat(accountForm.originalAmount) || 0;
-    const r = parseFloat(accountForm.interestRate) || 0;
-    const tenureMonthsVal =
-      accountForm.tenureType === 'years'
-        ? parseFloat(accountForm.tenureYears) * 12
-        : parseFloat(accountForm.tenureMonths);
-    const n = tenureMonthsVal || 0;
-
-    if (p <= 0 || r <= 0 || n <= 0) return null;
-
-    const monthlyRate = r / 12 / 100;
-    let calculatedEmi = 0;
-    if (accountForm.interestType === 'flat') {
-      calculatedEmi = (p + p * (r / 100) * (n / 12)) / n;
-    } else {
-      calculatedEmi =
-        (p * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
-    }
-
-    const totalPayment = calculatedEmi * n;
-    const totalInterest = totalPayment - p;
-
-    const startStr = accountForm.startDate || new Date().toISOString().slice(0, 10);
-    const start = new Date(startStr);
-    const end = new Date(start.getFullYear(), start.getMonth() + n, start.getDate());
-
-    return {
-      emi: Math.ceil(calculatedEmi),
-      totalPayment: Math.ceil(totalPayment),
-      totalInterest: Math.ceil(totalInterest),
-      endDate: end.toLocaleDateString('en-IN', { year: 'numeric', month: 'short' }),
-    };
-  }, [
+  const emiPreview = useMemo(() => calculateLoanPreview(accountForm), [
     accountForm.originalAmount,
     accountForm.interestRate,
     accountForm.tenureMonths,

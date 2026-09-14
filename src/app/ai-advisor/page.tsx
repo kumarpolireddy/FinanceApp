@@ -1,38 +1,25 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AppLayout from '@/components/AppLayout';
 import {
-  Sparkles,
   Send,
-  Bot,
-  User,
   RefreshCw,
   Trash2,
   ChevronRight,
   TrendingUp,
-  Wallet,
   Target,
   AlertCircle,
   Copy,
   Check,
   Zap,
-  Info,
-  Layers,
   Plane,
 } from 'lucide-react';
-import {
-  getAccounts,
-  getTransactions,
-  getBudgets,
-  getGoals,
-  type Transaction,
-  type Account,
-  type Budget,
-  type Goal,
-} from '@/lib/storage';
 import { toast } from 'sonner';
 import { getFullFinancialContext } from '@/lib/aiContext';
+import { sendGeminiDirect, GeminiError } from '@/lib/geminiClient';
+import { hasGeminiKey, subscribeToGeminiKey } from '@/lib/geminiKeyStorage';
+import GeminiSetupNotice from '@/components/GeminiSetupNotice';
 import FormattedChatMessage from '@/components/FormattedChatMessage';
 
 interface Message {
@@ -96,7 +83,16 @@ export default function AiAdvisorPage() {
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showTimestampId, setShowTimestampId] = useState<string | null>(null);
-  const [apiKeyMissing, setApiKeyMissing] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<'checking' | 'ready' | 'missing' | 'invalid' | 'storage'>('checking');
+  useEffect(() => {
+    let active = true;
+    const refresh = () => hasGeminiKey().then((saved) => {
+      if (active) setKeyStatus(saved ? 'ready' : 'missing');
+    }).catch(() => { if (active) setKeyStatus('storage'); });
+    void refresh();
+    const unsubscribe = subscribeToGeminiKey(refresh);
+    return () => { active = false; unsubscribe(); };
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -111,13 +107,11 @@ export default function AiAdvisorPage() {
     scrollToBottom();
   }, [messages, loading]);
 
-  const contextData = useMemo(() => {
-    return getFullFinancialContext();
-  }, []);
+
 
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputMessage).trim();
-    if (!text || loading) return;
+    if (!text || loading || keyStatus !== 'ready') return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -140,50 +134,23 @@ export default function AiAdvisorPage() {
           content: m.content,
         }));
 
-      const endpoint = typeof window !== 'undefined' && window.location.protocol.startsWith('http')
-        ? '/api/ai/chat'
-        : (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('builtwithrocket.new'))
-          ? `${process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')}/api/ai/chat`
-          : '/api/ai/chat';
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: apiMessages.length > 0 ? apiMessages : [{ role: 'user', content: text }],
-          context: contextData,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.apiKeyMissing) {
-        setApiKeyMissing(true);
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to get response from AI');
-      }
+      const reply = await sendGeminiDirect(apiMessages, getFullFinancialContext());
 
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.reply || "Sorry, I couldn't generate a response.",
+        content: reply || "Sorry, I couldn't generate a response.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch (err: any) {
-      console.error('Error sending message:', err);
-      toast.error(err.message || 'Something went wrong communicating with Gemini.');
-
-      const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `⚠️ **Error**: ${err.message || 'Unable to connect to Gemini AI right now.'}\n\nPlease check your internet connection or verify your \`GEMINI_API_KEY\` in \`.env\`.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
+    } catch (error) {
+      const failure = error instanceof GeminiError ? error : new GeminiError('request', 'Unable to connect to Gemini AI right now.');
+      if (failure.code === 'missing-key') setKeyStatus('missing');
+      else if (failure.code === 'invalid-key') setKeyStatus('invalid');
+      else if (failure.code === 'storage') setKeyStatus('storage');
+      // Keep failures out of persisted chat history; never log upstream error objects.
+      toast.error(failure.message);
     } finally {
       setLoading(false);
     }
@@ -228,18 +195,8 @@ export default function AiAdvisorPage() {
           </button>
         </div>
 
-        {/* API Key Missing Alert */}
-        {apiKeyMissing && (
-          <div className="mb-2 p-4 rounded-xl bg-warning-subtle border border-warning/30 flex items-start gap-4 flex-shrink-0 text-xs">
-            <AlertCircle size={16} className="text-warning flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-warning">Gemini API Key missing or using placeholder key</p>
-              <p className="text-muted-foreground mt-0.5">
-                Add your real <code className="bg-muted px-1 py-0.5 rounded">GEMINI_API_KEY</code> in <code className="bg-muted px-1 py-0.5 rounded">.env</code> to activate live responses from Google Gemini. Get a free API key at <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="underline text-primary">Google AI Studio</a>.
-              </p>
-            </div>
-          </div>
-        )}
+        {keyStatus === 'checking' && <p role="status" className="text-sm text-muted-foreground">Checking AI setup?</p>}
+        {['missing', 'invalid', 'storage'].includes(keyStatus) && <GeminiSetupNotice invalid={keyStatus === 'invalid'} storageError={keyStatus === 'storage'} />}
 
         {/* Messages Scroll Area - ONLY THIS AREA SCROLLS */}
         <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1 py-2 mb-2">
@@ -308,7 +265,7 @@ export default function AiAdvisorPage() {
         </div>
 
         {/* Starter Prompt Chips (only shown if few messages) */}
-        {messages.length <= 2 && !loading && (
+        {messages.length <= 2 && !loading && keyStatus === 'ready' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 flex-shrink-0">
             {STARTER_PROMPTS.map((item, idx) => {
               const Icon = item.icon;
@@ -350,12 +307,12 @@ export default function AiAdvisorPage() {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="Type a message..."
-              disabled={loading}
+              disabled={loading || keyStatus !== 'ready'}
               className="min-w-0 flex-1 appearance-none bg-transparent border-0 outline-none focus:border-0 focus:outline-none focus-visible:outline-none focus:ring-0 text-base px-4 py-1.5 text-foreground placeholder:text-muted-foreground disabled:opacity-50"
             />
             <button
               type="submit"
-              disabled={!inputMessage.trim() || loading}
+              disabled={!inputMessage.trim() || loading || keyStatus !== 'ready'}
               className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition flex-shrink-0"
             >
               <Send size={16} />

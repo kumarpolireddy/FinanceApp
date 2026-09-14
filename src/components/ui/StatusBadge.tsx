@@ -1,4 +1,3 @@
-import React from 'react';
 
 type BadgeVariant =
   'income' | 'expense' | 'transfer' | 'success' | 'warning' | 'error' | 'info' | 'neutral';

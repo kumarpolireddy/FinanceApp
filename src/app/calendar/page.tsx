@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { getTransactions, getAccounts, type Transaction, type Account } from '@/lib/storage';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
