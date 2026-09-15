@@ -616,7 +616,7 @@ function TransactionsPageContent() {
       );
       if (found) return found.name;
       if (!accountId.startsWith('acc-') && !accountId.startsWith('mm-acc-')) return accountId;
-      return 'Deleted / Historical Account';
+      return 'Deleted';
     },
     [accounts]
   );
@@ -1845,7 +1845,7 @@ function TransactionsPageContent() {
                       return (
                         <div
                           key={group.date.toISOString()}
-                          className="transactions-date-card bg-card border border-border rounded-2xl p-4 space-y-2"
+                          className="transactions-date-card bg-card border border-border rounded-2xl p-4 space-y-2 overflow-hidden"
                         >
                           {/* Day Group Header */}
                           <div className="transactions-date-heading flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-border">
@@ -1926,7 +1926,7 @@ function TransactionsPageContent() {
                                     isSelected
                                       ? 'bg-primary/20 border-l-4 border-l-primary'
                                       : isTrip
-                                        ? 'border-l-4'
+                                        ? 'w-full'
                                         : 'hover:bg-secondary/45 active:bg-secondary/65'
                                   }`}
                                   style={
@@ -1934,8 +1934,8 @@ function TransactionsPageContent() {
                                       ? undefined
                                       : isTrip
                                         ? {
-                                            backgroundColor: `${tripBgColor}22`,
-                                            borderLeftColor: tripBgColor,
+                                            backgroundColor: `${tripBgColor}33`,
+                                            marginInline: -16, width: 'calc(100% + 32px)', paddingInline: 24, borderRadius: 0,
                                           }
                                         : undefined
                                   }
@@ -2035,7 +2035,7 @@ function TransactionsPageContent() {
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                       <span
                         key={day}
-                        className="py-2 text-xs font-bold text-muted-foreground uppercase"
+                        className={`py-2 text-xs font-bold uppercase ${day === 'Sat' || day === 'Sun' ? 'text-negative' : 'text-muted-foreground'}`}
                       >
                         {day}
                       </span>
@@ -2055,6 +2055,7 @@ function TransactionsPageContent() {
                       }
 
                       const isSelected = selectedCalendarDay === cell.day;
+                      const isWeekend = idx % 7 === 0 || idx % 7 === 6;
                       const hasActivity = cell.income > 0 || cell.expense > 0;
 
                       return (
@@ -2068,7 +2069,7 @@ function TransactionsPageContent() {
                           }`}
                         >
                           <span
-                            className={`text-xs sm:text-sm font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}
+                            className={`text-xs sm:text-sm font-bold ${isWeekend ? 'text-negative' : isSelected ? 'text-primary' : 'text-foreground'}`}
                           >
                             {cell.day}
                           </span>
@@ -2100,7 +2101,7 @@ function TransactionsPageContent() {
 
                 {/* Day-specific transactions */}
                 {selectedCalendarDay !== null && (
-                  <div className="transactions-date-card bg-card border border-border rounded-2xl p-4 space-y-2">
+                  <div className="transactions-date-card bg-card border border-border rounded-2xl p-4 space-y-2 overflow-hidden">
                     <div className="flex justify-between items-center pb-2 border-b border-border/40">
                       <span className="text-sm font-bold uppercase tracking-wider text-white">
                         Transactions on Day {selectedCalendarDay}
@@ -2143,6 +2144,7 @@ function TransactionsPageContent() {
                           }
 
                           const isTrip = Boolean(txn.tripId);
+                          const tripColor = isTrip ? getTripBgColor() : '';
 
                           return (
                             <div
@@ -2150,15 +2152,20 @@ function TransactionsPageContent() {
                               onClick={() => startEditing(txn)}
                               className={`transaction-row relative flex items-center justify-between gap-2 py-4 px-2 rounded-lg transition cursor-pointer ${
                                 isTrip
-                                  ? 'bg-amber-500/15 border-l-4 border-l-amber-500 hover:bg-amber-500/25'
+                                  ? 'w-full'
                                   : 'hover:bg-secondary/45 active:bg-secondary/65'
                               }`}
+                              style={isTrip ? {
+                                backgroundColor: `${tripColor}33`,
+                                marginInline: -16, width: 'calc(100% + 32px)', paddingInline: 24, borderRadius: 0,
+                              } : undefined}
                             >
                               <div className={`flex-1 min-w-0 pr-3 ${txn.isSplit ? "max-w-[33.333%] overflow-hidden" : ""}`}>
                                 <div className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
                                   <span>{title}</span>
                                   {isTrip && (
-                                    <span className="text-xs font-bold text-amber-500 bg-amber-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                                    <span className="text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0"
+                                      style={{ color: tripColor, backgroundColor: `${tripColor}33` }}>
                                       ✈️ Trip
                                     </span>
                                   )}

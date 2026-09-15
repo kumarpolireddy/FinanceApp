@@ -5,7 +5,7 @@ import SplitTransactionLabel from '@/components/SplitTransactionLabel';
 import { useState, useEffect } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { ArrowRight } from 'lucide-react';
-import { getTransactions, getCategories, type Transaction, type Category } from '@/lib/storage';
+import { getTransactions, getCategories, getTripBgColor, type Transaction, type Category } from '@/lib/storage';
 import { useMemo } from 'react';
 import Link from 'next/link';
 
@@ -56,10 +56,12 @@ export default function RecentTransactions({
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [showIcons, setShowIcons] = useState(false);
+  const [tripColor, setTripColor] = useState('#f59e0b');
 
   useEffect(() => {
     setCategories(getCategories());
     const updateShowIcons = () => {
+      setTripColor(getTripBgColor());
       const stored = localStorage.getItem('wealthiq_show_category_icons');
       setShowIcons(stored === 'true');
     };
@@ -86,7 +88,7 @@ export default function RecentTransactions({
   }, [selectedMonth, selectedYear, selectedAccountId]);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
+    <div className="bg-card border border-border rounded-2xl p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">Recent Transactions</h3>
@@ -122,7 +124,11 @@ export default function RecentTransactions({
             return (
               <div
                 key={txn.id}
-                className="relative flex items-center gap-4 px-2 py-2 rounded-lg row-hover-highlight hover:bg-muted/20 cursor-pointer transition-colors duration-150"
+                className={`relative flex items-center gap-4 px-2 py-2 rounded-lg row-hover-highlight hover:bg-muted/20 cursor-pointer transition-colors duration-150 ${txn.tripId ? 'w-full' : ''}`}
+                style={txn.tripId ? {
+                  backgroundColor: `${tripColor}33`,
+                  marginInline: -24, width: 'calc(100% + 48px)', paddingInline: 32, borderRadius: 0,
+                } : undefined}
               >
                 <div className={`flex-1 min-w-0 ${txn.isSplit ? "max-w-[33.333%] overflow-hidden" : ""}`}>
                   <p className="text-sm font-medium text-foreground truncate">{txn.isSplit ? (txn.splitDetails?.name?.trim() || txn.description || 'Split expense') : (txn.notes || txn.category || 'Transaction')}</p>

@@ -41,9 +41,11 @@
 .transactions-date-heading { min-height: 40px; }
 .transactions-date-heading > div:first-child > span:first-child { font-size: 20px; }
 .transactions-date-heading > div:first-child > span:nth-child(2) {
-  color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 500;
+}
+.transactions-date-heading > div:first-child > span:nth-child(2):not(.text-negative) {
+  color: var(--muted-foreground);
 }
 .transaction-row + .transaction-row { border-top: 1px solid rgb(150 163 181 / 9%); }
 .transaction-amount { max-width: 45%; overflow-wrap: anywhere; }

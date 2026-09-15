@@ -717,6 +717,7 @@ export default function MobileAppView() {
                   return groupedDailyTransactions.map(([day, txs]) => {
                     const dateObj = new Date(txs[0].date);
                     const weekDay = dateObj.toLocaleDateString('en-IN', { weekday: 'short' });
+                    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
                     
                     // Daily balance totals
                     let dayIncome = 0;
@@ -731,8 +732,8 @@ export default function MobileAppView() {
                         {/* Day Header */}
                         <div className="flex justify-between items-center px-4 py-2 bg-muted/10 border-b border-border">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-black text-foreground">{day}</span>
-                            <span className="text-3xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-bold uppercase">{weekDay}</span>
+                            <span className={`text-sm font-black ${isWeekend ? 'text-negative' : 'text-foreground'}`}>{day}</span>
+                            <span className={`text-3xs bg-muted px-1.5 py-0.5 rounded font-bold uppercase ${isWeekend ? 'text-negative' : 'text-muted-foreground'}`}>{weekDay}</span>
                           </div>
                           <div className="flex gap-2 text-3xs font-bold">
                             {dayIncome > 0 && <span className="text-positive">+{formatVal(dayIncome)}</span>}
@@ -768,12 +769,11 @@ export default function MobileAppView() {
                                   isSelected
                                     ? 'bg-primary/20 border-l-4 border-l-primary'
                                     : isTrip
-                                      ? 'border-l-4'
+                                      ? 'w-full'
                                       : 'hover:bg-muted/10'
                                 }`}
                                 style={isSelected ? undefined : (isTrip ? {
-                                  backgroundColor: `${tripColor}22`,
-                                  borderLeftColor: tripColor,
+                                  backgroundColor: `${tripColor}33`,
                                 } : undefined)}
                               >
                                 {isSelectionMode && (

@@ -24,6 +24,7 @@ import {
   getActiveTrip,
   setActiveTrip,
   getTripSummary,
+  getTripBgColor,
   getAccounts,
   getCategories,
   saveTransaction,
@@ -469,7 +470,7 @@ export default function TripsPage() {
             {currentSummary && currentSummary.trip ? (
               <div className="space-y-6">
                 {/* Trip Header Card */}
-                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4 overflow-hidden">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <h2 className="text-xl font-black text-foreground">{currentSummary.trip.name}</h2>
@@ -562,7 +563,7 @@ export default function TripsPage() {
                 </div>
 
                 {/* Expense Breakdown by Category */}
-                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4 overflow-hidden">
                   <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                     <PieChart size={16} className="text-primary" /> Category Spending Breakdown
                   </h3>
@@ -603,7 +604,7 @@ export default function TripsPage() {
                 </div>
 
                 {/* Trip Transactions List */}
-                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                <div className="bg-card border border-border rounded-xl p-6 space-y-4 overflow-hidden">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                       <ListFilter size={16} className="text-primary" /> Trip Transactions (
@@ -618,7 +619,8 @@ export default function TripsPage() {
                   ) : (
                     <div className="divide-y divide-border">
                       {currentSummary.transactions.map((txn) => (
-                        <div key={txn.id} className="py-3 flex items-center justify-between gap-4 text-xs">
+                        <div key={txn.id} className="py-3 px-2 w-full rounded-lg flex items-center justify-between gap-4 text-xs"
+                          style={{ backgroundColor: `${getTripBgColor()}33`, marginInline: -24, width: 'calc(100% + 48px)', paddingInline: 32, borderRadius: 0 }}>
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-foreground truncate">{txn.notes || txn.category}</p>
                             <p className="text-2xs text-muted-foreground mt-0.5 truncate">

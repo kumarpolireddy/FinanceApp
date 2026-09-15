@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
-import { getAccounts, type Account, addAccount, updateAccount, getTransactions, type Transaction, calculateCreditCardBalances } from '@/lib/storage';
+import { getAccounts, saveAccounts, saveAccountCategories, getAccountCategories, type AccountCategory, type Account, addAccount, updateAccount, deleteAccount, getTransactions, type Transaction, calculateCreditCardBalances } from '@/lib/storage';
 import {
   Landmark,
   Wallet,
@@ -15,9 +15,11 @@ import {
   Plus,
   GripVertical,
   Pencil,
+  Trash2,
 } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
+import { getAccountGroupOptions, renameAccountGroup, accountGroupKey } from './accountGroups';
 
 export default function AccountsPage() {
   const router = useRouter();
@@ -31,6 +33,15 @@ export default function AccountsPage() {
   const [newAccName, setNewAccName] = useState('');
   const [newAccBalance, setNewAccBalance] = useState('0');
   const [newAccType, setNewAccType] = useState<Account['type']>('accounts');
+  const [accountCategories, setAccountCategories] = useState<AccountCategory[]>([]);
+  const [newAccGroup, setNewAccGroup] = useState('');
+  const accountGroupOptions = useMemo(
+    () => getAccountGroupOptions(newAccType, accounts, accountCategories),
+    [accounts, accountCategories, newAccType]
+  );
+  const selectedAccountGroup = accountGroupOptions.includes(newAccGroup)
+    ? newAccGroup
+    : accountGroupOptions[0];
   const [newAccNotes, setNewAccNotes] = useState('');
   const [newAccLimit, setNewAccLimit] = useState('100000');
   const [newAccInterest, setNewAccInterest] = useState('8.5');
@@ -66,6 +77,8 @@ export default function AccountsPage() {
       name: newAccName.trim(),
       balance: balanceNum,
       type: newAccType,
+      category: selectedAccountGroup,
+      groupUid: accountCategories.find((category) => !category.isDeletedSource && category.baseType === newAccType && category.name === selectedAccountGroup)?.sourceUid,
       color: colors[newAccType] || '#3b82f6',
       icon: icons[newAccType] || '🏦',
       notes: newAccNotes.trim(),
@@ -93,6 +106,7 @@ export default function AccountsPage() {
     setNewAccName('');
     setNewAccBalance('0');
     setNewAccType('accounts');
+    setNewAccGroup('');
     setNewAccNotes('');
     setNewAccLimit('100000');
     setNewAccInterest('8.5');
@@ -117,6 +131,7 @@ export default function AccountsPage() {
 
   useEffect(() => {
     setAccounts(getAccounts(true));
+    setAccountCategories(getAccountCategories());
     setAllTransactions(getTransactions(true));
     setIsMounted(true);
   }, []);
@@ -226,15 +241,24 @@ export default function AccountsPage() {
       return;
     }
 
-    const groupToRename = groupedAccounts.groups[renameGroupTarget.key];
-    if (groupToRename && groupToRename.items.length > 0) {
-      groupToRename.items.forEach((acc) => {
-        updateAccount(acc.id, { category: newName });
-      });
+    try {
+      const renamed = renameAccountGroup(getAccounts(true), getAccountCategories(), oldName, newName);
+      saveAccounts(renamed.accounts);
+      saveAccountCategories(renamed.categories);
+      setAccountCategories(renamed.categories);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to rename group');
+      return;
     }
 
     const oldKey = renameGroupTarget.key;
-    const newKey = newName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+    const newKey = accountGroupKey(newName);
+    setCollapsedSections((previous) => {
+      const next = { ...previous };
+      delete next[oldKey];
+      next[newKey] = previous[oldKey] || false;
+      return next;
+    });
     if (groupOrder.includes(oldKey)) {
       const newOrder = groupOrder.map((k) => (k === oldKey ? newKey : k));
       saveGroupOrder(newOrder);
@@ -247,12 +271,16 @@ export default function AccountsPage() {
 
   // Edit Account state & long press timer
   const [editingAccountTarget, setEditingAccountTarget] = useState<Account | null>(null);
+  const [confirmAccountDelete, setConfirmAccountDelete] = useState(false);
   const [accountActionTarget, setAccountActionTarget] = useState<{
     account: Account;
     groupKey: string;
   } | null>(null);
   const [editName, setEditName] = useState('');
   const [editType, setEditType] = useState<Account['type']>('accounts');
+  const [editGroup, setEditGroup] = useState('');
+  const editGroupOptions = useMemo(() => getAccountGroupOptions(editType, accounts, accountCategories), [editType, accounts, accountCategories]);
+  const selectedEditGroup = editGroupOptions.includes(editGroup) ? editGroup : editGroupOptions[0];
   const [editBalance, setEditBalance] = useState('0');
   const [editNotes, setEditNotes] = useState('');
   const [editCreditLimit, setEditCreditLimit] = useState('100000');
@@ -266,9 +294,11 @@ export default function AccountsPage() {
   const isAccountLongPressTriggered = useRef(false);
 
   const openEditAccountModal = (acc: Account) => {
+    setConfirmAccountDelete(false);
     setEditingAccountTarget(acc);
     setEditName(acc.name);
     setEditType(acc.type || 'accounts');
+    setEditGroup(acc.category || '');
     setEditBalance(String(acc.balance || 0));
     setEditNotes(acc.notes || '');
     setEditCreditLimit(String(acc.creditLimit || 100000));
@@ -331,6 +361,8 @@ export default function AccountsPage() {
     const updatedData: Partial<Account> = {
       name: editName.trim(),
       type: editType,
+      category: selectedEditGroup,
+      groupUid: accountCategories.find((category) => !category.isDeletedSource && category.baseType === editType && category.name === selectedEditGroup)?.sourceUid,
       balance: balanceNum,
       notes: editNotes.trim(),
     };
@@ -350,6 +382,18 @@ export default function AccountsPage() {
     setAccounts(getAccounts(true));
     setAllTransactions(getTransactions(true));
     setEditingAccountTarget(null);
+  };
+
+  const handleDeleteEditedAccount = () => {
+    if (!editingAccountTarget) return;
+    const { id, name } = editingAccountTarget;
+    deleteAccount(id);
+    saveAccountOrder(accountOrderMap.filter((accountId) => accountId !== id));
+    setAccounts(getAccounts(true));
+    setAllTransactions(getTransactions(true));
+    setEditingAccountTarget(null);
+    setConfirmAccountDelete(false);
+    toast.success(`Account "${name}" deleted`);
   };
 
   const handleDragStart = (
@@ -618,10 +662,7 @@ export default function AccountsPage() {
           {Object.entries(groupedAccounts.groups).map(([key, group]) => {
             if (group.items.length === 0) return null;
             const Icon = group.icon;
-            const normalizedGroupName = group.name.toLowerCase();
-            const isCreditGroup =
-              (normalizedGroupName.includes('credit') || normalizedGroupName.includes('card')) &&
-              !normalizedGroupName.includes('bank');
+            const isCreditGroup = group.items.every((account) => account.type === 'credit');
 
             const isCollapsed = collapsedSections[key];
 
@@ -838,7 +879,10 @@ export default function AccountsPage() {
               <div className="relative">
                 <select
                   value={newAccType}
-                  onChange={(e) => setNewAccType(e.target.value as any)}
+                  onChange={(e) => {
+                    setNewAccType(e.target.value as Account['type']);
+                    setNewAccGroup('');
+                  }}
                   className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary transition font-bold"
                 >
                   <option value="accounts">🏦 Bank Account</option>
@@ -862,6 +906,20 @@ export default function AccountsPage() {
                 className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="new-account-group" className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Account Group
+            </label>
+            <select
+              id="new-account-group"
+              value={selectedAccountGroup}
+              onChange={(e) => setNewAccGroup(e.target.value)}
+              className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition"
+            >
+              {accountGroupOptions.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
           </div>
 
           {newAccType === 'credit' && (
@@ -1232,7 +1290,10 @@ export default function AccountsPage() {
               <div className="relative">
                 <select
                   value={editType}
-                  onChange={(e) => setEditType(e.target.value as any)}
+                  onChange={(e) => {
+                    setEditType(e.target.value as Account['type']);
+                    setEditGroup('');
+                  }}
                   className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary transition font-bold"
                 >
                   <option value="accounts">🏦 Bank Account</option>
@@ -1256,6 +1317,14 @@ export default function AccountsPage() {
                 className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition font-mono font-bold"
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="edit-account-group" className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Account Group</label>
+            <select id="edit-account-group" value={selectedEditGroup} onChange={(e) => setEditGroup(e.target.value)}
+              className="w-full text-sm bg-card border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-primary transition">
+              {editGroupOptions.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
           </div>
 
           {editType === 'credit' && (
@@ -1369,6 +1438,30 @@ export default function AccountsPage() {
             >
               Save Changes
             </button>
+          </div>
+          <div className="border-t border-border pt-4">
+            {confirmAccountDelete ? (
+              <div className="space-y-3" role="alert">
+                <p className="text-sm text-muted-foreground">
+                  Delete <strong className="text-foreground">{editingAccountTarget?.name}</strong>? This cannot be undone. Existing transactions will remain.
+                </p>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setConfirmAccountDelete(false)}
+                    className="flex-1 rounded-lg border border-border bg-secondary px-4 py-2.5 text-foreground">
+                    Keep Account
+                  </button>
+                  <button type="button" onClick={handleDeleteEditedAccount}
+                    className="flex-1 rounded-lg bg-rose-600 px-4 py-2.5 text-white hover:bg-rose-700">
+                    Confirm Delete
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setConfirmAccountDelete(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-negative/30 px-4 py-2.5 text-negative hover:bg-negative/10">
+                <Trash2 size={16} /> Delete Account
+              </button>
+            )}
           </div>
         </form>
       </Modal>
